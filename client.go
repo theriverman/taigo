@@ -3,9 +3,7 @@ package taigo
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -19,7 +17,6 @@ type Client struct {
 	Headers            map[string]string         // set by system&user
 	HTTPClient         *http.Client              // set by user
 	IsLoggedIn         bool                      // set by system
-	Logger             *log.Logger               // customisable logging interface
 	LoginType          string                    // i.e.: "normal"; "github"; "ldap"
 	Token              string                    // set by system; can be set manually
 	TokenType          string                    // default=Bearer; options:Bearer,Application
@@ -46,9 +43,7 @@ type Client struct {
 // SetDefaultProject takes an int and uses that to internally set the default project ID.
 func (c *Client) SetDefaultProject(projectID int) error {
 	if !(projectID > 0) {
-		msg := fmt.Sprintf("Could not set Default Project ID. Provided projectID was: %d", projectID)
-		c.Logger.Fatalln(msg)
-		return NewError(msg)
+		return fmt.Errorf("Could not set Default Project ID. Provided projectID was: %d", projectID)
 	}
 	c.defaultProjectID = projectID
 	return nil
@@ -57,9 +52,7 @@ func (c *Client) SetDefaultProject(projectID int) error {
 // SetDefaultProjectBySlug takes an slug string and uses that to internally set the default project ID.
 func (c *Client) SetDefaultProjectBySlug(projectSlug string) error {
 	if projectSlug == "" {
-		msg := fmt.Sprintf("Could not set Default Project ID. Provided projectSlug was: %s", projectSlug)
-		c.Logger.Fatalln(msg)
-		return NewError(msg)
+		return fmt.Errorf("Could not set Default Project ID. Provided projectSlug was: %s", projectSlug)
 	}
 	proj, err := c.Project.GetBySlug(projectSlug)
 	if err != nil {
@@ -94,11 +87,6 @@ func (c *Client) HasDefaultProject() bool {
 
 // Initialise returns a new Taiga Client which is the entrypoint of the driver
 func (c *Client) Initialise(credentials *Credentials) error {
-	// Instantiate a logger handle
-	if c.Logger == nil {
-		c.instantiateLogger()
-	}
-
 	// Taiga.Client safety guards
 	if len(c.BaseURL) < len("http://") { // compares for a minimum of len("http://")
 		return errors.New("BaseURL is not set or invalid")
@@ -186,12 +174,4 @@ func (c *Client) loadHeaders(request *http.Request) {
 
 func (c *Client) setContentType(s string) {
 	c.Headers["Content-Type"] = s
-}
-
-func (c *Client) instantiateLogger() {
-	c.Logger = &log.Logger{}
-	// Configure Log
-	c.Logger.SetOutput(os.Stdout)
-	c.Logger.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	c.Logger.SetPrefix("go-taiga >> ")
 }

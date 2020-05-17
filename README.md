@@ -117,7 +117,7 @@ func main() {
 		Password: "123123",
 	})
 	if err != nil {
-		client.Logger.Fatalln(err)
+		log.Fatalln(err)
 	}
 	// Set default project (optional. recommended for convenience)
 	client.SetDefaultProjectBySlug("theriverman-test-1337")

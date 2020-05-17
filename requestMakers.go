@@ -3,7 +3,7 @@ package taigo
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -28,7 +28,7 @@ func newRawRequest(requestType string, c *Client, responseBody interface{}, url 
 		}
 		request, _ = http.NewRequest(requestType, url, bytes.NewBuffer(body))
 	} else {
-		c.Logger.Panicln("Failed to build request in newRawRequest. Received payload could not be processed!")
+		return fmt.Errorf("Failed to build request because the received payload could not be processed")
 	}
 
 	// Load Headers
@@ -58,8 +58,7 @@ func newRawRequest(requestType string, c *Client, responseBody interface{}, url 
 		return nil
 	}
 
-	c.Logger.Println("Failed Request!")
-	return errors.New(string(body))
+	return fmt.Errorf("Request Failed")
 }
 
 func successfulRequest(response *http.Response) bool {
@@ -157,6 +156,5 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment) (*Attac
 		return &responseBody, nil
 	}
 
-	c.Logger.Println("Failed Request!")
-	return nil, errors.New(string(rawResponseBody))
+	return nil, fmt.Errorf("Request Failed")
 }
