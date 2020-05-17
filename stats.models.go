@@ -1,4 +1,4 @@
-package gotaiga
+package taigo
 
 // DiscoverStats => https://taigaio.github.io/taiga-doc/dist/api.html#object-discover-stats
 type DiscoverStats struct {

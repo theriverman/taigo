@@ -1,4 +1,4 @@
-package gotaiga
+package taigo
 
 // NewError returns an error that formats as the given text.
 func NewError(text string) error {

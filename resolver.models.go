@@ -1,4 +1,4 @@
-package gotaiga
+package taigo
 
 // Resolver represents all possible response body key/value pairs
 type Resolver struct {

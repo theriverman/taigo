@@ -1,4 +1,4 @@
-package gotaiga
+package taigo
 
 import (
 	"github.com/google/go-querystring/query"

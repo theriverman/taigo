@@ -1,3 +1,3 @@
-package gotaiga
+package taigo
 
 // TODO: To be implemented

@@ -1,4 +1,4 @@
-package gotaiga
+package taigo
 
 // Credentials is the payload for normal authentication
 type Credentials struct {

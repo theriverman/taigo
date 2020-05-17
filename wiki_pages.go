@@ -1,4 +1,4 @@
-package gotaiga
+package taigo
 
 var wikiURI = "/wiki"
 
