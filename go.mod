@@ -1,4 +1,4 @@
-module theriverman/go-taiga
+module github.com/theriverman/taigo
 
 go 1.14
 
