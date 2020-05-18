@@ -188,8 +188,9 @@ This package conforms to the stable HEAD philosophy.
   * **develop** is *not* <i>always</i> stable
 
 # Licenses & Recognitions
-| Product                   | License |                                                        |
-|---------------------------|---------|--------------------------------------------------------|
-| **Go Gopher**             | CC3.0   | [Renee French](https://www.instagram.com/reneefrench/) |
-| **Gopher Konstructor**    | CC0-1.0 | [quasilyte](https://github.com/quasilyte/gopherkon)    |
-| **TAIGO**                 | MIT     | [theriverman](https://github.com/theriverman)          |
+|							|			|															|
+|---------------------------|-----------|-----------------------------------------------------------|
+| **Go Gopher**             | CC3.0     | [Renee French](https://www.instagram.com/reneefrench/) 	|
+| **Gopher Konstructor**    | CC0-1.0   | [quasilyte](https://github.com/quasilyte/gopherkon)    	|
+| **TAIGA**                 | AGPL-3.0  | [Taiga.io](https://github.com/taigaio)                 	|
+| **TAIGO**                 | MIT       | [theriverman](https://github.com/theriverman)          	|
