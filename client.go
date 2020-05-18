@@ -25,12 +25,16 @@ type Client struct {
 	pagination         *Pagination               // Pagination details extracted from the LAST http response
 	paginationDisabled bool                      // indicates pagination status
 
-	// Services
+	// Core Services
+	Request *RequestService
+
+	// Taiga Services
 	Auth      *AuthService
 	Epic      *EpicService
 	Issue     *IssueService
 	Milestone *MilestoneService
 	Project   *ProjectService
+	Stats     *StatsService
 	Task      *TaskService
 	UserStory *UserStoryService
 	User      *UserService
@@ -113,11 +117,14 @@ func (c *Client) Initialise(credentials *Credentials) error {
 	c.DisablePagination(true) // https://taigaio.github.io/taiga-doc/dist/api.html#_pagination
 
 	// Bootstrapping Services
+	c.Request = &RequestService{c}
+
 	c.Auth = &AuthService{c}
 	c.Epic = &EpicService{c}
 	c.Issue = &IssueService{c}
 	c.Milestone = &MilestoneService{c}
 	c.Project = &ProjectService{c}
+	c.Stats = &StatsService{c}
 	c.Task = &TaskService{c}
 	c.UserStory = &UserStoryService{c}
 	c.User = &UserService{c}

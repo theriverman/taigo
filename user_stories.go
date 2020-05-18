@@ -16,9 +16,9 @@ type UserStoryService struct {
 	client *Client
 }
 
-// ListUserStories returns all User Stories | https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-list
+// List returns all User Stories | https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-list
 // Available Meta: *[]UserStoryDetailLIST
-func (s *UserStoryService) ListUserStories(queryParameters *UserStoryQueryParams) ([]UserStory, error) {
+func (s *UserStoryService) List(queryParameters *UserStoryQueryParams) ([]UserStory, error) {
 	url := s.client.APIURL + endpointUserStories
 	if queryParameters != nil {
 		paramValues, _ := query.Values(queryParameters)
@@ -27,17 +27,17 @@ func (s *UserStoryService) ListUserStories(queryParameters *UserStoryQueryParams
 		url = url + s.client.GetDefaultProjectAsQueryParam()
 	}
 	var UserStoryDetailList UserStoryDetailLIST
-	err := getRequest(s.client, &UserStoryDetailList, url)
+	err := s.client.Request.GetRequest(url, &UserStoryDetailList)
 	if err != nil {
 		return nil, err
 	}
 	return UserStoryDetailList.AsUserStory()
 }
 
-// CreateUserStory creates a new User Story | https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-create
+// Create creates a new User Story | https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-create
 //
 // Available Meta: *UserStoryDetail
-func (s *UserStoryService) CreateUserStory(userStory UserStory) (*UserStory, error) {
+func (s *UserStoryService) Create(userStory UserStory) (*UserStory, error) {
 	url := s.client.APIURL + endpointUserStories
 	var newUserStory UserStoryDetail
 
@@ -47,7 +47,7 @@ func (s *UserStoryService) CreateUserStory(userStory UserStory) (*UserStory, err
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
 
-	err := postRequest(s.client, &newUserStory, url, userStory)
+	err := s.client.Request.PostRequest(url, &userStory, &newUserStory)
 	if err != nil {
 		return nil, err
 	}
@@ -55,20 +55,20 @@ func (s *UserStoryService) CreateUserStory(userStory UserStory) (*UserStory, err
 	return newUserStory.AsUserStory()
 }
 
-// GetUserStory -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-get
+// Get -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-get
 //
 // Available Meta: *UserStoryDetailGET
-func (s *UserStoryService) GetUserStory(userStoryID int) (*UserStory, error) {
+func (s *UserStoryService) Get(userStoryID int) (*UserStory, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUserStories, userStoryID)
 	var us UserStoryDetailGET
-	err := getRequest(s.client, &us, url)
+	err := s.client.Request.GetRequest(url, &us)
 	if err != nil {
 		return nil, err
 	}
 	return us.AsUserStory()
 }
 
-// GetUserStoryByRef returns a User Story by Ref -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-get-by-ref
+// GetByRef returns a User Story by Ref -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-get-by-ref
 //
 // The passed userStoryRef should be an int taken from the UserStory's URL
 // The passed *Project struct should have at least one of the following fields set:
@@ -78,7 +78,7 @@ func (s *UserStoryService) GetUserStory(userStoryID int) (*UserStory, error) {
 // If both fields are set, *Project.ID will be preferred.
 //
 // Available Meta: UserStoryDetailGET
-func (s *UserStoryService) GetUserStoryByRef(userStoryRef int, project *Project) (*UserStory, error) {
+func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserStory, error) {
 	var us UserStoryDetailGET
 	var url string
 
@@ -93,72 +93,107 @@ func (s *UserStoryService) GetUserStoryByRef(userStoryRef int, project *Project)
 		return nil, errors.New("No ID or Ref defined in passed project struct")
 	}
 
-	err := getRequest(s.client, &us, url)
+	err := s.client.Request.GetRequest(url, &us)
 	if err != nil {
 		return nil, err
 	}
 	return us.AsUserStory()
 }
 
-// EditUserStory sends a PATCH request to edit a User Story -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-edit
+// Edit sends a PATCH request to edit a User Story -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-edit
 // Available Meta: UserStoryDetail
-func (s *UserStoryService) EditUserStory(userStory UserStory) (*UserStory, error) {
+func (s *UserStoryService) Edit(userStory UserStory) (*UserStory, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUserStories, userStory.ID)
-	var us UserStoryDetail
+	var responseUS UserStoryDetail
 
 	if userStory.ID == 0 {
 		return nil, errors.New("Passed UserStory does not have an ID yet. Does it exist?")
 	}
 
 	// Taiga OCC
-	remoteUS, err := s.GetUserStory(userStory.ID)
+	remoteUS, err := s.Get(userStory.ID)
 	if err != nil {
 		return nil, err
 	}
 	userStory.Version = remoteUS.Version
-	err = patchRequest(s.client, &us, url, &userStory)
+	err = s.client.Request.PatchRequest(url, &userStory, &responseUS)
 	if err != nil {
 		return nil, err
 	}
-	return us.AsUserStory()
+	return responseUS.AsUserStory()
 }
 
-// DeleteUserStory -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-delete
-func (s *UserStoryService) DeleteUserStory(userStoryID int) error {
+// Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-delete
+func (s *UserStoryService) Delete(userStoryID int) error {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUserStories, userStoryID)
-	return deleteRequest(s.client, url)
+	return s.client.Request.DeleteRequest(url)
 }
 
-// CloneUserStory clones an existing UserStory with most fields
+// CreateAttachment creates a new UserStory attachment => https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-create-attachment
+func (s *UserStoryService) CreateAttachment(attachment *Attachment, userStory *UserStory, filePath string) (*Attachment, error) {
+	url := s.client.APIURL + endpointUserStories + "/attachments"
+	attachment.filePath = filePath
+	attachment.ObjectID = userStory.ID
+	if attachment.Project == 0 && userStory.Project > 0 {
+		attachment.Project = userStory.Project
+	} else {
+		return nil, fmt.Errorf("Project.ID could not be fetched from any possible sources")
+	}
+	return newfileUploadRequest(s.client, url, attachment)
+}
+
+/*
+	Advanced Operations
+*/
+
+// RelateToEpic relates the UserStory to an Epic via an EpicID
+//
+// TaigaClient must be a pointer to taiga.Client
+// EpicID must be an int to desired Epic
+func (us *UserStory) RelateToEpic(TaigaClient *Client, EpicID int) (*EpicRelatedUserStoryDetail, error) {
+	if us.ID == 0 {
+		return nil, fmt.Errorf("UserStory must be created before relating it to an Epic. UserStory.ID was 0")
+	}
+	payload := EpicRelatedUserStoryDetail{
+		EpicID:      EpicID,
+		UserStoryID: us.ID,
+	}
+	return TaigaClient.Epic.CreateRelatedUserStory(&payload)
+}
+
+// Clone clones an existing UserStory with most fields
 //
 // Available Meta: UserStoryDetail
-func (s *UserStoryService) CloneUserStory(srcUserStory UserStory) (*UserStory, error) {
+func (s *UserStoryService) Clone(srcUserStory UserStory) (*UserStory, error) {
 	srcUserStory.ID = 0
 	srcUserStory.Ref = 0
 	srcUserStory.Version = 0
-	return s.CreateUserStory(srcUserStory)
+	return s.Create(srcUserStory)
 }
 
-// GetRelatedTasks returns all Tasks related to this UserStory
-func (s *UserStoryService) GetRelatedTasks(userStoryID int) ([]Task, error) {
-	return s.client.Task.List(&TasksQueryParams{UserStory: userStoryID})
+// ListRelatedTasks returns all Tasks related to this UserStory
+func (us *UserStory) ListRelatedTasks(TaigaClient *Client, userStoryID int) ([]Task, error) {
+	return TaigaClient.Task.List(&TasksQueryParams{UserStory: userStoryID})
 }
 
 // CreateRelatedTask creates a Task related to a UserStory
 // Available Meta: *TaskDetail
-func (s *UserStoryService) CreateRelatedTask(task Task, userStoryID, projectID int) (*Task, error) {
-	task.UserStory = userStoryID
-	task.Project = projectID
-	return s.client.Task.Create(&task)
+func (us *UserStory) CreateRelatedTask(TaigaClient *Client, task Task) (*Task, error) {
+	task.UserStory = us.ID
+	task.Project = us.Project
+	return TaigaClient.Task.Create(&task)
 }
 
-// UserStoryCreateAttachment creates a new UserStory attachment => https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-create-attachment
-func (s *UserStoryService) UserStoryCreateAttachment(attachment *Attachment, filePath string) (*Attachment, error) {
-	url := s.client.APIURL + endpointUserStories + "/attachments"
-	attachment.filePath = filePath
-	attachment, err := newfileUploadRequest(s.client, url, attachment)
-	if err != nil {
-		return nil, err
-	}
-	return attachment, nil
+// CloneUserStory clones an existing UserStory with most fields
+// Available Meta: UserStoryDetail
+func (us *UserStory) CloneUserStory(TaigaClient *Client) (*UserStory, error) {
+	us.ID = 0
+	us.Ref = 0
+	us.Version = 0
+	return TaigaClient.UserStory.Create(*us)
+}
+
+// GetRelatedTasks returns all Tasks related to this UserStory
+func (us *UserStory) GetRelatedTasks(TaigaClient *Client) ([]Task, error) {
+	return TaigaClient.Task.List(&TasksQueryParams{UserStory: us.ID})
 }

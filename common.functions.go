@@ -19,7 +19,7 @@ func listAttachmentsForEndpoint(c *Client, queryParams *attachmentsQueryParams) 
 	url := c.APIURL + queryParams.endpointURI + "/attachments?" + paramValues.Encode()
 	var attachmentsList []Attachment
 
-	err := getRequest(c, &attachmentsList, url)
+	err := c.Request.GetRequest(url, &attachmentsList)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func getAttachmentForEndpoint(c *Client, attachment *Attachment, endpointURI str
 	url := c.APIURL + endpointURI + fmt.Sprintf("/attachments/%d", attachment.ID)
 	var a Attachment
 
-	err := getRequest(c, &a, url)
+	err := c.Request.GetRequest(url, &a)
 	if err != nil {
 		return nil, err
 	}

@@ -25,7 +25,7 @@ func (s *IssueService) List(queryParams *IssueQueryParams) ([]Issue, error) {
 	}
 	// execute requests
 	var issues IssueDetailLIST
-	err := getRequest(s.client, &issues, url)
+	err := s.client.Request.GetRequest(url, &issues)
 	if err != nil {
 		return nil, err
 	}
@@ -34,12 +34,14 @@ func (s *IssueService) List(queryParams *IssueQueryParams) ([]Issue, error) {
 }
 
 // CreateAttachment creates a new Issue attachment => https://taigaio.github.io/taiga-doc/dist/api.html#issues-create-attachment
-func (s *IssueService) CreateAttachment(attachment *Attachment, filePath string) (*Attachment, error) {
+func (s *IssueService) CreateAttachment(attachment *Attachment, issue *Issue, filePath string) (*Attachment, error) {
 	url := s.client.APIURL + endpointIssues + "/attachments"
 	attachment.filePath = filePath
-	attachment, err := newfileUploadRequest(s.client, url, attachment)
-	if err != nil {
-		return nil, err
+	attachment.ObjectID = issue.ID
+	if attachment.Project == 0 && issue.Project > 0 {
+		attachment.Project = issue.Project
+	} else {
+		return nil, fmt.Errorf("Project.ID could not be fetched from any possible sources")
 	}
-	return attachment, nil
+	return newfileUploadRequest(s.client, url, attachment)
 }

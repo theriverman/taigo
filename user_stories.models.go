@@ -41,28 +41,6 @@ type UserStory struct {
 	UserStoryDetailLIST *UserStoryDetailLIST
 }
 
-// CloneUserStory clones an existing UserStory with most fields
-// Available Meta: UserStoryDetail
-func (us *UserStory) CloneUserStory(c *Client) (*UserStory, error) {
-	us.ID = 0
-	us.Ref = 0
-	us.Version = 0
-	return c.UserStory.CreateUserStory(*us)
-}
-
-// GetRelatedTasks returns all Tasks related to this UserStory
-func (us *UserStory) GetRelatedTasks(c *Client) ([]Task, error) {
-	return c.Task.List(&TasksQueryParams{UserStory: us.ID})
-}
-
-// CreateRelatedTask creates a Task related to a UserStory
-// Available Meta: *TaskDetail
-func (us *UserStory) CreateRelatedTask(task Task, c *Client) (*Task, error) {
-	task.UserStory = us.ID
-	task.Project = us.Project
-	return c.Task.Create(&task)
-}
-
 // UserStoryDetailLIST => https://taigaio.github.io/taiga-doc/dist/api.html#object-userstory-detail-list
 type UserStoryDetailLIST []struct {
 	AssignedTo          int                 `json:"assigned_to,omitempty"`

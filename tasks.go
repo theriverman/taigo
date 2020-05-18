@@ -28,7 +28,7 @@ func (s *TaskService) List(queryParameters *TasksQueryParams) ([]Task, error) {
 
 	var taskDetailList TaskDetailLIST
 
-	err := getRequest(s.client, &taskDetailList, url)
+	err := s.client.Request.GetRequest(url, &taskDetailList)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (s *TaskService) List(queryParameters *TasksQueryParams) ([]Task, error) {
 // Meta Available: *TaskDetail
 func (s *TaskService) Create(task *Task) (*Task, error) {
 	url := s.client.APIURL + endpointTasks
-	var newTask TaskDetail
+	var responseTask TaskDetail
 
 	// Check for required fields
 	// project, subject
@@ -47,22 +47,22 @@ func (s *TaskService) Create(task *Task) (*Task, error) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
 
-	err := postRequest(s.client, &newTask, url, task)
+	err := s.client.Request.PostRequest(url, &task, &responseTask)
 	if err != nil {
 		return nil, err
 	}
-	return newTask.AsTask()
+	return responseTask.AsTask()
 }
 
 // Get => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-get
 func (s *TaskService) Get(task *Task) (*Task, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointTasks, task.ID)
-	var respTask TaskDetailGET
-	err := getRequest(s.client, &respTask, url)
+	var responseTask TaskDetailGET
+	err := s.client.Request.GetRequest(url, &responseTask)
 	if err != nil {
 		return nil, err
 	}
-	return respTask.AsTask()
+	return responseTask.AsTask()
 }
 
 // GetByRef => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-get-by-ref
@@ -77,7 +77,7 @@ func (s *TaskService) GetByRef(task *Task, project *Project) (*Task, error) {
 		return nil, errors.New("No ID or Ref defined in passed project struct")
 	}
 
-	err := getRequest(s.client, &respTask, url)
+	err := s.client.Request.GetRequest(url, &respTask)
 	if err != nil {
 		return nil, err
 	}
@@ -115,12 +115,14 @@ func (s *TaskService) ListAttachments(task interface{}) (*[]Attachment, error) {
 }
 
 // CreateAttachment creates a new Task attachment => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-create-attachment
-func (s *TaskService) CreateAttachment(attachment *Attachment, filePath string) (*Attachment, error) {
+func (s *TaskService) CreateAttachment(attachment *Attachment, task *Task, filePath string) (*Attachment, error) {
 	url := s.client.APIURL + endpointTasks + "/attachments"
 	attachment.filePath = filePath
-	attachment, err := newfileUploadRequest(s.client, url, attachment)
-	if err != nil {
-		return nil, err
+	attachment.ObjectID = task.ID
+	if attachment.Project == 0 && task.Project > 0 {
+		attachment.Project = task.Project
+	} else {
+		return nil, fmt.Errorf("Project.ID could not be fetched from any possible sources")
 	}
-	return attachment, nil
+	return newfileUploadRequest(s.client, url, attachment)
 }

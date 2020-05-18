@@ -16,8 +16,8 @@ type MilestoneService struct {
 	client *Client
 }
 
-// ListMilestones => https://taigaio.github.io/taiga-doc/dist/api.html#Milestones-list
-func (s *MilestoneService) ListMilestones(queryParams *MilestonesQueryParams) ([]Milestone, error) {
+// List => https://taigaio.github.io/taiga-doc/dist/api.html#Milestones-list
+func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone, error) {
 	// prepare url & parameters
 	url := s.client.APIURL + endpointMilestones
 	if queryParams != nil {
@@ -28,7 +28,7 @@ func (s *MilestoneService) ListMilestones(queryParams *MilestonesQueryParams) ([
 	}
 	// execute requests
 	var Milestones []Milestone
-	err := getRequest(s.client, &Milestones, url)
+	err := s.client.Request.GetRequest(url, &Milestones)
 	if err != nil {
 		return nil, err
 	}
@@ -36,8 +36,10 @@ func (s *MilestoneService) ListMilestones(queryParams *MilestonesQueryParams) ([
 	return Milestones, nil
 }
 
-// CreateMilestone => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-create
-func (s *MilestoneService) CreateMilestone(milestone Milestone) (*Milestone, error) {
+// Create => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-create
+//
+// Mandatory fields: Project, Name, EstimatedStart, EstimatedFinish
+func (s *MilestoneService) Create(milestone Milestone) (*Milestone, error) {
 	url := s.client.APIURL + endpointMilestones
 	var respMilestone Milestone
 
@@ -50,7 +52,7 @@ func (s *MilestoneService) CreateMilestone(milestone Milestone) (*Milestone, err
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
 
-	err := postRequest(s.client, &respMilestone, url, milestone)
+	err := s.client.Request.PostRequest(url, &milestone, &respMilestone)
 	if err != nil {
 		return nil, err
 	}
@@ -58,20 +60,20 @@ func (s *MilestoneService) CreateMilestone(milestone Milestone) (*Milestone, err
 	return &respMilestone, nil
 }
 
-// GetMilestone => https://taigaio.github.io/taiga-doc/dist/api.html#Milestones-get
-func (s *MilestoneService) GetMilestone(milestoneID int) (*Milestone, error) {
+// Get => https://taigaio.github.io/taiga-doc/dist/api.html#Milestones-get
+func (s *MilestoneService) Get(milestoneID int) (*Milestone, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointMilestones, milestoneID)
 	var m Milestone
-	err := getRequest(s.client, &m, url)
+	err := s.client.Request.GetRequest(url, &m)
 	if err != nil {
 		return nil, err
 	}
 	return &m, nil
 }
 
-// EditMilestone edits an Milestone via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-edit
+// Edit edits an Milestone via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-edit
 // Available Meta: MilestoneDetail
-func (s *MilestoneService) EditMilestone(milestone Milestone) (*Milestone, error) {
+func (s *MilestoneService) Edit(milestone Milestone) (*Milestone, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointMilestones, milestone.ID)
 	var M Milestone
 
@@ -79,17 +81,17 @@ func (s *MilestoneService) EditMilestone(milestone Milestone) (*Milestone, error
 		return nil, errors.New("Passed Milestone does not have an ID yet. Does it exist?")
 	}
 
-	err := patchRequest(s.client, &M, url, &milestone)
+	err := s.client.Request.PatchRequest(url, &milestone, &M)
 	if err != nil {
 		return nil, err
 	}
 	return &M, nil
 }
 
-// DeleteMilestone => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-delete
-func (s *MilestoneService) DeleteMilestone(milestoneID int) error {
+// Delete => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-delete
+func (s *MilestoneService) Delete(milestoneID int) error {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointMilestones, milestoneID)
-	return deleteRequest(s.client, url)
+	return s.client.Request.DeleteRequest(url)
 }
 
 // Stats
