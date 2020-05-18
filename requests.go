@@ -132,7 +132,11 @@ func evaluateResponseAndStatusCode() {
 */
 
 // NOTE: responseBody must always be a pointer otherwise we lose the response data!
-func newfileUploadRequest(c *Client, url string, attachment *Attachment) (*Attachment, error) {
+func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgBaseObj TaigaBaseObject) (*Attachment, error) {
+	// Map Object details into *Attachment
+	attachment.ObjectID = tgBaseObj.GetID()
+	attachment.Project = tgBaseObj.GetProject()
+
 	// Open file
 	f, err := os.Open(attachment.filePath)
 	if err != nil {

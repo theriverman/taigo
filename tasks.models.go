@@ -16,6 +16,7 @@ func genericToTasks(anyTaskObjectSlice interface{}) []Task {
 
 // Task represents a subset of (TaskDetail, TaskDetailGET, TaskDetailLIST)
 type Task struct {
+	TaigaBaseObject
 	ID                int
 	AssignedTo        int         `json:"assigned_to,omitempty"`
 	BlockedNote       string      `json:"blocked_note,omitempty"`
@@ -38,6 +39,31 @@ type Task struct {
 	TaskDetail        *TaskDetail
 	TaskDetailGET     *TaskDetailGET
 	TaskDetailLIST    *TaskDetailLIST
+}
+
+// GetID returns the ID
+func (tgObj *Task) GetID() int {
+	return tgObj.ID
+}
+
+// GetRef returns the Ref
+func (tgObj *Task) GetRef() int {
+	return tgObj.Ref
+}
+
+// GetVersion return the version
+func (tgObj *Task) GetVersion() int {
+	return tgObj.Version
+}
+
+// GetSubject returns the subject
+func (tgObj *Task) GetSubject() string {
+	return tgObj.Subject
+}
+
+// GetProject returns the project ID
+func (tgObj *Task) GetProject() int {
+	return tgObj.Project
 }
 
 // TaskDetailLIST => https://taigaio.github.io/taiga-doc/dist/api.html#object-task-detail-list

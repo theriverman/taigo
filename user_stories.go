@@ -130,16 +130,9 @@ func (s *UserStoryService) Delete(userStoryID int) error {
 }
 
 // CreateAttachment creates a new UserStory attachment => https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-create-attachment
-func (s *UserStoryService) CreateAttachment(attachment *Attachment, userStory *UserStory, filePath string) (*Attachment, error) {
-	url := s.client.APIURL + endpointUserStories + "/attachments"
-	attachment.filePath = filePath
-	attachment.ObjectID = userStory.ID
-	if attachment.Project == 0 && userStory.Project > 0 {
-		attachment.Project = userStory.Project
-	} else {
-		return nil, fmt.Errorf("Project.ID could not be fetched from any possible sources")
-	}
-	return newfileUploadRequest(s.client, url, attachment)
+func (s *UserStoryService) CreateAttachment(attachment *Attachment, task *Task) (*Attachment, error) {
+	url := s.client.APIURL + endpointTasks + "/attachments"
+	return newfileUploadRequest(s.client, url, attachment, task)
 }
 
 /*

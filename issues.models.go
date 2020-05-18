@@ -16,6 +16,7 @@ func genericToIssues(anyIssueObjectSlice interface{}) []Issue {
 
 // Issue represents the mandatory fields of an Issue only
 type Issue struct {
+	TaigaBaseObject
 	ID              int      `json:"id,omitempty"`
 	Ref             int      `json:"ref,omitempty"`
 	Version         int      `json:"version,omitempty"`
@@ -36,6 +37,31 @@ type Issue struct {
 	IssueDetail     *IssueDetail
 	IssueDetailGET  *IssueDetailGET
 	IssueDetailLIST *IssueDetailLIST
+}
+
+// GetID returns the ID
+func (tgObj *Issue) GetID() int {
+	return tgObj.ID
+}
+
+// GetRef returns the Ref
+func (tgObj *Issue) GetRef() int {
+	return tgObj.Ref
+}
+
+// GetVersion return the version
+func (tgObj *Issue) GetVersion() int {
+	return tgObj.Version
+}
+
+// GetSubject returns the subject
+func (tgObj *Issue) GetSubject() string {
+	return tgObj.Subject
+}
+
+// GetProject returns the project ID
+func (tgObj *Issue) GetProject() int {
+	return tgObj.Project
 }
 
 // IssueDetailLIST -> Issue detail (LIST)

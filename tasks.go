@@ -115,14 +115,7 @@ func (s *TaskService) ListAttachments(task interface{}) (*[]Attachment, error) {
 }
 
 // CreateAttachment creates a new Task attachment => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-create-attachment
-func (s *TaskService) CreateAttachment(attachment *Attachment, task *Task, filePath string) (*Attachment, error) {
+func (s *TaskService) CreateAttachment(attachment *Attachment, task *Task) (*Attachment, error) {
 	url := s.client.APIURL + endpointTasks + "/attachments"
-	attachment.filePath = filePath
-	attachment.ObjectID = task.ID
-	if attachment.Project == 0 && task.Project > 0 {
-		attachment.Project = task.Project
-	} else {
-		return nil, fmt.Errorf("Project.ID could not be fetched from any possible sources")
-	}
-	return newfileUploadRequest(s.client, url, attachment)
+	return newfileUploadRequest(s.client, url, attachment, task)
 }

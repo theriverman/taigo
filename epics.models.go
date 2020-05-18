@@ -18,6 +18,7 @@ func genericToEpics(anyEpicObjectSlice interface{}) []Epic {
 
 // Epic represents the mandatory fields of an Epic only
 type Epic struct {
+	TaigaBaseObject
 	ID                int      `json:"id,omitempty"`
 	Ref               int      `json:"ref,omitempty"`
 	Version           int      `json:"version,omitempty"`
@@ -37,6 +38,31 @@ type Epic struct {
 	EpicDetail        *EpicDetail
 	EpicDetailGET     *EpicDetailGET
 	EpicDetailLIST    *EpicDetailLIST
+}
+
+// GetID returns the ID
+func (tgObj *Epic) GetID() int {
+	return tgObj.ID
+}
+
+// GetRef returns the Ref
+func (tgObj *Epic) GetRef() int {
+	return tgObj.Ref
+}
+
+// GetVersion return the version
+func (tgObj *Epic) GetVersion() int {
+	return tgObj.Version
+}
+
+// GetSubject returns the subject
+func (tgObj *Epic) GetSubject() string {
+	return tgObj.Subject
+}
+
+// GetProject returns the project ID
+func (tgObj *Epic) GetProject() int {
+	return tgObj.Project
 }
 
 // EpicDetailLIST -> Epic detail (LIST)

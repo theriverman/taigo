@@ -48,6 +48,11 @@ type Attachment struct {
 	filePath         string    // For package-internal use only
 }
 
+// SetFilePath takes the path to the file be uploaded
+func (a *Attachment) SetFilePath(FilePath string) {
+	a.filePath = FilePath
+}
+
 // attachmentsQueryParams is a helper to transfer and render ObjectID and Project ID as URL query parameters
 type attachmentsQueryParams struct {
 	ObjectID    int    `url:"object_id,omitempty"`

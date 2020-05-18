@@ -16,6 +16,7 @@ func genericToUserStories(anyUsObjectSlice interface{}) []UserStory {
 
 // UserStory represents a subset of (UserStoryDetail, UserStoryDetailGET, UserStoryDetailLIST) structs for creating new objects
 type UserStory struct {
+	TaigaBaseObject
 	ID                  int         `json:"id,omitempty"`
 	Ref                 int         `json:"ref,omitempty"`
 	Version             int         `json:"version,omitempty"`
@@ -39,6 +40,31 @@ type UserStory struct {
 	UserStoryDetail     *UserStoryDetail
 	UserStoryDetailGET  *UserStoryDetailGET
 	UserStoryDetailLIST *UserStoryDetailLIST
+}
+
+// GetID returns the ID
+func (tgObj *UserStory) GetID() int {
+	return tgObj.ID
+}
+
+// GetRef returns the Ref
+func (tgObj *UserStory) GetRef() int {
+	return tgObj.Ref
+}
+
+// GetVersion return the version
+func (tgObj *UserStory) GetVersion() int {
+	return tgObj.Version
+}
+
+// GetSubject returns the subject
+func (tgObj *UserStory) GetSubject() string {
+	return tgObj.Subject
+}
+
+// GetProject returns the project ID
+func (tgObj *UserStory) GetProject() int {
+	return tgObj.Project
 }
 
 // UserStoryDetailLIST => https://taigaio.github.io/taiga-doc/dist/api.html#object-userstory-detail-list

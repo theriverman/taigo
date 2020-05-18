@@ -173,18 +173,9 @@ func (s *EpicService) CreateRelatedUserStory(epicRelatedUSDetail *EpicRelatedUse
 
 // CreateAttachment creates a new Epic attachment => https://taigaio.github.io/taiga-doc/dist/api.html#epics-create-attachment
 //
-// Mandatory parameters: `ObjectID`; `ProjectID`;
-// **Note**: Set ObjectID to epic.ID
-func (s *EpicService) CreateAttachment(attachment *Attachment, epic *Epic, filePath string) (*Attachment, error) {
-	url := s.client.APIURL + endpointEpics + "/attachments"
-	attachment.filePath = filePath
-	attachment.ObjectID = epic.ID
-	if attachment.Project == 0 && epic.Project > 0 {
-		attachment.Project = epic.Project
-	} else {
-		return nil, fmt.Errorf("Project.ID could not be fetched from any possible sources")
-	}
-	return newfileUploadRequest(s.client, url, attachment)
+func (s *EpicService) CreateAttachment(attachment *Attachment, task *Task) (*Attachment, error) {
+	url := s.client.APIURL + endpointTasks + "/attachments"
+	return newfileUploadRequest(s.client, url, attachment, task)
 }
 
 // Clone takes an *Epic struct with loaded properties and duplicates it
