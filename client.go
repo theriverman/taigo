@@ -39,6 +39,7 @@ type Client struct {
 	UserStory *UserStoryService
 	User      *UserService
 	Webhook   *WebhookService
+	Wiki      *WikiService
 }
 
 // TODO: Pack Taiga operations into services, such as, ProjectService, EpicService, MilestoneService, etc...
@@ -129,6 +130,7 @@ func (c *Client) Initialise(credentials *Credentials) error {
 	c.UserStory = &UserStoryService{c}
 	c.User = &UserService{c}
 	c.Webhook = &WebhookService{c}
+	c.Wiki = &WikiService{c}
 
 	user, err := c.Auth.login(credentials)
 	if err != nil {
