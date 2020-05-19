@@ -58,7 +58,7 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 // Create -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-create
 func (s *ProjectService) Create(project *Project) (*Project, error) {
 	url := s.client.APIURL + endpointProjects
-	var responseProject Project
+	var responseProject ProjectDetail
 
 	// Check for required fields
 	// name, description
@@ -70,7 +70,7 @@ func (s *ProjectService) Create(project *Project) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &responseProject, nil
+	return responseProject.AsProject()
 }
 
 // Get -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get
@@ -99,7 +99,7 @@ func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
 
 // Edit edits an Project via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#projects-edit
 // Available Meta: ProjectDetail
-func (s *ProjectService) Edit(project Project) (*Project, error) {
+func (s *ProjectService) Edit(project *Project) (*Project, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointProjects, project.ID)
 	var projectDetail ProjectDetail
 

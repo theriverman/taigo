@@ -39,7 +39,7 @@ func (s *EpicService) List(queryParams *EpicsQueryParams) ([]Epic, error) {
 // Create => https://taigaio.github.io/taiga-doc/dist/api.html#epics-create
 //
 // Available Meta: *EpicDetail
-func (s *EpicService) Create(epic Epic) (*Epic, error) {
+func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 	url := s.client.APIURL + endpointEpics
 	var responseEpic EpicDetail
 
@@ -85,7 +85,7 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 	var url string
 
 	switch {
-	case project.ID != 0:
+	case project.ID > 0:
 		url = s.client.APIURL + fmt.Sprintf("%s/by_ref?ref=%d&project=%d", endpointEpics, epicRef, project.ID)
 		break
 	case len(project.Slug) > 0:
@@ -104,7 +104,7 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 
 // Edit edits an Epic via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#epics-edit
 // Available Meta: EpicDetail
-func (s *EpicService) Edit(epic Epic) (*Epic, error) {
+func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointEpics, epic.ID)
 	var responseEpic EpicDetail
 
@@ -134,14 +134,14 @@ func (s *EpicService) Delete(epicID int) error {
 // BulkCreation => https://taigaio.github.io/taiga-doc/dist/api.html#epics-bulk-create
 /*
 This is not yet implemented, placeholder only.
-It seems to be pointless to implement this operation here. A for loop around `CreateEpic` is much more efficient and accurate.
+It seems to be pointless to implement this operation here. A for loop around `Create` is much more efficient and accurate.
 */
 // func (s *EpicService) BulkCreation() {}
 
 // EpicFiltersData => https://taigaio.github.io/taiga-doc/dist/api.html#epics-get-filters-data
 /*
 This is not yet implemented, placeholder only.
-It seems to be pointless to implement this operation here. A for loop around `CreateEpic` is much more efficient and accurate.
+It seems to be pointless to implement this operation here. A for loop around `Create` is much more efficient and accurate.
 */
 // func (s *EpicService) EpicFiltersData() {}
 
@@ -160,15 +160,16 @@ func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStory
 //
 // Mandatory parameters: `EpicID`; `UserStoryID`
 // Accepted UserStory values: `UserStory.ID`
-func (s *EpicService) CreateRelatedUserStory(epicRelatedUSDetail *EpicRelatedUserStoryDetail) (*EpicRelatedUserStoryDetail, error) {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d/related_userstories", endpointEpics, epicRelatedUSDetail.EpicID)
-	var responseEpic EpicRelatedUserStoryDetail
+func (s *EpicService) CreateRelatedUserStory(EpicID int, UserStoryID int) (*EpicRelatedUserStoryDetail, error) {
+	url := s.client.APIURL + fmt.Sprintf("%s/%d/related_userstories", endpointEpics, EpicID)
 
-	err := s.client.Request.PostRequest(url, epicRelatedUSDetail, &responseEpic)
+	e := EpicRelatedUserStoryDetail{EpicID: EpicID, UserStoryID: UserStoryID}
+
+	err := s.client.Request.PostRequest(url, &e, &e)
 	if err != nil {
 		return nil, err
 	}
-	return &responseEpic, nil
+	return &e, nil
 }
 
 // CreateAttachment creates a new Epic attachment => https://taigaio.github.io/taiga-doc/dist/api.html#epics-create-attachment
@@ -186,5 +187,5 @@ func (e *Epic) Clone(s *EpicService) (*Epic, error) {
 	e.ID = 0
 	e.Version = 0
 	e.Ref = 0
-	return s.Create(*e)
+	return s.Create(e)
 }

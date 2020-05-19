@@ -147,11 +147,7 @@ func (us *UserStory) RelateToEpic(TaigaClient *Client, EpicID int) (*EpicRelated
 	if us.ID == 0 {
 		return nil, fmt.Errorf("UserStory must be created before relating it to an Epic. UserStory.ID was 0")
 	}
-	payload := EpicRelatedUserStoryDetail{
-		EpicID:      EpicID,
-		UserStoryID: us.ID,
-	}
-	return TaigaClient.Epic.CreateRelatedUserStory(&payload)
+	return TaigaClient.Epic.CreateRelatedUserStory(EpicID, us.ID)
 }
 
 // Clone clones an existing UserStory with most fields

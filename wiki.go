@@ -1,6 +1,6 @@
 package taigo
 
-var wikiURI = "/wiki"
+const endpointWiki = "/wiki"
 
 // WikiService is a handle to actions related to Tasks
 //

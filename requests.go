@@ -51,8 +51,8 @@ func SuccessfulHTTPRequest(Response *http.Response) bool {
 
 // GetRequest a handler for composing a new HTTP GET request
 //
-// URL must be an absolute (full) URL to the desired endpoint
-// ResponseBody must be a pointer to a struct representing the fields returned by Taiga
+//  * URL must be an absolute (full) URL to the desired endpoint
+//  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) GetRequest(URL string, ResponseBody interface{}) error {
 	return newRawRequest("GET", s.client, ResponseBody, URL, nil)
 }
@@ -64,9 +64,9 @@ func (s *RequestService) HeadRequest() {
 
 // PostRequest a handler for composing a new HTTP POST request
 //
-// URL must be an absolute (full) URL to the desired endpoint
-// Payload must be a pointer to a complete struct which will be sent to Taiga
-// ResponseBody must be a pointer to a struct representing the fields returned by Taiga
+//  * URL must be an absolute (full) URL to the desired endpoint
+//  * Payload must be a pointer to a complete struct which will be sent to Taiga
+//  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) PostRequest(URL string, Payload interface{}, ResponseBody interface{}) error {
 	// NOTE: responseBody must always be a pointer otherwise we lose the response data!
 	// New POST request
@@ -75,9 +75,9 @@ func (s *RequestService) PostRequest(URL string, Payload interface{}, ResponseBo
 
 // PutRequest a handler for composing a new HTTP PUT request
 //
-// URL must be an absolute (full) URL to the desired endpoint
-// Payload must be a pointer to a complete struct which will be sent to Taiga
-// ResponseBody must be a pointer to a struct representing the fields returned by Taiga
+//  * URL must be an absolute (full) URL to the desired endpoint
+//  * Payload must be a pointer to a complete struct which will be sent to Taiga
+//  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) PutRequest(URL string, Payload interface{}, ResponseBody interface{}) error {
 	// NOTE: responseBody must always be a pointer otherwise we lose the response data!
 	// New PUT request
@@ -86,9 +86,9 @@ func (s *RequestService) PutRequest(URL string, Payload interface{}, ResponseBod
 
 // PatchRequest a handler for composing a new HTTP PATCH request
 //
-// URL must be an absolute (full) URL to the desired endpoint
-// Payload must be a pointer to a complete struct which will be sent to Taiga
-// ResponseBody must be a pointer to a struct representing the fields returned by Taiga
+//  * URL must be an absolute (full) URL to the desired endpoint
+//  * Payload must be a pointer to a complete struct which will be sent to Taiga
+//  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) PatchRequest(URL string, Payload interface{}, ResponseBody interface{}) error {
 	/*
 		patchRequest is proto-function to keep the code DRY and write things only once
@@ -104,7 +104,7 @@ func (s *RequestService) PatchRequest(URL string, Payload interface{}, ResponseB
 
 // DeleteRequest a handler for composing a new HTTP DELETE request
 //
-// URL must be an absolute (full) URL to the desired endpoint
+//  * URL must be an absolute (full) URL to the desired endpoint
 func (s *RequestService) DeleteRequest(URL string) error {
 	// New DELETE request
 	return newRawRequest("DELETE", s.client, nil, URL, nil)

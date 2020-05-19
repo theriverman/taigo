@@ -2,7 +2,7 @@ package taigo
 
 import "log"
 
-var endpointAuth = "/auth"
+const endpointAuth = "/auth"
 
 // AuthService is a handle to actions related to Auths
 //

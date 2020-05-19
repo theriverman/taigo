@@ -39,7 +39,7 @@ func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone
 // Create => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-create
 //
 // Mandatory fields: Project, Name, EstimatedStart, EstimatedFinish
-func (s *MilestoneService) Create(milestone Milestone) (*Milestone, error) {
+func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 	url := s.client.APIURL + endpointMilestones
 	var respMilestone Milestone
 
@@ -73,7 +73,7 @@ func (s *MilestoneService) Get(milestoneID int) (*Milestone, error) {
 
 // Edit edits an Milestone via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-edit
 // Available Meta: MilestoneDetail
-func (s *MilestoneService) Edit(milestone Milestone) (*Milestone, error) {
+func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointMilestones, milestone.ID)
 	var M Milestone
 
