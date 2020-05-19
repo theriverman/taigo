@@ -37,7 +37,7 @@ func (s *UserStoryService) List(queryParameters *UserStoryQueryParams) ([]UserSt
 // Create creates a new User Story | https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-create
 //
 // Available Meta: *UserStoryDetail
-func (s *UserStoryService) Create(userStory UserStory) (*UserStory, error) {
+func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 	url := s.client.APIURL + endpointUserStories
 	var newUserStory UserStoryDetail
 
@@ -102,7 +102,7 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 
 // Edit sends a PATCH request to edit a User Story -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-edit
 // Available Meta: UserStoryDetail
-func (s *UserStoryService) Edit(userStory UserStory) (*UserStory, error) {
+func (s *UserStoryService) Edit(userStory *UserStory) (*UserStory, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUserStories, userStory.ID)
 	var responseUS UserStoryDetail
 
@@ -153,7 +153,7 @@ func (us *UserStory) RelateToEpic(TaigaClient *Client, EpicID int) (*EpicRelated
 // Clone clones an existing UserStory with most fields
 //
 // Available Meta: UserStoryDetail
-func (s *UserStoryService) Clone(srcUserStory UserStory) (*UserStory, error) {
+func (s *UserStoryService) Clone(srcUserStory *UserStory) (*UserStory, error) {
 	srcUserStory.ID = 0
 	srcUserStory.Ref = 0
 	srcUserStory.Version = 0
@@ -179,7 +179,7 @@ func (us *UserStory) CloneUserStory(TaigaClient *Client) (*UserStory, error) {
 	us.ID = 0
 	us.Ref = 0
 	us.Version = 0
-	return TaigaClient.UserStory.Create(*us)
+	return TaigaClient.UserStory.Create(us)
 }
 
 // GetRelatedTasks returns all Tasks related to this UserStory

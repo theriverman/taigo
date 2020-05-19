@@ -27,14 +27,12 @@ type RequestService struct {
 // MakeURL accepts an Endpoint URL and returns a compiled absolute URL
 //
 // For example:
-//	* If the given endpoint URL is /epic-custom-attributes
+//	* If the given endpoint URLs are [epics, attachments]
 //	* If the BaseURL is https://api.taiga.io
-//	* It returns https://api.taiga.io/api/v1/epic-custom-attributes
-func (s *RequestService) MakeURL(Endpoint string) string {
-	if strings.HasPrefix(Endpoint, "/") {
-		return s.client.APIURL + Endpoint
-	}
-	return s.client.APIURL + "/" + Endpoint
+//	* It returns https://api.taiga.io/api/v1/epics/attachments
+//  * Suffixes are appended to the URL joined by a slash (/)
+func (s *RequestService) MakeURL(EndpointParts ...string) string {
+	return s.client.APIURL + "/" + strings.Join(EndpointParts, "/")
 }
 
 // SuccessfulHTTPRequest returns true if the given Response's StatusCode
