@@ -10,12 +10,14 @@ Taiga is an Agile, Free and Open Source Project Management Tool.
 Should you have any ideas or recommendations, feel free to report it as an issue or open a pull request.
 
 # Integration
-To use **TAIGO**, in your project, first get the code: <br>
-`go get github.com/theriverman/taigo/driver` <br>
- Then import it into your project: <br>
+Download **TAIGO**:
+```bash
+go get github.com/theriverman/taigo
+```
+Import it into your project: <br>
 ```go
 import (
-    taiga "github.com/theriverman/taigo/src"
+    taiga "github.com/theriverman/taigo"
 )
 ```
 
