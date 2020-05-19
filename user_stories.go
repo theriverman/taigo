@@ -27,7 +27,7 @@ func (s *UserStoryService) List(queryParameters *UserStoryQueryParams) ([]UserSt
 		url = url + s.client.GetDefaultProjectAsQueryParam()
 	}
 	var UserStoryDetailList UserStoryDetailLIST
-	err := s.client.Request.GetRequest(url, &UserStoryDetailList)
+	err := s.client.Request.Get(url, &UserStoryDetailList)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
 
-	err := s.client.Request.PostRequest(url, &userStory, &newUserStory)
+	err := s.client.Request.Post(url, &userStory, &newUserStory)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 func (s *UserStoryService) Get(userStoryID int) (*UserStory, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUserStories, userStoryID)
 	var us UserStoryDetailGET
-	err := s.client.Request.GetRequest(url, &us)
+	err := s.client.Request.Get(url, &us)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 		return nil, errors.New("No ID or Ref defined in passed project struct")
 	}
 
-	err := s.client.Request.GetRequest(url, &us)
+	err := s.client.Request.Get(url, &us)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (s *UserStoryService) Edit(userStory *UserStory) (*UserStory, error) {
 		return nil, err
 	}
 	userStory.Version = remoteUS.Version
-	err = s.client.Request.PatchRequest(url, &userStory, &responseUS)
+	err = s.client.Request.Patch(url, &userStory, &responseUS)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (s *UserStoryService) Edit(userStory *UserStory) (*UserStory, error) {
 // Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-delete
 func (s *UserStoryService) Delete(userStoryID int) error {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUserStories, userStoryID)
-	return s.client.Request.DeleteRequest(url)
+	return s.client.Request.Delete(url)
 }
 
 // CreateAttachment creates a new UserStory attachment => https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-create-attachment

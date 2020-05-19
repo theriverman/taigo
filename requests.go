@@ -47,47 +47,47 @@ func SuccessfulHTTPRequest(Response *http.Response) bool {
 	return false
 }
 
-// GetRequest a handler for composing a new HTTP GET request
+// Get a handler for composing a new HTTP GET request
 //
 //  * URL must be an absolute (full) URL to the desired endpoint
 //  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
-func (s *RequestService) GetRequest(URL string, ResponseBody interface{}) error {
+func (s *RequestService) Get(URL string, ResponseBody interface{}) error {
 	return newRawRequest("GET", s.client, ResponseBody, URL, nil)
 }
 
-// HeadRequest a handler for composing a new HTTP HEAD request
-func (s *RequestService) HeadRequest() {
+// Head a handler for composing a new HTTP HEAD request
+func (s *RequestService) Head() {
 	panic("HEAD requests are not implemented")
 }
 
-// PostRequest a handler for composing a new HTTP POST request
+// Post a handler for composing a new HTTP POST request
 //
 //  * URL must be an absolute (full) URL to the desired endpoint
 //  * Payload must be a pointer to a complete struct which will be sent to Taiga
 //  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
-func (s *RequestService) PostRequest(URL string, Payload interface{}, ResponseBody interface{}) error {
+func (s *RequestService) Post(URL string, Payload interface{}, ResponseBody interface{}) error {
 	// NOTE: responseBody must always be a pointer otherwise we lose the response data!
 	// New POST request
 	return newRawRequest("POST", s.client, ResponseBody, URL, Payload)
 }
 
-// PutRequest a handler for composing a new HTTP PUT request
+// Put a handler for composing a new HTTP PUT request
 //
 //  * URL must be an absolute (full) URL to the desired endpoint
 //  * Payload must be a pointer to a complete struct which will be sent to Taiga
 //  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
-func (s *RequestService) PutRequest(URL string, Payload interface{}, ResponseBody interface{}) error {
+func (s *RequestService) Put(URL string, Payload interface{}, ResponseBody interface{}) error {
 	// NOTE: responseBody must always be a pointer otherwise we lose the response data!
 	// New PUT request
 	return newRawRequest("PUT", s.client, ResponseBody, URL, Payload)
 }
 
-// PatchRequest a handler for composing a new HTTP PATCH request
+// Patch a handler for composing a new HTTP PATCH request
 //
 //  * URL must be an absolute (full) URL to the desired endpoint
 //  * Payload must be a pointer to a complete struct which will be sent to Taiga
 //  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
-func (s *RequestService) PatchRequest(URL string, Payload interface{}, ResponseBody interface{}) error {
+func (s *RequestService) Patch(URL string, Payload interface{}, ResponseBody interface{}) error {
 	/*
 		patchRequest is proto-function to keep the code DRY and write things only once
 		patchRequest takes the following arguments:
@@ -100,26 +100,26 @@ func (s *RequestService) PatchRequest(URL string, Payload interface{}, ResponseB
 	return newRawRequest("PATCH", s.client, ResponseBody, URL, Payload)
 }
 
-// DeleteRequest a handler for composing a new HTTP DELETE request
+// Delete a handler for composing a new HTTP DELETE request
 //
 //  * URL must be an absolute (full) URL to the desired endpoint
-func (s *RequestService) DeleteRequest(URL string) error {
+func (s *RequestService) Delete(URL string) error {
 	// New DELETE request
 	return newRawRequest("DELETE", s.client, nil, URL, nil)
 }
 
-// ConnectRequest a handler for composing a new HTTP CONNECT request
-func (s *RequestService) ConnectRequest() {
+// Connect a handler for composing a new HTTP CONNECT request
+func (s *RequestService) Connect() {
 	panic("CONNECT requests are not implemented")
 }
 
-// OptionsRequest a handler for composing a new HTTP OPTIONS request
-func (s *RequestService) OptionsRequest() {
+// Options a handler for composing a new HTTP OPTIONS request
+func (s *RequestService) Options() {
 	panic("OPTIONS requests are not implemented")
 }
 
-// TraceRequest a handler for composing a new HTTP TRACE request
-func (s *RequestService) TraceRequest() {
+// Trace a handler for composing a new HTTP TRACE request
+func (s *RequestService) Trace() {
 	panic("TRACE requests are not implemented")
 }
 

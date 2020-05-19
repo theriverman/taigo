@@ -28,7 +28,7 @@ func (s *EpicService) List(queryParams *EpicsQueryParams) ([]Epic, error) {
 		url = url + s.client.GetDefaultProjectAsQueryParam()
 	}
 	var epics EpicDetailLIST
-	err := s.client.Request.GetRequest(url, &epics)
+	err := s.client.Request.Get(url, &epics)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 		return nil, errors.New("A mandatory field(Project, Subject) is missing. See API documentataion")
 	}
 
-	err := s.client.Request.PostRequest(url, &epic, &responseEpic)
+	err := s.client.Request.Post(url, &epic, &responseEpic)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 func (s *EpicService) Get(epicID int) (*Epic, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointEpics, epicID)
 	var e EpicDetailGET
-	err := s.client.Request.GetRequest(url, &e)
+	err := s.client.Request.Get(url, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 		return nil, errors.New("No ID or Ref defined in passed project struct")
 	}
 
-	err := s.client.Request.GetRequest(url, &e)
+	err := s.client.Request.Get(url, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 		return nil, err
 	}
 	epic.Version = remoteEpic.Version
-	err = s.client.Request.PatchRequest(url, &epic, &responseEpic)
+	err = s.client.Request.Patch(url, &epic, &responseEpic)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#epics-delete
 func (s *EpicService) Delete(epicID int) error {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointEpics, epicID)
-	return s.client.Request.DeleteRequest(url)
+	return s.client.Request.Delete(url)
 }
 
 // BulkCreation => https://taigaio.github.io/taiga-doc/dist/api.html#epics-bulk-create
@@ -149,7 +149,7 @@ It seems to be pointless to implement this operation here. A for loop around `Cr
 func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStoryDetail, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d/related_userstories", endpointEpics, epicID)
 	var responseEpic []EpicRelatedUserStoryDetail
-	err := s.client.Request.GetRequest(url, &responseEpic)
+	err := s.client.Request.Get(url, &responseEpic)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (s *EpicService) CreateRelatedUserStory(EpicID int, UserStoryID int) (*Epic
 
 	e := EpicRelatedUserStoryDetail{EpicID: EpicID, UserStoryID: UserStoryID}
 
-	err := s.client.Request.PostRequest(url, &e, &e)
+	err := s.client.Request.Post(url, &e, &e)
 	if err != nil {
 		return nil, err
 	}

@@ -48,7 +48,7 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 	}
 	var projects ProjectsList
 
-	err := s.client.Request.GetRequest(url, &projects)
+	err := s.client.Request.Get(url, &projects)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (s *ProjectService) Create(project *Project) (*Project, error) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
 
-	err := s.client.Request.PostRequest(url, &project, &responseProject)
+	err := s.client.Request.Post(url, &project, &responseProject)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (s *ProjectService) Get(projectID int) (*Project, error) {
 	url := s.client.APIURL + fmt.Sprintf("/%s/%d", endpointProjects, projectID)
 	var responseProject ProjectDetail
 
-	err := s.client.Request.GetRequest(url, &responseProject)
+	err := s.client.Request.Get(url, &responseProject)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
 	url := s.client.APIURL + fmt.Sprintf("/%s/by_slug?slug=%s", endpointProjects, slug)
 	var p ProjectDetail
 
-	err := s.client.Request.GetRequest(url, &p)
+	err := s.client.Request.Get(url, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (s *ProjectService) Edit(project *Project) (*Project, error) {
 		return nil, errors.New("Passed Project does not have an ID yet. Does it exist?")
 	}
 
-	err := s.client.Request.PatchRequest(url, &project, &projectDetail)
+	err := s.client.Request.Patch(url, &project, &projectDetail)
 	if err != nil {
 		return nil, err
 	}
@@ -117,5 +117,5 @@ func (s *ProjectService) Edit(project *Project) (*Project, error) {
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#projects-delete
 func (s *ProjectService) Delete(projectID int) error {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointProjects, projectID)
-	return s.client.Request.DeleteRequest(url)
+	return s.client.Request.Delete(url)
 }

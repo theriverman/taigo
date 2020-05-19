@@ -78,7 +78,7 @@ func genericResolver(c *Client, queryParameters *ResolverQueryParams) (*Resolver
 	paramValues, _ := query.Values(queryParameters)
 	url := c.APIURL + resolverURI + "?" + paramValues.Encode()
 	var respResolver Resolver
-	err := c.Request.GetRequest(url, &respResolver)
+	err := c.Request.Get(url, &respResolver)
 	if err != nil {
 		return nil, err
 	}

@@ -25,7 +25,7 @@ func (s *IssueService) List(queryParams *IssueQueryParams) ([]Issue, error) {
 	}
 	// execute requests
 	var issues IssueDetailLIST
-	err := s.client.Request.GetRequest(url, &issues)
+	err := s.client.Request.Get(url, &issues)
 	if err != nil {
 		return nil, err
 	}

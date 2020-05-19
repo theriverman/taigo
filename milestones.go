@@ -28,7 +28,7 @@ func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone
 	}
 	// execute requests
 	var Milestones []Milestone
-	err := s.client.Request.GetRequest(url, &Milestones)
+	err := s.client.Request.Get(url, &Milestones)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
 
-	err := s.client.Request.PostRequest(url, &milestone, &respMilestone)
+	err := s.client.Request.Post(url, &milestone, &respMilestone)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 func (s *MilestoneService) Get(milestoneID int) (*Milestone, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointMilestones, milestoneID)
 	var m Milestone
-	err := s.client.Request.GetRequest(url, &m)
+	err := s.client.Request.Get(url, &m)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
 		return nil, errors.New("Passed Milestone does not have an ID yet. Does it exist?")
 	}
 
-	err := s.client.Request.PatchRequest(url, &milestone, &M)
+	err := s.client.Request.Patch(url, &milestone, &M)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-delete
 func (s *MilestoneService) Delete(milestoneID int) error {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointMilestones, milestoneID)
-	return s.client.Request.DeleteRequest(url)
+	return s.client.Request.Delete(url)
 }
 
 // Stats
