@@ -42,28 +42,28 @@ type Task struct {
 }
 
 // GetID returns the ID
-func (tgObj *Task) GetID() int {
-	return tgObj.ID
+func (t *Task) GetID() int {
+	return t.ID
 }
 
 // GetRef returns the Ref
-func (tgObj *Task) GetRef() int {
-	return tgObj.Ref
+func (t *Task) GetRef() int {
+	return t.Ref
 }
 
 // GetVersion return the version
-func (tgObj *Task) GetVersion() int {
-	return tgObj.Version
+func (t *Task) GetVersion() int {
+	return t.Version
 }
 
 // GetSubject returns the subject
-func (tgObj *Task) GetSubject() string {
-	return tgObj.Subject
+func (t *Task) GetSubject() string {
+	return t.Subject
 }
 
 // GetProject returns the project ID
-func (tgObj *Task) GetProject() int {
-	return tgObj.Project
+func (t *Task) GetProject() int {
+	return t.Project
 }
 
 // TaskDetailLIST => https://taigaio.github.io/taiga-doc/dist/api.html#object-task-detail-list
@@ -107,8 +107,8 @@ type TaskDetailLIST []struct {
 	Watchers            []int               `json:"watchers,omitempty"`
 }
 
-// AsTask packs the returned TaskDetailLIST into a generic Task struct
-func (t *TaskDetailLIST) AsTask() ([]Task, error) {
+// AsTasks packs the returned TaskDetailLIST into a generic Task struct
+func (t *TaskDetailLIST) AsTasks() ([]Task, error) {
 	tasks := genericToTasks(&t)
 	for i := 0; i < len(tasks); i++ {
 		tasks[i].TaskDetailLIST = t

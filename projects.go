@@ -58,7 +58,7 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 // Create -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-create
 func (s *ProjectService) Create(project *Project) (*Project, error) {
 	url := s.client.APIURL + endpointProjects
-	var responseProject ProjectDetail
+	var p ProjectDetail
 
 	// Check for required fields
 	// name, description
@@ -66,23 +66,23 @@ func (s *ProjectService) Create(project *Project) (*Project, error) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
 
-	err := s.client.Request.Post(url, &project, &responseProject)
+	err := s.client.Request.Post(url, &project, &p)
 	if err != nil {
 		return nil, err
 	}
-	return responseProject.AsProject()
+	return p.AsProject()
 }
 
 // Get -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get
 func (s *ProjectService) Get(projectID int) (*Project, error) {
 	url := s.client.APIURL + fmt.Sprintf("/%s/%d", endpointProjects, projectID)
-	var responseProject ProjectDetail
+	var p ProjectDetail
 
-	err := s.client.Request.Get(url, &responseProject)
+	err := s.client.Request.Get(url, &p)
 	if err != nil {
 		return nil, err
 	}
-	return responseProject.AsProject()
+	return p.AsProject()
 }
 
 // GetBySlug -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get-by-slug

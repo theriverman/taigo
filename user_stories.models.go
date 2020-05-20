@@ -43,28 +43,28 @@ type UserStory struct {
 }
 
 // GetID returns the ID
-func (tgObj *UserStory) GetID() int {
-	return tgObj.ID
+func (us *UserStory) GetID() int {
+	return us.ID
 }
 
 // GetRef returns the Ref
-func (tgObj *UserStory) GetRef() int {
-	return tgObj.Ref
+func (us *UserStory) GetRef() int {
+	return us.Ref
 }
 
 // GetVersion return the version
-func (tgObj *UserStory) GetVersion() int {
-	return tgObj.Version
+func (us *UserStory) GetVersion() int {
+	return us.Version
 }
 
 // GetSubject returns the subject
-func (tgObj *UserStory) GetSubject() string {
-	return tgObj.Subject
+func (us *UserStory) GetSubject() string {
+	return us.Subject
 }
 
 // GetProject returns the project ID
-func (tgObj *UserStory) GetProject() int {
-	return tgObj.Project
+func (us *UserStory) GetProject() int {
+	return us.Project
 }
 
 // UserStoryDetailLIST => https://taigaio.github.io/taiga-doc/dist/api.html#object-userstory-detail-list

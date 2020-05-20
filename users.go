@@ -2,6 +2,8 @@ package taigo
 
 import (
 	"fmt"
+
+	"github.com/google/go-querystring/query"
 )
 
 const endpointUsers = "/users"
@@ -14,10 +16,13 @@ type UserService struct {
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#users-list
-func (s *UserService) List() ([]User, error) {
-	url := s.client.APIURL + endpointUsers
+func (s *UserService) List(queryParams *UsersQueryParams) ([]User, error) {
+	url := s.client.Request.MakeURL(endpointUsers)
+	if queryParams != nil {
+		paramValues, _ := query.Values(queryParams)
+		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
+	}
 	var users []User
-
 	err := s.client.Request.Get(url, &users)
 	if err != nil {
 		return nil, err
@@ -26,69 +31,62 @@ func (s *UserService) List() ([]User, error) {
 }
 
 // Get => https://taigaio.github.io/taiga-doc/dist/api.html#users-get
-func (s *UserService) Get(user User) (*User, error) {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUsers, user.ID)
-	var respUser User
-	err := s.client.Request.Get(url, &respUser)
+func (s *UserService) Get(userID int) (*User, error) {
+	url := s.client.Request.MakeURL(fmt.Sprintf("%s/%d", endpointUsers, userID))
+	var u User
+	err := s.client.Request.Get(url, &u)
 	if err != nil {
 		return nil, err
 	}
-	return &respUser, nil
+	return &u, nil
 }
 
 // Me => https://taigaio.github.io/taiga-doc/dist/api.html#users-me
 func (s *UserService) Me() (*User, error) {
-	var user User
-	url := s.client.APIURL + endpointUsers + "/me"
-
-	err := s.client.Request.Get(url, &user)
+	var u User
+	url := s.client.Request.MakeURL(endpointUsers, "/me")
+	err := s.client.Request.Get(url, &u)
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &u, nil
 }
 
 // GetStats => https://taigaio.github.io/taiga-doc/dist/api.html#users-stats
-func (s *UserService) GetStats(user *User) (*UserStatsDetail, error) {
-	url := s.client.APIURL + endpointUsers + fmt.Sprintf("/%d/stats", user.ID)
-	var userStatsDetail UserStatsDetail
-
-	err := s.client.Request.Get(url, &userStatsDetail)
+func (s *UserService) GetStats(userID int) (*UserStatsDetail, error) {
+	url := s.client.APIURL + endpointUsers + fmt.Sprintf("/%d/stats", userID)
+	var usd UserStatsDetail
+	err := s.client.Request.Get(url, &usd)
 	if err != nil {
 		return nil, err
 	}
-
-	return &userStatsDetail, nil
+	return &usd, nil
 }
 
 // GetWatchedContent => https://taigaio.github.io/taiga-doc/dist/api.html#users-watched
 //
 // TODO: Implement query param filtering
-func (s *UserService) GetWatchedContent(user *User) (*UserWatched, error) {
-	url := s.client.APIURL + endpointUsers + fmt.Sprintf("/%d/watched", user.ID)
-	var userWatched UserWatched
-
-	err := s.client.Request.Get(url, &userWatched)
+func (s *UserService) GetWatchedContent(userID int) (*UserWatched, error) {
+	url := s.client.APIURL + endpointUsers + fmt.Sprintf("/%d/watched", userID)
+	var uw UserWatched
+	err := s.client.Request.Get(url, &uw)
 	if err != nil {
 		return nil, err
 	}
-
-	return &userWatched, nil
+	return &uw, nil
 }
 
 // GetLikedContent => https://taigaio.github.io/taiga-doc/dist/api.html#users-liked
 //
 // TODO: Implement query param filtering
-func (s *UserService) GetLikedContent(user *User) (*UserLiked, error) {
-	url := s.client.APIURL + endpointUsers + fmt.Sprintf("/%d/liked", user.ID)
-	var userLiked UserLiked
-
-	err := s.client.Request.Get(url, &userLiked)
+func (s *UserService) GetLikedContent(userID int) (*UserLiked, error) {
+	url := s.client.APIURL + endpointUsers + fmt.Sprintf("/%d/liked", userID)
+	var ul UserLiked
+	err := s.client.Request.Get(url, &ul)
 	if err != nil {
 		return nil, err
 	}
-
-	return &userLiked, nil
+	return &ul, nil
 }
 
 // https://taigaio.github.io/taiga-doc/dist/api.html#users-voted
@@ -96,20 +94,19 @@ func (s *UserService) GetLikedContent(user *User) (*UserLiked, error) {
 
 // Edit sends a PATCH request to edit a user
 // https://taigaio.github.io/taiga-doc/dist/api.html#users-edit
-func (s *UserService) Edit(userID int, patchedUser *User) (*User, error) {
-	url := s.client.APIURL + endpointUsers + fmt.Sprintf("/%d", userID)
-	var responseUser User
-
-	err := s.client.Request.Patch(url, &patchedUser, &responseUser)
+func (s *UserService) Edit(user *User) (*User, error) {
+	url := s.client.APIURL + endpointUsers + fmt.Sprintf("/%d", user.ID)
+	var u User
+	err := s.client.Request.Patch(url, &user, &u)
 	if err != nil {
 		return nil, err
 	}
-	return &responseUser, nil
+	return &u, nil
 }
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#users-delete
-func (s *UserService) Delete(user *User) error {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUsers, user.ID)
+func (s *UserService) Delete(userID int) error {
+	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUsers, userID)
 	err := s.client.Request.Delete(url)
 	if err != nil {
 		return err

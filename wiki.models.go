@@ -22,16 +22,16 @@ type WikiPage struct {
 }
 
 // GetID returns the ID
-func (tgObj *WikiPage) GetID() int {
-	return tgObj.ID
+func (w *WikiPage) GetID() int {
+	return w.ID
 }
 
 // GetVersion return the version
-func (tgObj *WikiPage) GetVersion() int {
-	return tgObj.Version
+func (w *WikiPage) GetVersion() int {
+	return w.Version
 }
 
 // GetProject returns the project ID
-func (tgObj *WikiPage) GetProject() int {
-	return tgObj.Project
+func (w *WikiPage) GetProject() int {
+	return w.Project
 }

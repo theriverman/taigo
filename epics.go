@@ -41,7 +41,7 @@ func (s *EpicService) List(queryParams *EpicsQueryParams) ([]Epic, error) {
 // Available Meta: *EpicDetail
 func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 	url := s.client.APIURL + endpointEpics
-	var responseEpic EpicDetail
+	var e EpicDetail
 
 	// Check for required fields
 	// project, subject
@@ -49,12 +49,12 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 		return nil, errors.New("A mandatory field(Project, Subject) is missing. See API documentataion")
 	}
 
-	err := s.client.Request.Post(url, &epic, &responseEpic)
+	err := s.client.Request.Post(url, &epic, &e)
 	if err != nil {
 		return nil, err
 	}
 
-	return responseEpic.AsEpic()
+	return e.AsEpic()
 }
 
 // Get => https://taigaio.github.io/taiga-doc/dist/api.html#epics-get
@@ -106,7 +106,7 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 // Available Meta: EpicDetail
 func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointEpics, epic.ID)
-	var responseEpic EpicDetail
+	var e EpicDetail
 
 	if epic.ID == 0 {
 		return nil, errors.New("Passed Epic does not have an ID yet. Does it exist?")
@@ -118,11 +118,11 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 		return nil, err
 	}
 	epic.Version = remoteEpic.Version
-	err = s.client.Request.Patch(url, &epic, &responseEpic)
+	err = s.client.Request.Patch(url, &epic, &e)
 	if err != nil {
 		return nil, err
 	}
-	return responseEpic.AsEpic()
+	return e.AsEpic()
 }
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#epics-delete
@@ -148,12 +148,12 @@ It seems to be pointless to implement this operation here. A for loop around `Cr
 // ListRelatedUserStories => https://taigaio.github.io/taiga-doc/dist/api.html#epics-related-user-stories-list
 func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStoryDetail, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d/related_userstories", endpointEpics, epicID)
-	var responseEpic []EpicRelatedUserStoryDetail
-	err := s.client.Request.Get(url, &responseEpic)
+	var e []EpicRelatedUserStoryDetail
+	err := s.client.Request.Get(url, &e)
 	if err != nil {
 		return nil, err
 	}
-	return responseEpic, nil
+	return e, nil
 }
 
 // CreateRelatedUserStory => https://taigaio.github.io/taiga-doc/dist/api.html#epics-related-user-stories-create
@@ -162,9 +162,7 @@ func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStory
 // Accepted UserStory values: `UserStory.ID`
 func (s *EpicService) CreateRelatedUserStory(EpicID int, UserStoryID int) (*EpicRelatedUserStoryDetail, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d/related_userstories", endpointEpics, EpicID)
-
 	e := EpicRelatedUserStoryDetail{EpicID: EpicID, UserStoryID: UserStoryID}
-
 	err := s.client.Request.Post(url, &e, &e)
 	if err != nil {
 		return nil, err

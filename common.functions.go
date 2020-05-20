@@ -16,21 +16,19 @@ import (
 // listAttachmentsForEndpoint is a common method to get attachments for an endpoint (userstories, tasks, etc...)
 func listAttachmentsForEndpoint(c *Client, queryParams *attachmentsQueryParams) ([]Attachment, error) {
 	paramValues, _ := query.Values(queryParams)
-	url := c.APIURL + queryParams.endpointURI + "/attachments?" + paramValues.Encode()
-	var attachmentsList []Attachment
-
-	err := c.Request.Get(url, &attachmentsList)
+	url := c.Request.MakeURL(queryParams.endpointURI, "/attachments?", paramValues.Encode())
+	var attachments []Attachment
+	err := c.Request.Get(url, &attachments)
 	if err != nil {
 		return nil, err
 	}
-	return attachmentsList, nil
+	return attachments, nil
 }
 
 // getAttachmentForEndpoint is a common method to get a specific attachment for an endpoint (epic, issue, etc...)
-func getAttachmentForEndpoint(c *Client, attachment *Attachment, endpointURI string) (*Attachment, error) {
-	url := c.APIURL + endpointURI + fmt.Sprintf("/attachments/%d", attachment.ID)
+func getAttachmentForEndpoint(c *Client, attachmentID int, endpointURI string) (*Attachment, error) {
+	url := c.Request.MakeURL(endpointURI, fmt.Sprintf("/attachments/%d", attachmentID))
 	var a Attachment
-
 	err := c.Request.Get(url, &a)
 	if err != nil {
 		return nil, err

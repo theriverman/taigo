@@ -41,28 +41,33 @@ type Epic struct {
 }
 
 // GetID returns the ID
-func (tgObj *Epic) GetID() int {
-	return tgObj.ID
+func (e *Epic) GetID() int {
+	return e.ID
 }
 
 // GetRef returns the Ref
-func (tgObj *Epic) GetRef() int {
-	return tgObj.Ref
+func (e *Epic) GetRef() int {
+	return e.Ref
 }
 
 // GetVersion return the version
-func (tgObj *Epic) GetVersion() int {
-	return tgObj.Version
+func (e *Epic) GetVersion() int {
+	return e.Version
 }
 
 // GetSubject returns the subject
-func (tgObj *Epic) GetSubject() string {
-	return tgObj.Subject
+func (e *Epic) GetSubject() string {
+	return e.Subject
 }
 
 // GetProject returns the project ID
-func (tgObj *Epic) GetProject() int {
-	return tgObj.Project
+func (e *Epic) GetProject() int {
+	return e.Project
+}
+
+// ListRelatedUserStories => https://taigaio.github.io/taiga-doc/dist/api.html#epics-related-user-stories-list
+func (e *Epic) ListRelatedUserStories(client *Client) ([]EpicRelatedUserStoryDetail, error) {
+	return client.Epic.ListRelatedUserStories(e.ID)
 }
 
 // EpicDetailLIST -> Epic detail (LIST)

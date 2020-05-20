@@ -40,28 +40,28 @@ type Issue struct {
 }
 
 // GetID returns the ID
-func (tgObj *Issue) GetID() int {
-	return tgObj.ID
+func (i *Issue) GetID() int {
+	return i.ID
 }
 
 // GetRef returns the Ref
-func (tgObj *Issue) GetRef() int {
-	return tgObj.Ref
+func (i *Issue) GetRef() int {
+	return i.Ref
 }
 
 // GetVersion return the version
-func (tgObj *Issue) GetVersion() int {
-	return tgObj.Version
+func (i *Issue) GetVersion() int {
+	return i.Version
 }
 
 // GetSubject returns the subject
-func (tgObj *Issue) GetSubject() string {
-	return tgObj.Subject
+func (i *Issue) GetSubject() string {
+	return i.Subject
 }
 
 // GetProject returns the project ID
-func (tgObj *Issue) GetProject() int {
-	return tgObj.Project
+func (i *Issue) GetProject() int {
+	return i.Project
 }
 
 // IssueDetailLIST -> Issue detail (LIST)

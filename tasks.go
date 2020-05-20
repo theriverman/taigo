@@ -25,21 +25,19 @@ func (s *TaskService) List(queryParameters *TasksQueryParams) ([]Task, error) {
 	} else if s.client.HasDefaultProject() {
 		url = url + s.client.GetDefaultProjectAsQueryParam()
 	}
-
-	var taskDetailList TaskDetailLIST
-
-	err := s.client.Request.Get(url, &taskDetailList)
+	var tasks TaskDetailLIST
+	err := s.client.Request.Get(url, &tasks)
 	if err != nil {
 		return nil, err
 	}
-	return taskDetailList.AsTask()
+	return tasks.AsTasks()
 }
 
 // Create creates a new Task | https://taigaio.github.io/taiga-doc/dist/api.html#tasks-create
 // Meta Available: *TaskDetail
 func (s *TaskService) Create(task *Task) (*Task, error) {
 	url := s.client.APIURL + endpointTasks
-	var responseTask TaskDetail
+	var t TaskDetail
 
 	// Check for required fields
 	// project, subject
@@ -47,27 +45,27 @@ func (s *TaskService) Create(task *Task) (*Task, error) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
 
-	err := s.client.Request.Post(url, &task, &responseTask)
+	err := s.client.Request.Post(url, &task, &t)
 	if err != nil {
 		return nil, err
 	}
-	return responseTask.AsTask()
+	return t.AsTask()
 }
 
 // Get => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-get
 func (s *TaskService) Get(task *Task) (*Task, error) {
 	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointTasks, task.ID)
-	var responseTask TaskDetailGET
-	err := s.client.Request.Get(url, &responseTask)
+	var t TaskDetailGET
+	err := s.client.Request.Get(url, &t)
 	if err != nil {
 		return nil, err
 	}
-	return responseTask.AsTask()
+	return t.AsTask()
 }
 
 // GetByRef => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-get-by-ref
 func (s *TaskService) GetByRef(task *Task, project *Project) (*Task, error) {
-	var respTask TaskDetailGET
+	var t TaskDetailGET
 	var url string
 	if project.ID != 0 {
 		url = s.client.APIURL + fmt.Sprintf("%s/by_ref?ref=%d&project=%d", endpointTasks, task.Ref, project.ID)
@@ -77,16 +75,16 @@ func (s *TaskService) GetByRef(task *Task, project *Project) (*Task, error) {
 		return nil, errors.New("No ID or Ref defined in passed project struct")
 	}
 
-	err := s.client.Request.Get(url, &respTask)
+	err := s.client.Request.Get(url, &t)
 	if err != nil {
 		return nil, err
 	}
-	return respTask.AsTask()
+	return t.AsTask()
 }
 
 // GetAttachment retrives a Task attachment by its ID => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-get-attachment
-func (s *TaskService) GetAttachment(attachment *Attachment) (*Attachment, error) {
-	a, err := getAttachmentForEndpoint(s.client, attachment, endpointTasks)
+func (s *TaskService) GetAttachment(attachmentID int) (*Attachment, error) {
+	a, err := getAttachmentForEndpoint(s.client, attachmentID, endpointTasks)
 	if err != nil {
 		return nil, err
 	}
@@ -107,11 +105,11 @@ func (s *TaskService) ListAttachments(task interface{}) ([]Attachment, error) {
 		Project:     t.Project,
 	}
 
-	attachmentsOfTask, err := listAttachmentsForEndpoint(s.client, &queryParams)
+	attachments, err := listAttachmentsForEndpoint(s.client, &queryParams)
 	if err != nil {
 		return nil, err
 	}
-	return attachmentsOfTask, nil
+	return attachments, nil
 }
 
 // CreateAttachment creates a new Task attachment => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-create-attachment
