@@ -1,6 +1,10 @@
 package taigo
 
-import "time"
+import (
+	"net/http"
+	"strconv"
+	"time"
+)
 
 // TODO
 /*
@@ -37,4 +41,22 @@ type Milestone struct {
 type MilestonesQueryParams struct {
 	Project int  `url:"project,omitempty"`
 	Closed  bool `url:"closed,omitempty"`
+}
+
+// MilestoneTotalInfo holds the two extra headers returned by Taiga when filtering for milestones
+//
+// Taiga-Info-Total-Opened-Milestones: the number of opened milestones for this project
+// Taiga-Info-Total-Closed-Milestones: the number of closed milestones for this project
+//
+// https://taigaio.github.io/taiga-doc/dist/api.html#milestones-list
+type MilestoneTotalInfo struct {
+	TaigaInfoTotalOpenedMilestones int // Taiga-Info-Total-Opened-Milestones
+	TaigaInfoTotalClosedMilestones int // Taiga-Info-Total-Closed-Milestones
+}
+
+// LoadFromHeaders accepts an *http.Response struct and reads the relevant
+// pagination headers returned by Taiga
+func (m *MilestoneTotalInfo) LoadFromHeaders(response *http.Response) {
+	m.TaigaInfoTotalOpenedMilestones, _ = strconv.Atoi(response.Header.Get("Taiga-Info-Total-Opened-Milestones"))
+	m.TaigaInfoTotalClosedMilestones, _ = strconv.Atoi(response.Header.Get("Taiga-Info-Total-Closed-Milestones"))
 }

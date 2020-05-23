@@ -17,7 +17,7 @@ type MilestoneService struct {
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#Milestones-list
-func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone, error) {
+func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone, *MilestoneTotalInfo, error) {
 	// prepare url & parameters
 	url := s.client.MakeURL(s.Endpoint)
 	if queryParams != nil {
@@ -30,9 +30,12 @@ func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone
 	var Milestones []Milestone
 	httpResponse, err := s.client.Request.Get(url, &Milestones)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return Milestones, nil
+	mti := &MilestoneTotalInfo{}
+	mti.LoadFromHeaders(httpResponse)
+
+	return Milestones, mti, nil
 }
 
 // Create => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-create
