@@ -3,6 +3,7 @@ package taigo
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/google/go-querystring/query"
 )
@@ -27,7 +28,7 @@ func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone
 	}
 	// execute requests
 	var Milestones []Milestone
-	err := s.client.Request.Get(url, &Milestones)
+	httpResponse, err := s.client.Request.Get(url, &Milestones)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +48,7 @@ func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 		isEmpty(milestone.EstimatedFinish) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
-	err := s.client.Request.Post(url, &milestone, &respMilestone)
+	_, err := s.client.Request.Post(url, &milestone, &respMilestone)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +59,7 @@ func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 func (s *MilestoneService) Get(milestoneID int) (*Milestone, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, milestoneID))
 	var m Milestone
-	err := s.client.Request.Get(url, &m)
+	_, err := s.client.Request.Get(url, &m)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,7 @@ func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
 	if milestone.ID == 0 {
 		return nil, errors.New("Passed Milestone does not have an ID yet. Does it exist?")
 	}
-	err := s.client.Request.Patch(url, &milestone, &m)
+	_, err := s.client.Request.Patch(url, &milestone, &m)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +82,7 @@ func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
 }
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-delete
-func (s *MilestoneService) Delete(milestoneID int) error {
+func (s *MilestoneService) Delete(milestoneID int) (*http.Response, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, milestoneID))
 	return s.client.Request.Delete(url)
 }

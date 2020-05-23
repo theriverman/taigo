@@ -3,6 +3,7 @@ package taigo
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/google/go-querystring/query"
 )
@@ -27,7 +28,7 @@ func (s *EpicService) List(queryParams *EpicsQueryParams) ([]Epic, error) {
 		url = url + s.client.GetDefaultProjectAsQueryParam()
 	}
 	var epics EpicDetailLIST
-	err := s.client.Request.Get(url, &epics)
+	_, err := s.client.Request.Get(url, &epics)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +49,7 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 		return nil, errors.New("A mandatory field(Project, Subject) is missing. See API documentataion")
 	}
 
-	err := s.client.Request.Post(url, &epic, &e)
+	_, err := s.client.Request.Post(url, &epic, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +63,7 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 func (s *EpicService) Get(epicID int) (*Epic, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, epicID))
 	var e EpicDetailGET
-	err := s.client.Request.Get(url, &e)
+	_, err := s.client.Request.Get(url, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +95,7 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 		return nil, errors.New("No ID or Ref defined in passed project struct")
 	}
 
-	err := s.client.Request.Get(url, &e)
+	_, err := s.client.Request.Get(url, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +118,7 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 		return nil, err
 	}
 	epic.Version = remoteEpic.Version
-	err = s.client.Request.Patch(url, &epic, &e)
+	_, err = s.client.Request.Patch(url, &epic, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 }
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#epics-delete
-func (s *EpicService) Delete(epicID int) error {
+func (s *EpicService) Delete(epicID int) (*http.Response, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, epicID))
 	return s.client.Request.Delete(url)
 }
@@ -148,7 +149,7 @@ It seems to be pointless to implement this operation here. A for loop around `Cr
 func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStoryDetail, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d/related_userstories", s.Endpoint, epicID))
 	var e []EpicRelatedUserStoryDetail
-	err := s.client.Request.Get(url, &e)
+	_, err := s.client.Request.Get(url, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +163,7 @@ func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStory
 func (s *EpicService) CreateRelatedUserStory(EpicID int, UserStoryID int) (*EpicRelatedUserStoryDetail, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d/related_userstories", s.Endpoint, EpicID))
 	e := EpicRelatedUserStoryDetail{EpicID: EpicID, UserStoryID: UserStoryID}
-	err := s.client.Request.Post(url, &e, &e)
+	_, err := s.client.Request.Post(url, &e, &e)
 	if err != nil {
 		return nil, err
 	}

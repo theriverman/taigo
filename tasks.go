@@ -25,7 +25,7 @@ func (s *TaskService) List(queryParameters *TasksQueryParams) ([]Task, error) {
 		url = url + s.client.GetDefaultProjectAsQueryParam()
 	}
 	var tasks TaskDetailLIST
-	err := s.client.Request.Get(url, &tasks)
+	_, err := s.client.Request.Get(url, &tasks)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *TaskService) Create(task *Task) (*Task, error) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
 
-	err := s.client.Request.Post(url, &task, &t)
+	_, err := s.client.Request.Post(url, &task, &t)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *TaskService) Create(task *Task) (*Task, error) {
 func (s *TaskService) Get(task *Task) (*Task, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, task.ID))
 	var t TaskDetailGET
-	err := s.client.Request.Get(url, &t)
+	_, err := s.client.Request.Get(url, &t)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (s *TaskService) GetByRef(task *Task, project *Project) (*Task, error) {
 		return nil, errors.New("No ID or Ref defined in passed project struct")
 	}
 
-	err := s.client.Request.Get(url, &t)
+	_, err := s.client.Request.Get(url, &t)
 	if err != nil {
 		return nil, err
 	}

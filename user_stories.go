@@ -3,6 +3,7 @@ package taigo
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/google/go-querystring/query"
 )
@@ -26,7 +27,7 @@ func (s *UserStoryService) List(queryParameters *UserStoryQueryParams) ([]UserSt
 		url = url + s.client.GetDefaultProjectAsQueryParam()
 	}
 	var userstories UserStoryDetailLIST
-	err := s.client.Request.Get(url, &userstories)
+	_, err := s.client.Request.Get(url, &userstories)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +47,7 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
 
-	err := s.client.Request.Post(url, &userStory, &us)
+	_, err := s.client.Request.Post(url, &userStory, &us)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 func (s *UserStoryService) Get(userStoryID int) (*UserStory, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, userStoryID))
 	var us UserStoryDetailGET
-	err := s.client.Request.Get(url, &us)
+	_, err := s.client.Request.Get(url, &us)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +93,7 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 		return nil, errors.New("No ID or Ref defined in passed project struct")
 	}
 
-	err := s.client.Request.Get(url, &us)
+	_, err := s.client.Request.Get(url, &us)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +116,7 @@ func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
 		return nil, err
 	}
 	us.Version = remoteUS.Version
-	err = s.client.Request.Patch(url, &us, &responseUS)
+	_, err = s.client.Request.Patch(url, &us, &responseUS)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +124,7 @@ func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
 }
 
 // Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-delete
-func (s *UserStoryService) Delete(usID int) error {
+func (s *UserStoryService) Delete(usID int) (*http.Response, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, usID))
 	return s.client.Request.Delete(url)
 }

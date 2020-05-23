@@ -22,7 +22,7 @@ func (s *UserService) List(queryParams *UsersQueryParams) ([]User, error) {
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
 	}
 	var users []User
-	err := s.client.Request.Get(url, &users)
+	_, err := s.client.Request.Get(url, &users)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (s *UserService) List(queryParams *UsersQueryParams) ([]User, error) {
 func (s *UserService) Get(userID int) (*User, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, userID))
 	var u User
-	err := s.client.Request.Get(url, &u)
+	_, err := s.client.Request.Get(url, &u)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *UserService) Get(userID int) (*User, error) {
 func (s *UserService) Me() (*User, error) {
 	var u User
 	url := s.client.MakeURL(s.Endpoint, "me")
-	err := s.client.Request.Get(url, &u)
+	_, err := s.client.Request.Get(url, &u)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *UserService) Me() (*User, error) {
 func (s *UserService) GetStats(userID int) (*UserStatsDetail, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d/stats", s.Endpoint, userID))
 	var usd UserStatsDetail
-	err := s.client.Request.Get(url, &usd)
+	_, err := s.client.Request.Get(url, &usd)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *UserService) GetStats(userID int) (*UserStatsDetail, error) {
 func (s *UserService) GetWatchedContent(userID int) (*UserWatched, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d/watched", s.Endpoint, userID))
 	var uw UserWatched
-	err := s.client.Request.Get(url, &uw)
+	_, err := s.client.Request.Get(url, &uw)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (s *UserService) GetWatchedContent(userID int) (*UserWatched, error) {
 func (s *UserService) GetLikedContent(userID int) (*UserLiked, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d/liked", s.Endpoint, userID))
 	var ul UserLiked
-	err := s.client.Request.Get(url, &ul)
+	_, err := s.client.Request.Get(url, &ul)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (s *UserService) GetLikedContent(userID int) (*UserLiked, error) {
 func (s *UserService) Edit(user *User) (*User, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, user.ID))
 	var u User
-	err := s.client.Request.Patch(url, &user, &u)
+	_, err := s.client.Request.Patch(url, &user, &u)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (s *UserService) Edit(user *User) (*User, error) {
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#users-delete
 func (s *UserService) Delete(userID int) error {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, userID))
-	err := s.client.Request.Delete(url)
+	_, err := s.client.Request.Delete(url)
 	if err != nil {
 		return err
 	}

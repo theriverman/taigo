@@ -86,7 +86,7 @@ func (s *ResolverService) genericResolver(queryParameters *ResolverQueryParams) 
 	paramValues, _ := query.Values(queryParameters)
 	url := s.client.MakeURL(fmt.Sprintf("%s?%s", s.Endpoint, paramValues.Encode()))
 	var respResolver Resolver
-	err := s.client.Request.Get(url, &respResolver)
+	_, err := s.client.Request.Get(url, &respResolver)
 	if err != nil {
 		return nil, err
 	}

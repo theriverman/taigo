@@ -11,7 +11,7 @@ type StatsService struct {
 func (s *StatsService) GetDiscoverStats() (*DiscoverStats, error) {
 	url := s.client.MakeURL(s.Endpoint, "discover")
 	var respDiscoverStats DiscoverStats
-	err := s.client.Request.Get(url, &respDiscoverStats)
+	_, err := s.client.Request.Get(url, &respDiscoverStats)
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +22,7 @@ func (s *StatsService) GetDiscoverStats() (*DiscoverStats, error) {
 func (s *StatsService) GetSystemStats() (*SystemStats, error) {
 	url := s.client.MakeURL(s.Endpoint, "system")
 	var respSystemStats SystemStats
-	err := s.client.Request.Get(url, &respSystemStats)
+	_, err := s.client.Request.Get(url, &respSystemStats)
 	if err != nil {
 		return nil, err
 	}

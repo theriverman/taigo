@@ -3,6 +3,7 @@ package taigo
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/google/go-querystring/query"
 )
@@ -47,7 +48,7 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 	}
 	var projects ProjectsList
 
-	err := s.client.Request.Get(url, &projects)
+	_, err := s.client.Request.Get(url, &projects)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func (s *ProjectService) Create(project *Project) (*Project, error) {
 	if isEmpty(project.Name) || isEmpty(project.Description) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
-	err := s.client.Request.Post(url, &project, &p)
+	_, err := s.client.Request.Post(url, &project, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +76,7 @@ func (s *ProjectService) Get(projectID int) (*Project, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, projectID))
 	var p ProjectDetail
 
-	err := s.client.Request.Get(url, &p)
+	_, err := s.client.Request.Get(url, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/by_slug?slug=%s", s.Endpoint, slug))
 	var p ProjectDetail
 
-	err := s.client.Request.Get(url, &p)
+	_, err := s.client.Request.Get(url, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +105,7 @@ func (s *ProjectService) Edit(project *Project) (*Project, error) {
 		return nil, errors.New("Passed Project does not have an ID yet. Does it exist?")
 	}
 
-	err := s.client.Request.Patch(url, &project, &p)
+	_, err := s.client.Request.Patch(url, &project, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +113,7 @@ func (s *ProjectService) Edit(project *Project) (*Project, error) {
 }
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#projects-delete
-func (s *ProjectService) Delete(projectID int) error {
+func (s *ProjectService) Delete(projectID int) (*http.Response, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, projectID))
 	return s.client.Request.Delete(url)
 }

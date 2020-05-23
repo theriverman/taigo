@@ -17,7 +17,7 @@ func (s *AuthService) PublicRegistry(credentials *Credentials) (*UserAuthenticat
 
 	credentials.Type = "public"
 	credentials.AcceptedTerms = true // Hardcoded for simplicity; otherwise this func would be useless
-	err := s.client.Request.Post(url, &credentials, &u)
+	_, err := s.client.Request.Post(url, &credentials, &u)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (s *AuthService) login(credentials *Credentials) (*UserAuthenticationDetail
 	url := s.client.MakeURL(s.Endpoint)
 	u := UserAuthenticationDetail{}
 
-	err := s.client.Request.Post(url, &credentials, &u)
+	_, err := s.client.Request.Post(url, &credentials, &u)
 	if err != nil {
 		log.Println("Failed to authenticate to Taiga.")
 		return nil, err

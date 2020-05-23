@@ -176,22 +176,14 @@ type Pagination struct {
 // LoadFromHeaders accepts an *http.Response struct and reads the relevant
 // pagination headers returned by Taiga
 func (p *Pagination) LoadFromHeaders(c *Client, response *http.Response) {
-	if c.paginationDisabled {
-		p.Paginated = false
-		return
-	}
-
-	headers := response.Header
-
-	// Check if response is paginated
-	paginated := headers.Get("X-Paginated")
+	paginated := response.Header.Get("X-Paginated") // Check if response is paginated
 	if paginated == "true" {
 		p.Paginated = true
-		p.PaginatedBy, _ = strconv.Atoi(headers.Get("X-Paginated-By"))
-		p.PaginationCount, _ = strconv.Atoi(headers.Get("X-Paginated-Count"))
-		p.PaginationCurrent, _ = strconv.Atoi(headers.Get("X-Paginated-Current"))
-		p.PaginationNext, _ = url.Parse(headers.Get("X-Pagination-Next"))
-		p.PaginationPrev, _ = url.Parse(headers.Get("X-Pagination-Prev"))
+		p.PaginatedBy, _ = strconv.Atoi(response.Header.Get("X-Paginated-By"))
+		p.PaginationCount, _ = strconv.Atoi(response.Header.Get("X-Paginated-Count"))
+		p.PaginationCurrent, _ = strconv.Atoi(response.Header.Get("X-Paginated-Current"))
+		p.PaginationNext, _ = url.Parse(response.Header.Get("X-Pagination-Next"))
+		p.PaginationPrev, _ = url.Parse(response.Header.Get("X-Pagination-Prev"))
 	} else {
 		p.Paginated = false
 	}

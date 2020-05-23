@@ -25,7 +25,7 @@ func (s *WebhookService) ListWebhooks(queryParameters *WebhookQueryParameters) (
 	}
 	var webhooks []Webhook
 
-	err := s.client.Request.Get(url, &webhooks)
+	_, err := s.client.Request.Get(url, &webhooks)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (s *WebhookService) CreateWebhook(webhook *Webhook) (*Webhook, error) {
 	url := s.client.MakeURL(s.Endpoint)
 	var wh Webhook
 
-	err := s.client.Request.Post(url, &webhook, &wh)
+	_, err := s.client.Request.Post(url, &webhook, &wh)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (s *WebhookService) CreateWebhook(webhook *Webhook) (*Webhook, error) {
 func (s *WebhookService) GetWebhook(webhook *Webhook) (*Webhook, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, webhook.ID))
 	var wh Webhook
-	err := s.client.Request.Get(url, &wh)
+	_, err := s.client.Request.Get(url, &wh)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (s *WebhookService) GetWebhook(webhook *Webhook) (*Webhook, error) {
 func (s *WebhookService) EditWebhook(webhook *Webhook) (*Webhook, error) {
 	var responseWebhook Webhook
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, webhook.ID))
-	err := s.client.Request.Patch(url, &webhook, &responseWebhook)
+	_, err := s.client.Request.Patch(url, &webhook, &responseWebhook)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (s *WebhookService) EditWebhook(webhook *Webhook) (*Webhook, error) {
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-delete
 func (s *WebhookService) DeleteWebhook(webhook *Webhook) error {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, webhook.ID))
-	err := s.client.Request.Delete(url)
+	_, err := s.client.Request.Delete(url)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (s *WebhookService) DeleteWebhook(webhook *Webhook) error {
 func (s *WebhookService) TestWebhook(webhook *Webhook) (*WebhookLog, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, webhook.ID))
 	var whLog WebhookLog
-	err := s.client.Request.Post(url, &webhook, &whLog)
+	_, err := s.client.Request.Post(url, &webhook, &whLog)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (s *WebhookService) ListWebhookLogs(queryParameters *WebhookQueryParameters
 	}
 	var whLogs []WebhookLog
 
-	err := s.client.Request.Get(url, &whLogs)
+	_, err := s.client.Request.Get(url, &whLogs)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *WebhookService) ListWebhookLogs(queryParameters *WebhookQueryParameters
 func (s *WebhookService) GetWebhookLog(webhook *Webhook) (*WebhookLog, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.EndpointLogs, webhook.ID))
 	var whLog WebhookLog
-	err := s.client.Request.Get(url, &whLog)
+	_, err := s.client.Request.Get(url, &whLog)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (s *WebhookService) GetWebhookLog(webhook *Webhook) (*WebhookLog, error) {
 func (s *WebhookService) ResendWebhookRequest(webhookLog *WebhookLog) (*WebhookLog, error) {
 	url := s.client.MakeURL(fmt.Sprintf("%s/%d/resend", s.EndpointLogs, webhookLog.ID))
 	var whLog WebhookLog
-	err := s.client.Request.Post(url, &webhookLog, &whLog)
+	_, err := s.client.Request.Post(url, &webhookLog, &whLog)
 	if err != nil {
 		return nil, err
 	}

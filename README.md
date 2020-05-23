@@ -91,6 +91,16 @@ To enable pagination (for all future requests) set `Client.DisablePagination` to
 client.DisablePagination(false)
 ```
 
+If you enable pagination, you can collect pagination details by accessing the returned `*http.Response`, <br>
+and extracting the relevant headers into a taigo.Pagination struct the following way:
+```go
+// Collect returned Pagination headers
+p := Pagination{}
+p.LoadFromHeaders(client, response)
+```
+
+**Note:** See `type Pagination struct` in [TAIGO/common.models.go](common.models.go) for more details.
+
 For details on Taiga's pagination, see [Taiga REST API / Pagination](https://taigaio.github.io/taiga-doc/dist/api.html#_pagination).
 
 # Usage
