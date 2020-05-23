@@ -179,13 +179,63 @@ for _, proj := range *projectsList {
 newAttachment, err := client.Epic.CreateAttachment(&taiga.Attachment{ObjectID: 1337, Project: 7331}, "C:/Users/theriverman/Pictures/nghfb.jpg")
 ```
 
-## Advanced Operations (Non-Standard)
+## Non-Standard Operations (Non-Standard)
 1. Clone Epic (with UserStories)
 2. Clone Epic (without UserStories)
 3. Clone UserStory (with sub-tasks)
 4. Clone UserStory (without sub-tasks)
 5. Clone Sub-Task
 6. Copy UserStory to another project [will lose comments and attachments]
+
+## Advanced Operations
+Do you need access to a non yet implemented or special API endpoint? No problem! <br>
+It is possible to make requests to custom API endpoints by leveraging `*RequestService`.
+
+HTTP operations (`GET`, `POST`, etc..) should be executed through RequestService which provides a managed environment for communicating with Taiga.
+
+For example, let's try accessing the `epic-custom-attributes` endpoint:
+
+First, a model struct will be needed to represent the data returned by the endpoint. Refer to the official Taiga API documentation for response examples:
+```go
+// EpicCustomAttributeDetail -> https://taigaio.github.io/taiga-doc/dist/api.html#object-epic-custom-attribute-detail
+// Converted via https://mholt.github.io/json-to-go/
+type EpicCustomAttributeDetail struct {
+	CreatedDate  time.Time   `json:"created_date"`
+	Description  string      `json:"description"`
+	Extra        interface{} `json:"extra"`
+	ID           int         `json:"id"`
+	ModifiedDate time.Time   `json:"modified_date"`
+	Name         string      `json:"name"`
+	Order        int         `json:"order"`
+	Project      int         `json:"project"`
+	Type         string      `json:"type"`
+}
+```
+
+Then initialise an instance which is going to store the reponse:
+```go
+epicCustomAttributes := []EpicCustomAttributeDetail{}
+```
+
+Using `client.MakeURL` the absolute URL endpoint is built for the request. <br>
+Using `client.Request.Get` an HTTP GET request is sent to the API endpoint URL: <br>
+The `Request.Get` call must receive the URL, then a pointer to the model struct:
+```go
+// Final URL should be https://api.taiga.io/api/v1/epic-custom-attributes
+resp, err := client.Request.Get(client.MakeURL("epic-custom-attributes"), &epicCustomAttributes)
+if err != nil {
+	fmt.Println(err)
+	fmt.Println(resp)
+} else {
+	for i := 0; i < 3; i++ {
+		ca := epicCustomAttributes[i]
+		fmt.Println("  * ", ca.ID, ca.Name)
+	}
+}
+```
+
+( Such raw requests return an `*http.Response` and an `Error` (if applies) object. )
+
 
 # Contribution
 You're contribution would be much appreciated! <br>
