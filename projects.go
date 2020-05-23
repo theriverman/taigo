@@ -7,13 +7,12 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-const endpointProjects = "/projects"
-
 // ProjectService is a handle to actions related to Projects
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#projects
 type ProjectService struct {
-	client *Client
+	client   *Client
+	Endpoint string
 }
 
 // List -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-list
@@ -41,7 +40,7 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 		  * total_activity_last_year
 	*/
 
-	url := s.client.APIURL + endpointProjects
+	url := s.client.MakeURL(s.Endpoint)
 	if queryParameters != nil {
 		paramValues, _ := query.Values(queryParameters)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
@@ -57,15 +56,13 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 
 // Create -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-create
 func (s *ProjectService) Create(project *Project) (*Project, error) {
-	url := s.client.APIURL + endpointProjects
+	url := s.client.MakeURL(s.Endpoint)
 	var p ProjectDetail
-
 	// Check for required fields
 	// name, description
 	if isEmpty(project.Name) || isEmpty(project.Description) {
 		return nil, errors.New("A mandatory field is missing. See API documentataion")
 	}
-
 	err := s.client.Request.Post(url, &project, &p)
 	if err != nil {
 		return nil, err
@@ -75,7 +72,7 @@ func (s *ProjectService) Create(project *Project) (*Project, error) {
 
 // Get -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get
 func (s *ProjectService) Get(projectID int) (*Project, error) {
-	url := s.client.APIURL + fmt.Sprintf("/%s/%d", endpointProjects, projectID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, projectID))
 	var p ProjectDetail
 
 	err := s.client.Request.Get(url, &p)
@@ -87,7 +84,7 @@ func (s *ProjectService) Get(projectID int) (*Project, error) {
 
 // GetBySlug -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get-by-slug
 func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
-	url := s.client.APIURL + fmt.Sprintf("/%s/by_slug?slug=%s", endpointProjects, slug)
+	url := s.client.MakeURL(fmt.Sprintf("%s/by_slug?slug=%s", s.Endpoint, slug))
 	var p ProjectDetail
 
 	err := s.client.Request.Get(url, &p)
@@ -100,22 +97,22 @@ func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
 // Edit edits an Project via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#projects-edit
 // Available Meta: ProjectDetail
 func (s *ProjectService) Edit(project *Project) (*Project, error) {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointProjects, project.ID)
-	var projectDetail ProjectDetail
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, project.ID))
+	var p ProjectDetail
 
 	if project.ID == 0 {
 		return nil, errors.New("Passed Project does not have an ID yet. Does it exist?")
 	}
 
-	err := s.client.Request.Patch(url, &project, &projectDetail)
+	err := s.client.Request.Patch(url, &project, &p)
 	if err != nil {
 		return nil, err
 	}
-	return projectDetail.AsProject()
+	return p.AsProject()
 }
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#projects-delete
 func (s *ProjectService) Delete(projectID int) error {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointProjects, projectID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, projectID))
 	return s.client.Request.Delete(url)
 }

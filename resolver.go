@@ -1,10 +1,10 @@
 package taigo
 
 import (
+	"fmt"
+
 	"github.com/google/go-querystring/query"
 )
-
-var resolverURI = "/resolver"
 
 /*
 NOTES ON LOGIC:
@@ -12,73 +12,81 @@ NOTES ON LOGIC:
 	before sending to make sure there are no extra query parameters sent/picked up when only one is expected.
 */
 
+// ResolverService is a handle to actions related to Resolver
+//
+// https://taigaio.github.io/taiga-doc/dist/api.html#resolver
+type ResolverService struct {
+	client   *Client
+	Endpoint string
+}
+
 // ResolveProject => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-projects
-func ResolveProject(c *Client, queryParameters *ResolverQueryParams) (*Resolver, error) {
+func (s *ResolverService) ResolveProject(queryParameters *ResolverQueryParams) (*Resolver, error) {
 	qp := ResolverQueryParams{
 		Project: queryParameters.Project,
 	}
-	return genericResolver(c, &qp)
+	return s.genericResolver(&qp)
 }
 
 // ResolveUserStory => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-user-stories
-func ResolveUserStory(c *Client, queryParameters *ResolverQueryParams) (*Resolver, error) {
+func (s *ResolverService) ResolveUserStory(queryParameters *ResolverQueryParams) (*Resolver, error) {
 	qp := ResolverQueryParams{
 		US:      queryParameters.US,
 		Project: queryParameters.Project,
 	}
-	return genericResolver(c, &qp)
+	return s.genericResolver(&qp)
 }
 
 // ResolveIssue => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-issues
-func ResolveIssue(c *Client, queryParameters *ResolverQueryParams) (*Resolver, error) {
+func (s *ResolverService) ResolveIssue(queryParameters *ResolverQueryParams) (*Resolver, error) {
 	qp := ResolverQueryParams{
 		Issue:   queryParameters.Issue,
 		Project: queryParameters.Project,
 	}
-	return genericResolver(c, &qp)
+	return s.genericResolver(&qp)
 }
 
 // ResolveTask => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-tasks
-func ResolveTask(c *Client, queryParameters *ResolverQueryParams) (*Resolver, error) {
+func (s *ResolverService) ResolveTask(queryParameters *ResolverQueryParams) (*Resolver, error) {
 	qp := ResolverQueryParams{
 		Task:    queryParameters.Task,
 		Project: queryParameters.Project,
 	}
-	return genericResolver(c, &qp)
+	return s.genericResolver(&qp)
 }
 
 // ResolveMilestone => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-milestones
-func ResolveMilestone(c *Client, queryParameters *ResolverQueryParams) (*Resolver, error) {
+func (s *ResolverService) ResolveMilestone(queryParameters *ResolverQueryParams) (*Resolver, error) {
 	qp := ResolverQueryParams{
 		Milestone: queryParameters.Milestone,
 		Project:   queryParameters.Project,
 	}
-	return genericResolver(c, &qp)
+	return s.genericResolver(&qp)
 }
 
 // ResolveWikiPage => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-wiki-pages
-func ResolveWikiPage(c *Client, queryParameters *ResolverQueryParams) (*Resolver, error) {
+func (s *ResolverService) ResolveWikiPage(queryParameters *ResolverQueryParams) (*Resolver, error) {
 	qp := ResolverQueryParams{
 		WikiPage: queryParameters.WikiPage,
 		Project:  queryParameters.Project,
 	}
-	return genericResolver(c, &qp)
+	return s.genericResolver(&qp)
 }
 
 // ResolveMultipleObjects => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-multiple-resolution
-func ResolveMultipleObjects(c *Client, queryParameters *ResolverQueryParams) (*Resolver, error) {
-	return genericResolver(c, queryParameters)
+func (s *ResolverService) ResolveMultipleObjects(queryParameters *ResolverQueryParams) (*Resolver, error) {
+	return s.genericResolver(queryParameters)
 }
 
 // ResolveByRefValue => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-ref
 // TODO: Not yet implemented. Considered for later.
 
 // genericResolver acts as a common request execution middleware
-func genericResolver(c *Client, queryParameters *ResolverQueryParams) (*Resolver, error) {
+func (s *ResolverService) genericResolver(queryParameters *ResolverQueryParams) (*Resolver, error) {
 	paramValues, _ := query.Values(queryParameters)
-	url := c.APIURL + resolverURI + "?" + paramValues.Encode()
+	url := s.client.MakeURL(fmt.Sprintf("%s?%s", s.Endpoint, paramValues.Encode()))
 	var respResolver Resolver
-	err := c.Request.Get(url, &respResolver)
+	err := s.client.Request.Get(url, &respResolver)
 	if err != nil {
 		return nil, err
 	}

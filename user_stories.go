@@ -7,19 +7,18 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-const endpointUserStories = "/userstories"
-
 // UserStoryService is a handle to actions related to UserStories
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#user-stories
 type UserStoryService struct {
-	client *Client
+	client   *Client
+	Endpoint string
 }
 
 // List returns all User Stories | https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-list
 // Available Meta: *[]UserStoryDetailLIST
 func (s *UserStoryService) List(queryParameters *UserStoryQueryParams) ([]UserStory, error) {
-	url := s.client.APIURL + endpointUserStories
+	url := s.client.MakeURL(s.Endpoint)
 	if queryParameters != nil {
 		paramValues, _ := query.Values(queryParameters)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
@@ -38,7 +37,7 @@ func (s *UserStoryService) List(queryParameters *UserStoryQueryParams) ([]UserSt
 //
 // Available Meta: *UserStoryDetail
 func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
-	url := s.client.APIURL + endpointUserStories
+	url := s.client.MakeURL(s.Endpoint)
 	var us UserStoryDetail
 
 	// Check for required fields
@@ -59,7 +58,7 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 //
 // Available Meta: *UserStoryDetailGET
 func (s *UserStoryService) Get(userStoryID int) (*UserStory, error) {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUserStories, userStoryID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, userStoryID))
 	var us UserStoryDetailGET
 	err := s.client.Request.Get(url, &us)
 	if err != nil {
@@ -84,10 +83,10 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 
 	switch {
 	case project.ID != 0:
-		url = s.client.APIURL + fmt.Sprintf("%s/by_ref?ref=%d&project=%d", endpointEpics, userStoryRef, project.ID)
+		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, userStoryRef, project.ID))
 		break
 	case len(project.Slug) > 0:
-		url = s.client.APIURL + fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", endpointEpics, userStoryRef, project.Slug)
+		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, userStoryRef, project.Slug))
 		break
 	default:
 		return nil, errors.New("No ID or Ref defined in passed project struct")
@@ -103,7 +102,7 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 // Edit sends a PATCH request to edit a User Story -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-edit
 // Available Meta: UserStoryDetail
 func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUserStories, us.ID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, us.ID))
 	var responseUS UserStoryDetail
 
 	if us.ID == 0 {
@@ -125,13 +124,13 @@ func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
 
 // Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-delete
 func (s *UserStoryService) Delete(usID int) error {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointUserStories, usID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, usID))
 	return s.client.Request.Delete(url)
 }
 
 // CreateAttachment creates a new UserStory attachment => https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-create-attachment
 func (s *UserStoryService) CreateAttachment(attachment *Attachment, task *Task) (*Attachment, error) {
-	url := s.client.APIURL + endpointTasks + "/attachments"
+	url := s.client.MakeURL(s.Endpoint, "attachments")
 	return newfileUploadRequest(s.client, url, attachment, task)
 }
 

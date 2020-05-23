@@ -14,7 +14,7 @@ type Client struct {
 	APIURL             string                    // set by system
 	APIversion         string                    // default: "v1"
 	BaseURL            string                    // i.e.: "http://taiga.test" | Same value as `api` in `taiga-front-dist/dist/conf.json`
-	Headers            map[string]string         // set by system&user
+	Headers            *http.Header              // mostly set by system
 	HTTPClient         *http.Client              // set by user
 	IsLoggedIn         bool                      // set by system
 	LoginType          string                    // i.e.: "normal"; "github"; "ldap"
@@ -34,6 +34,7 @@ type Client struct {
 	Issue     *IssueService
 	Milestone *MilestoneService
 	Project   *ProjectService
+	Resolver  *ResolverService
 	Stats     *StatsService
 	Task      *TaskService
 	UserStory *UserStoryService
@@ -42,8 +43,16 @@ type Client struct {
 	Wiki      *WikiService
 }
 
-// TODO: Pack Taiga operations into services, such as, ProjectService, EpicService, MilestoneService, etc...
-// These services should be available under Client and implement their actions (List, Get, Create, etc...) there!
+// MakeURL accepts an Endpoint URL and returns a compiled absolute URL
+//
+// For example:
+//	* If the given endpoint URLs are [epics, attachments]
+//	* If the BaseURL is https://api.taiga.io
+//	* It returns https://api.taiga.io/api/v1/epics/attachments
+//  * Suffixes are appended to the URL joined by a slash (/)
+func (c *Client) MakeURL(EndpointParts ...string) string {
+	return c.APIURL + "/" + strings.Join(EndpointParts, "/")
+}
 
 // SetDefaultProject takes an int and uses that to internally set the default project ID.
 func (c *Client) SetDefaultProject(projectID int) error {
@@ -104,8 +113,8 @@ func (c *Client) Initialise(credentials *Credentials) error {
 		c.TokenType = "Bearer"
 	}
 	// Set basic headers
-	c.Headers = make(map[string]string)
-	c.setContentTypeToJSON()
+	c.Headers = &http.Header{}
+	c.setContentTypeToJSON() // Default Header = {"Content-Type": "application/json"}
 
 	// Setup APIversion | If user did not set it to anything, default to `v1`
 	if c.APIversion == "" {
@@ -120,17 +129,18 @@ func (c *Client) Initialise(credentials *Credentials) error {
 	// Bootstrapping Services
 	c.Request = &RequestService{c}
 
-	c.Auth = &AuthService{c}
-	c.Epic = &EpicService{c}
-	c.Issue = &IssueService{c}
-	c.Milestone = &MilestoneService{c}
-	c.Project = &ProjectService{c}
-	c.Stats = &StatsService{c}
-	c.Task = &TaskService{c}
-	c.UserStory = &UserStoryService{c}
-	c.User = &UserService{c}
-	c.Webhook = &WebhookService{c}
-	c.Wiki = &WikiService{c}
+	c.Auth = &AuthService{c, "auth"}
+	c.Epic = &EpicService{c, "epics"}
+	c.Issue = &IssueService{c, "issues"}
+	c.Milestone = &MilestoneService{c, "milestones"}
+	c.Project = &ProjectService{c, "projects"}
+	c.Resolver = &ResolverService{c, "resolver"}
+	c.Stats = &StatsService{c, "stats"}
+	c.Task = &TaskService{c, "tasks"}
+	c.UserStory = &UserStoryService{c, "userstories"}
+	c.User = &UserService{c, "users"}
+	c.Webhook = &WebhookService{c, "webhooks", "webhooklogs"}
+	c.Wiki = &WikiService{c, "wiki"}
 
 	user, err := c.Auth.login(credentials)
 	if err != nil {
@@ -156,31 +166,31 @@ func (c *Client) GetPagination() Pagination {
 	return *c.pagination
 }
 
+// GetAuthorizationHeader returns the formatted value of Authorization key from Headers
+func (c *Client) GetAuthorizationHeader() string {
+	return c.Headers.Get("Authorization")
+}
+
 // LoadExternalHeaders loads a map of header key/value pairs permemently into `Client.Headers`
 func (c *Client) LoadExternalHeaders(headers map[string]string) {
 	for k, v := range headers {
-		c.Headers[k] = v
+		c.Headers.Add(k, v)
 	}
 }
 
 func (c *Client) setContentTypeToJSON() {
-	c.Headers["Content-Type"] = "application/json"
-}
-
-func (c *Client) setContentTypeToFormData() {
-	c.Headers["Content-Type"] = "multipart/form-data"
+	c.Headers.Add("Content-Type", "application/json")
 }
 
 func (c *Client) setToken() {
-	c.Headers["Authorization"] = c.TokenType + " " + c.Token
+	c.Headers.Add("Authorization", fmt.Sprintf("%s %s", c.TokenType, c.Token))
 }
 
+// loadHeaders takes an http.Request and maps locally stored Header values to its .Header
 func (c *Client) loadHeaders(request *http.Request) {
-	for k, v := range c.Headers {
-		request.Header.Set(k, v)
+	for key, values := range *c.Headers {
+		for _, value := range values {
+			request.Header.Add(key, value)
+		}
 	}
-}
-
-func (c *Client) setContentType(s string) {
-	c.Headers["Content-Type"] = s
 }

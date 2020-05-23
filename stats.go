@@ -1,16 +1,15 @@
 package taigo
 
-var statsURI = "/stats"
-
 // StatsService is a handle to Stats operations
 // -> https://taigaio.github.io/taiga-doc/dist/api.html#stats
 type StatsService struct {
-	client *Client
+	client   *Client
+	Endpoint string
 }
 
 // GetDiscoverStats => https://taigaio.github.io/taiga-doc/dist/api.html#discover-stats
 func (s *StatsService) GetDiscoverStats() (*DiscoverStats, error) {
-	url := s.client.Request.MakeURL(statsURI, "discover")
+	url := s.client.MakeURL(s.Endpoint, "discover")
 	var respDiscoverStats DiscoverStats
 	err := s.client.Request.Get(url, &respDiscoverStats)
 	if err != nil {
@@ -21,7 +20,7 @@ func (s *StatsService) GetDiscoverStats() (*DiscoverStats, error) {
 
 // GetSystemStats => https://taigaio.github.io/taiga-doc/dist/api.html#system-stats
 func (s *StatsService) GetSystemStats() (*SystemStats, error) {
-	url := s.client.Request.MakeURL(statsURI, "system")
+	url := s.client.MakeURL(s.Endpoint, "system")
 	var respSystemStats SystemStats
 	err := s.client.Request.Get(url, &respSystemStats)
 	if err != nil {

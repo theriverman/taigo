@@ -20,12 +20,12 @@ type WebhookLog struct {
 	Status      int    `json:"status"`
 	RequestData struct {
 		By struct {
-			ID         int         `json:"id"`
-			Photo      interface{} `json:"photo"`
-			Username   string      `json:"username"`
-			FullName   string      `json:"full_name"`
-			Permalink  string      `json:"permalink"`
-			GravatarID string      `json:"gravatar_id"`
+			ID         int    `json:"id"`
+			Photo      string `json:"photo"`
+			Username   string `json:"username"`
+			FullName   string `json:"full_name"`
+			Permalink  string `json:"permalink"`
+			GravatarID string `json:"gravatar_id"`
 		} `json:"by"`
 		Data struct {
 			Test string `json:"test"`

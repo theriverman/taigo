@@ -7,20 +7,19 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-const endpointEpics = "/epics"
-
 // EpicService is a handle to actions related to Epics
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#epics
 type EpicService struct {
-	client *Client
+	client   *Client
+	Endpoint string
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#epics-list
 //
 // Available Meta: *EpicDetailLIST
 func (s *EpicService) List(queryParams *EpicsQueryParams) ([]Epic, error) {
-	url := s.client.APIURL + endpointEpics
+	url := s.client.MakeURL(s.Endpoint)
 	if queryParams != nil {
 		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
@@ -40,7 +39,7 @@ func (s *EpicService) List(queryParams *EpicsQueryParams) ([]Epic, error) {
 //
 // Available Meta: *EpicDetail
 func (s *EpicService) Create(epic *Epic) (*Epic, error) {
-	url := s.client.APIURL + endpointEpics
+	url := s.client.MakeURL(s.Endpoint)
 	var e EpicDetail
 
 	// Check for required fields
@@ -61,7 +60,7 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 //
 // Available Meta: *EpicDetailGET
 func (s *EpicService) Get(epicID int) (*Epic, error) {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointEpics, epicID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, epicID))
 	var e EpicDetailGET
 	err := s.client.Request.Get(url, &e)
 	if err != nil {
@@ -86,10 +85,10 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 
 	switch {
 	case project.ID > 0:
-		url = s.client.APIURL + fmt.Sprintf("%s/by_ref?ref=%d&project=%d", endpointEpics, epicRef, project.ID)
+		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, epicRef, project.ID))
 		break
 	case len(project.Slug) > 0:
-		url = s.client.APIURL + fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", endpointEpics, epicRef, project.Slug)
+		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, epicRef, project.Slug))
 		break
 	default:
 		return nil, errors.New("No ID or Ref defined in passed project struct")
@@ -105,7 +104,7 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 // Edit edits an Epic via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#epics-edit
 // Available Meta: EpicDetail
 func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointEpics, epic.ID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, epic.ID))
 	var e EpicDetail
 
 	if epic.ID == 0 {
@@ -127,7 +126,7 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#epics-delete
 func (s *EpicService) Delete(epicID int) error {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointEpics, epicID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, epicID))
 	return s.client.Request.Delete(url)
 }
 
@@ -147,7 +146,7 @@ It seems to be pointless to implement this operation here. A for loop around `Cr
 
 // ListRelatedUserStories => https://taigaio.github.io/taiga-doc/dist/api.html#epics-related-user-stories-list
 func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStoryDetail, error) {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d/related_userstories", endpointEpics, epicID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d/related_userstories", s.Endpoint, epicID))
 	var e []EpicRelatedUserStoryDetail
 	err := s.client.Request.Get(url, &e)
 	if err != nil {
@@ -161,7 +160,7 @@ func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStory
 // Mandatory parameters: `EpicID`; `UserStoryID`
 // Accepted UserStory values: `UserStory.ID`
 func (s *EpicService) CreateRelatedUserStory(EpicID int, UserStoryID int) (*EpicRelatedUserStoryDetail, error) {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d/related_userstories", endpointEpics, EpicID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d/related_userstories", s.Endpoint, EpicID))
 	e := EpicRelatedUserStoryDetail{EpicID: EpicID, UserStoryID: UserStoryID}
 	err := s.client.Request.Post(url, &e, &e)
 	if err != nil {
@@ -173,7 +172,7 @@ func (s *EpicService) CreateRelatedUserStory(EpicID int, UserStoryID int) (*Epic
 // CreateAttachment creates a new Epic attachment => https://taigaio.github.io/taiga-doc/dist/api.html#epics-create-attachment
 //
 func (s *EpicService) CreateAttachment(attachment *Attachment, task *Task) (*Attachment, error) {
-	url := s.client.APIURL + endpointTasks + "/attachments"
+	url := s.client.MakeURL(s.Endpoint, "attachments")
 	return newfileUploadRequest(s.client, url, attachment, task)
 }
 

@@ -11,28 +11,19 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 )
 
 // Evaluation Tools
-const noContent204 = 204
-
-var httpSuccessCodes = [...]int{200, 201, 202, 204}
+var httpSuccessCodes = [...]int{
+	http.StatusOK,
+	http.StatusCreated,
+	http.StatusAccepted,
+	http.StatusNoContent,
+}
 
 // RequestService is a handle to HTTP request operations
 type RequestService struct {
 	client *Client
-}
-
-// MakeURL accepts an Endpoint URL and returns a compiled absolute URL
-//
-// For example:
-//	* If the given endpoint URLs are [epics, attachments]
-//	* If the BaseURL is https://api.taiga.io
-//	* It returns https://api.taiga.io/api/v1/epics/attachments
-//  * Suffixes are appended to the URL joined by a slash (/)
-func (s *RequestService) MakeURL(EndpointParts ...string) string {
-	return s.client.APIURL + "/" + strings.Join(EndpointParts, "/")
 }
 
 // SuccessfulHTTPRequest returns true if the given Response's StatusCode
@@ -130,10 +121,10 @@ func evaluateResponseAndStatusCode() {
 */
 
 // NOTE: responseBody must always be a pointer otherwise we lose the response data!
-func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgBaseObj TaigaBaseObject) (*Attachment, error) {
+func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObject TaigaBaseObject) (*Attachment, error) {
 	// Map Object details into *Attachment
-	attachment.ObjectID = tgBaseObj.GetID()
-	attachment.Project = tgBaseObj.GetProject()
+	attachment.ObjectID = tgObject.GetID()
+	attachment.Project = tgObject.GetProject()
 
 	// Open file
 	f, err := os.Open(attachment.filePath)
@@ -158,11 +149,19 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgBaseO
 	writer.WriteField("from_comment", "False")
 	writer.Close()
 
-	// Add headers && Execute Request
-	req, _ := http.NewRequest("POST", url, body)
-	c.setContentType(writer.FormDataContentType())
-	c.loadHeaders(req)
-	rawResponse, err := c.HTTPClient.Do(req)
+	// Create POST Request
+	request, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add headers (manually, not calling c.loadHeaders())
+	request.Header.Set("Authorization", c.GetAuthorizationHeader())  // Load token
+	request.Header.Set("Content-Type", writer.FormDataContentType()) // Set Content-Type to multipart/form-data
+
+	// Execute Request
+	rawResponse, err := c.HTTPClient.Do(request)
+	// c.setContentTypeToJSON()  // Reset (just in case..)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +226,7 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 		return err
 	}
 	if SuccessfulHTTPRequest(resp) {
-		if resp.StatusCode == noContent204 { //  There's no body returned for 204 responses
+		if resp.StatusCode == http.StatusNoContent { //  There's no body returned for 204 responses
 			return nil
 		}
 		// Collect returned Pagination headers

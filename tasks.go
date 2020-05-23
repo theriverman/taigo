@@ -7,18 +7,17 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-const endpointTasks = "/tasks"
-
 // TaskService is a handle to actions related to Tasks
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#tasks
 type TaskService struct {
-	client *Client
+	client   *Client
+	Endpoint string
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-list
 func (s *TaskService) List(queryParameters *TasksQueryParams) ([]Task, error) {
-	url := s.client.APIURL + endpointTasks
+	url := s.client.MakeURL(s.Endpoint)
 	if queryParameters != nil {
 		paramValues, _ := query.Values(queryParameters)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
@@ -36,7 +35,7 @@ func (s *TaskService) List(queryParameters *TasksQueryParams) ([]Task, error) {
 // Create creates a new Task | https://taigaio.github.io/taiga-doc/dist/api.html#tasks-create
 // Meta Available: *TaskDetail
 func (s *TaskService) Create(task *Task) (*Task, error) {
-	url := s.client.APIURL + endpointTasks
+	url := s.client.MakeURL(s.Endpoint)
 	var t TaskDetail
 
 	// Check for required fields
@@ -54,7 +53,7 @@ func (s *TaskService) Create(task *Task) (*Task, error) {
 
 // Get => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-get
 func (s *TaskService) Get(task *Task) (*Task, error) {
-	url := s.client.APIURL + fmt.Sprintf("%s/%d", endpointTasks, task.ID)
+	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, task.ID))
 	var t TaskDetailGET
 	err := s.client.Request.Get(url, &t)
 	if err != nil {
@@ -68,9 +67,9 @@ func (s *TaskService) GetByRef(task *Task, project *Project) (*Task, error) {
 	var t TaskDetailGET
 	var url string
 	if project.ID != 0 {
-		url = s.client.APIURL + fmt.Sprintf("%s/by_ref?ref=%d&project=%d", endpointTasks, task.Ref, project.ID)
+		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, task.Ref, project.ID))
 	} else if len(project.Slug) > 0 {
-		url = s.client.APIURL + fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", endpointTasks, task.Ref, project.Slug)
+		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, task.Ref, project.Slug))
 	} else {
 		return nil, errors.New("No ID or Ref defined in passed project struct")
 	}
@@ -84,7 +83,7 @@ func (s *TaskService) GetByRef(task *Task, project *Project) (*Task, error) {
 
 // GetAttachment retrives a Task attachment by its ID => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-get-attachment
 func (s *TaskService) GetAttachment(attachmentID int) (*Attachment, error) {
-	a, err := getAttachmentForEndpoint(s.client, attachmentID, endpointTasks)
+	a, err := getAttachmentForEndpoint(s.client, attachmentID, s.Endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +99,7 @@ func (s *TaskService) ListAttachments(task interface{}) ([]Attachment, error) {
 	}
 
 	queryParams := attachmentsQueryParams{
-		endpointURI: endpointTasks,
+		endpointURI: s.Endpoint,
 		ObjectID:    t.ID,
 		Project:     t.Project,
 	}
@@ -114,6 +113,6 @@ func (s *TaskService) ListAttachments(task interface{}) ([]Attachment, error) {
 
 // CreateAttachment creates a new Task attachment => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-create-attachment
 func (s *TaskService) CreateAttachment(attachment *Attachment, task *Task) (*Attachment, error) {
-	url := s.client.APIURL + endpointTasks + "/attachments"
+	url := s.client.MakeURL(s.Endpoint, "attachments")
 	return newfileUploadRequest(s.client, url, attachment, task)
 }

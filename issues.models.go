@@ -127,9 +127,9 @@ type IssueDetailGET struct {
 	DueDate              string              `json:"due_date"`
 	DueDateReason        string              `json:"due_date_reason"`
 	DueDateStatus        string              `json:"due_date_status"`
-	ExternalReference    interface{}         `json:"external_reference"`
+	ExternalReference    int                 `json:"external_reference"`
 	FinishedDate         time.Time           `json:"finished_date"`
-	GeneratedUserStories interface{}         `json:"generated_user_stories"`
+	GeneratedUserStories []int               `json:"generated_user_stories"`
 	ID                   int                 `json:"id"`
 	IsBlocked            bool                `json:"is_blocked"`
 	IsClosed             bool                `json:"is_closed"`

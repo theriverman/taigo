@@ -2,28 +2,27 @@ package taigo
 
 import "log"
 
-const endpointAuth = "/auth"
-
 // AuthService is a handle to actions related to Auths
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#auths
 type AuthService struct {
-	client *Client
+	client   *Client
+	Endpoint string
 }
 
 // PublicRegistry => https://taigaio.github.io/taiga-doc/dist/api.html#auth-public-registry
 func (s *AuthService) PublicRegistry(credentials *Credentials) (*UserAuthenticationDetail, error) {
-	url := s.client.APIURL + endpointAuth + "/register"
-	response := UserAuthenticationDetail{}
+	url := s.client.MakeURL(s.Endpoint, "register")
+	u := UserAuthenticationDetail{}
 
 	credentials.Type = "public"
 	credentials.AcceptedTerms = true // Hardcoded for simplicity; otherwise this func would be useless
-	err := s.client.Request.Post(url, &credentials, &response)
+	err := s.client.Request.Post(url, &credentials, &u)
 	if err != nil {
 		return nil, err
 	}
 
-	return &response, nil
+	return &u, nil
 }
 
 // PrivateRegistry => https://taigaio.github.io/taiga-doc/dist/api.html#auth-private-registry
@@ -32,16 +31,16 @@ func (s *AuthService) PublicRegistry(credentials *Credentials) (*UserAuthenticat
 
 // login authenticates to Taiga
 func (s *AuthService) login(credentials *Credentials) (*UserAuthenticationDetail, error) {
-	url := s.client.APIURL + endpointAuth
-	response := UserAuthenticationDetail{}
+	url := s.client.MakeURL(s.Endpoint)
+	u := UserAuthenticationDetail{}
 
-	err := s.client.Request.Post(url, &credentials, &response)
+	err := s.client.Request.Post(url, &credentials, &u)
 	if err != nil {
 		log.Println("Failed to authenticate to Taiga.")
 		return nil, err
 	}
-	s.client.Token = response.AuthToken
+	s.client.Token = u.AuthToken
 	s.client.setToken()
 	s.client.IsLoggedIn = true
-	return &response, nil
+	return &u, nil
 }
