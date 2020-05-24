@@ -41,6 +41,5 @@ func (s *AuthService) login(credentials *Credentials) (*UserAuthenticationDetail
 	}
 	s.client.Token = u.AuthToken
 	s.client.setToken()
-	s.client.IsLoggedIn = true
 	return &u, nil
 }

@@ -122,15 +122,20 @@ func main() {
 		HTTPClient: &http.Client{},
 		LoginType:  "normal",
 	}
+	
 	// Initialise client (authenticates to Taiga)
-	err := client.Initialise(&taiga.Credentials{
+	err := client.Initialise()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	
+	// Authenticate (get/set Token)
+	client.AuthByCredentials(&taiga.Credentials{
 		Type:     "normal",
 		Username: "my_pretty_username",
 		Password: "123123",
 	})
-	if err != nil {
-		log.Fatalln(err)
-	}
+
 	// Set default project (optional. recommended for convenience)
 	client.SetDefaultProjectBySlug("theriverman-test-1337")
 
@@ -138,7 +143,7 @@ func main() {
 	me, _ := client.User.Me()
 	fmt.Println("Me: (ID, Username, FullName)", me.ID, me.Username, me.FullName)
 
-  // Get Project [ theriverman-api-dev-testing-1337 ]
+  	// Get Project [ theriverman-api-dev-testing-1337 ]
 	slug := "theriverman-api-dev-testing-1337"
 	fmt.Printf("Getting Project (slug=%s)..\n", slug)
 	project, err := client.Project.GetBySlug(slug)

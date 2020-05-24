@@ -9,6 +9,7 @@ type UsersQueryParams struct {
 
 // User represents User detail | https://taigaio.github.io/taiga-doc/dist/api.html#object-user-detail
 type User struct {
+	authToken                     string    // internal; non-standard
 	AcceptedTerms                 bool      `json:"accepted_terms,omitempty"`
 	BigPhoto                      string    `json:"big_photo,omitempty"`
 	Bio                           string    `json:"bio,omitempty"`
@@ -34,6 +35,30 @@ type User struct {
 	TotalPublicProjects           int       `json:"total_public_projects,omitempty"`
 	Username                      string    `json:"username,omitempty"`
 	UUID                          string    `json:"uuid,omitempty"`
+}
+
+// GetToken returns teh token string embedded into User
+func (u User) GetToken() string {
+	return u.authToken
+}
+
+// UserAuthenticationDetail is a superset of User extended by an AuthToken field
+type UserAuthenticationDetail struct {
+	AuthToken string `json:"auth_token"`
+	User             // Embedding type User struct
+}
+
+// AsUser returns a *User from *UserAuthenticationDetail
+//
+// The AuthToken can be accessed from *User via .
+func (u *UserAuthenticationDetail) AsUser() *User {
+	user := &User{}
+	err := convertStructViaJSON(u, user)
+	if err != nil {
+		return nil
+	}
+	user.authToken = u.AuthToken
+	return user
 }
 
 // Liked represents Liked | https://taigaio.github.io/taiga-doc/dist/api.html#object-liked-detail
@@ -200,34 +225,4 @@ type UserLiked struct {
 	TotalFans           int                 `json:"total_fans"`
 	TotalWatchers       int                 `json:"total_watchers"`
 	Type                string              `json:"type"`
-}
-
-// UserAuthenticationDetail represents all details of User logging in
-type UserAuthenticationDetail struct {
-	ReadNewTerms                  bool      `json:"read_new_terms"`
-	MaxPrivateProjects            int       `json:"max_private_projects"`
-	Roles                         []string  `json:"roles"`
-	Email                         string    `json:"email"`
-	BigPhoto                      string    `json:"big_photo"`
-	MaxMembershipsPrivateProjects int       `json:"max_memberships_private_projects"`
-	Username                      string    `json:"username"`
-	AuthToken                     string    `json:"auth_token"`
-	TotalPublicProjects           int       `json:"total_public_projects"`
-	DateJoined                    time.Time `json:"date_joined"`
-	GravatarID                    string    `json:"gravatar_id"`
-	FullName                      string    `json:"full_name"`
-	AcceptedTerms                 bool      `json:"accepted_terms"`
-	Timezone                      string    `json:"timezone"`
-	IsActive                      bool      `json:"is_active"`
-	Bio                           string    `json:"bio"`
-	UUID                          string    `json:"uuid"`
-	MaxMembershipsPublicProjects  int       `json:"max_memberships_public_projects"`
-	TotalPrivateProjects          int       `json:"total_private_projects"`
-	Photo                         string    `json:"photo"`
-	FullNameDisplay               string    `json:"full_name_display"`
-	Theme                         string    `json:"theme"`
-	Color                         string    `json:"color"`
-	MaxPublicProjects             int       `json:"max_public_projects"`
-	Lang                          string    `json:"lang"`
-	ID                            int       `json:"id"`
 }

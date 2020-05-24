@@ -11,19 +11,19 @@ import (
 // Client is the session manager of Taiga Driver
 type Client struct {
 	Credentials        *Credentials
-	APIURL             string                    // set by system
-	APIversion         string                    // default: "v1"
-	BaseURL            string                    // i.e.: "http://taiga.test" | Same value as `api` in `taiga-front-dist/dist/conf.json`
-	Headers            *http.Header              // mostly set by system
-	HTTPClient         *http.Client              // set by user
-	IsLoggedIn         bool                      // set by system
-	LoginType          string                    // i.e.: "normal"; "github"; "ldap"
-	Token              string                    // set by system; can be set manually
-	TokenType          string                    // default=Bearer; options:Bearer,Application
-	SelfUser           *UserAuthenticationDetail // User logged in
-	defaultProjectID   int                       // Project used in query params by default
-	pagination         *Pagination               // Pagination details extracted from the LAST http response
-	paginationDisabled bool                      // indicates pagination status
+	APIURL             string       // set by system
+	APIversion         string       // default: "v1"
+	BaseURL            string       // i.e.: "http://taiga.test" | Same value as `api` in `taiga-front-dist/dist/conf.json`
+	Headers            *http.Header // mostly set by system
+	HTTPClient         *http.Client // set by user
+	LoginType          string       // i.e.: "normal"; "github"; "ldap"
+	Token              string       // set by system; can be set manually
+	TokenType          string       // default=Bearer; options:Bearer,Application
+	Self               *User        // User logged in
+	defaultProjectID   int          // Project used in query params by default
+	pagination         *Pagination  // Pagination details extracted from the LAST http response
+	paginationDisabled bool         // indicates pagination status
+	isInitialised      bool         // indicates if taiga.Client has been initialised already
 
 	// Core Services
 	Request *RequestService
@@ -100,7 +100,7 @@ func (c *Client) HasDefaultProject() bool {
 }
 
 // Initialise returns a new Taiga Client which is the entrypoint of the driver
-func (c *Client) Initialise(credentials *Credentials) error {
+func (c *Client) Initialise() error {
 	// Taiga.Client safety guards
 	if len(c.BaseURL) < len("http://") { // compares for a minimum of len("http://")
 		return errors.New("BaseURL is not set or invalid")
@@ -142,12 +142,37 @@ func (c *Client) Initialise(credentials *Credentials) error {
 	c.Webhook = &WebhookService{c, "webhooks", "webhooklogs"}
 	c.Wiki = &WikiService{c, "wiki"}
 
+	// Final steps
+	c.isInitialised = true
+	return nil
+}
+
+// AuthByCredentials authenticates to Taiga using the provided basic credentials
+func (c *Client) AuthByCredentials(credentials *Credentials) error {
+	if !c.isInitialised {
+		return fmt.Errorf("Client not initialised")
+	}
 	user, err := c.Auth.login(credentials)
 	if err != nil {
 		return err
 	}
-	c.SelfUser = user
+	c.Self = user.AsUser()
+	return nil
+}
 
+// AuthByToken authenticates to Taiga using provided Token by requesting users/me
+func (c *Client) AuthByToken(tokenType, token string) error {
+	if !c.isInitialised {
+		return fmt.Errorf("Client not initialised")
+	}
+	c.TokenType = tokenType
+	c.Token = token
+
+	var err error
+	c.Self, err = c.User.Me()
+	if err != nil {
+		return fmt.Errorf("Authentication has failed. Reason: %s", err)
+	}
 	return nil
 }
 
