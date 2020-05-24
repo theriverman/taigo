@@ -4,13 +4,13 @@ TAIGO
 ![alt text](assets/banner_627x300.png "TAIGO Banner")
 
 # Description
-**TAIGO** is a driver written in GO for [Taiga](https://github.com/taigaio) targeting to implement all publicly available API v1 endpoints. <br>
+**Taigo** is a driver written in GO for [Taiga](https://github.com/taigaio) targeting to implement all publicly available API v1 endpoints. <br>
 Taiga is an Agile, Free and Open Source Project Management Tool.
 
 Should you have any ideas or recommendations, feel free to report it as an issue or open a pull request.
 
 # Integration
-Download **TAIGO**:
+Download **Taigo**:
 ```bash
 go get github.com/theriverman/taigo
 ```
@@ -25,25 +25,27 @@ import (
 Documentation is located here: [TAIGO](https://godoc.org/github.com/theriverman/taigo/)
 
 # Architecture
-To use **TAIGO**, you must instantiate a `*Client`, and as part of the process, you must provide an `httpClient` from `"net/http"`.<br>
-All objects (*epic, user story, issue, task, sprint, etc...*) you may encounter in Taiga are represented in a struct type.<br>
+To use **Taigo**, you must instantiate a `*Client`, and authenticate against Taiga to either get a new token or validate the one given. To authenticate, use one of the following methods:
+  * `client.AuthByCredentials`
+  * `client.AuthByToken`
+
+All Taiga objects, such as, Epic, User Story, Issue, Task, Sprint, etc.. are represented as a struct.<br>
 
 ## Meta System
 Since the API endpoints of Taiga return various payloads for the same object types, a meta system has been added 
-to simplify the interaction with the **TAIGO** APIs. <br>
+to simplify the interaction with the **Taigo** APIs. <br>
 
-For example, in Taiga the `http://localhost:8000/api/v1/userstories` base endpoint can return the following payload types:
+For example, in Taiga the `http://localhost:8000/api/v1/userstories` endpoint can return the following payload types:
   - User story detail
   - User story detail (GET)
   - User story detail (LIST)
 
-The returned payload type depends on the executed action: list, create, edit, get, etc...
+The returned payload type depends on the executed action: list, create, edit, get, etc..
 
-Since GO does not support generics and casting between different types is not a trivial operation, a generic
-type has been introduced in **TAIGO** for each implemented Taiga object type, such as, Epic, Milestone, UserStory, Task, etc...
+Since Go does not support generics and casting between different types is not a trivial operation, a generic type has been introduced in **Taigo** for each implemented basic object type (Epic, Milestone, UserStory, Task, etc..) found in Taiga.
 
 These generic types come with meta fields (pointers) to the originally returned payload.
-In case you need access to a field *not* represented in the generic type provided by **TAIGO**, you can use the appropriate meta field.
+In case you need access to a field *not* represented in the generic type provided by **Taigo**, you can use the appropriate meta field.
 
 For example, struct `Epic` has the following meta fields:
 
@@ -67,7 +69,7 @@ func (s *EpicService) Create(epic Epic) (*Epic, error) {}
 
 ## Docs-As-Code ( godoc / docstrings )
 To avoid creating and maintaining a redundant API documentation for each covered Taiga API resource, 
-the API behaviours and fields are **not** documented in **TAIGO**.
+the API behaviours and fields are **not** documented in **Taigo**.
 Instead, the docstring comment provides a direct URL to each appropriate online resource.<br>
 **Example:**<br>
 ```go
@@ -83,7 +85,7 @@ To find out which operation requires what fields and what they return, always re
 [Taiga REST API](https://taigaio.github.io/taiga-doc/dist/api.html) documentation.
 
 ## Pagination
-It is rarely useful to receive results paginated in a driver like **TAIGO**, so **pagination is disabled** by default. <br>
+It is rarely useful to receive results paginated in a driver like **Taigo**, so **pagination is disabled** by default. <br>
 
 To enable pagination (for all future requests) set `Client.DisablePagination` to `false`: <br>
 ```go
@@ -156,18 +158,13 @@ func main() {
 
 ## Basic Operations
 ```go
-// get users/me
-me, _ := client.User.Me()
-fmt.Println("Me (ID, Username, FullName)", me.ID, me.Username, me.FullName)
-
 // get all projects (no filtering, no ordering)
 projectsList, _ := client.Project.List(nil)
 for _, proj := range *projectsList {
     fmt.Println("Project ID:", proj.ID, "Project Name:", proj.Name)
 }
 /*
-  ListProjects accepts a `*ProjectsQueryParameters` as an argument, but if you don't need any filtering,
-  you can either pass nil or a pointer to an empty `*ProjectsQueryParameters` struct.
+  ListProjects accepts a `*ProjectsQueryParameters` as an argument, but if you don't need any filtering, you can pass in a nil.
 */
 
 // get all projects for user ID 1337
@@ -196,11 +193,11 @@ newAttachment, err := client.Epic.CreateAttachment(&taiga.Attachment{ObjectID: 1
 Do you need access to a non yet implemented or special API endpoint? No problem! <br>
 It is possible to make requests to custom API endpoints by leveraging `*RequestService`.
 
-HTTP operations (`GET`, `POST`, etc..) should be executed through RequestService which provides a managed environment for communicating with Taiga.
+HTTP operations (`GET`, `POST`, etc..) should be executed through `RequestService` which provides a managed environment for communicating with Taiga.
 
 For example, let's try accessing the `epic-custom-attributes` endpoint:
 
-First, a model struct will be needed to represent the data returned by the endpoint. Refer to the official Taiga API documentation for response examples:
+First, a model struct must be created to represent the data returned by the endpoint. Refer to the official Taiga API documentation for response examples:
 ```go
 // EpicCustomAttributeDetail -> https://taigaio.github.io/taiga-doc/dist/api.html#object-epic-custom-attribute-detail
 // Converted via https://mholt.github.io/json-to-go/
@@ -223,8 +220,8 @@ epicCustomAttributes := []EpicCustomAttributeDetail{}
 ```
 
 Using `client.MakeURL` the absolute URL endpoint is built for the request. <br>
-Using `client.Request.Get` an HTTP GET request is sent to the API endpoint URL: <br>
-The `Request.Get` call must receive the URL, then a pointer to the model struct:
+Using `client.Request.Get` an HTTP GET request is sent to the API endpoint URL. <br>
+The `client.Request.Get` call must receive a URL and a pointer to the model struct:
 ```go
 // Final URL should be https://api.taiga.io/api/v1/epic-custom-attributes
 resp, err := client.Request.Get(client.MakeURL("epic-custom-attributes"), &epicCustomAttributes)
@@ -239,8 +236,7 @@ if err != nil {
 }
 ```
 
-( Such raw requests return an `*http.Response` and an `Error` (if applies) object. )
-
+Such raw requests return `(*http.Response, error)`.
 
 # Contribution
 You're contribution would be much appreciated! <br>
@@ -248,6 +244,7 @@ Feel free to open Issue tickets or create Pull requests. <br>
 
 Should you have an idea which would cause non-backward compatibility, please open an issue first to discuss your proposal!
 
+For more details, see [TAIGO Contribution](CONTRIBUTION.md).
 
 ## Branching Strategy
 This package conforms to the stable HEAD philosophy.
@@ -260,4 +257,4 @@ This package conforms to the stable HEAD philosophy.
 | **Go Gopher**             | CC3.0     | [Renee French](https://www.instagram.com/reneefrench/) 	|
 | **Gopher Konstructor**    | CC0-1.0   | [quasilyte](https://github.com/quasilyte/gopherkon)    	|
 | **TAIGA**                 | AGPL-3.0  | [Taiga.io](https://github.com/taigaio)                 	|
-| **TAIGO**                 | MIT       | [theriverman](https://github.com/theriverman)          	|
+| **Taigo**                 | MIT       | [theriverman](https://github.com/theriverman)          	|
