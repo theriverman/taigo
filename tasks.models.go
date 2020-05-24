@@ -203,7 +203,7 @@ type TaskDetail struct {
 			Ref     int    `json:"ref,omitempty"`
 			Subject string `json:"subject,omitempty"`
 		} `json:"next,omitempty"`
-		Previous interface{} `json:"previous,omitempty"`
+		Previous Previous `json:"previous,omitempty"`
 	} `json:"neighbors,omitempty"`
 	Owner              int                `json:"owner,omitempty"`
 	OwnerExtraInfo     OwnerExtraInfo     `json:"owner_extra_info,omitempty"`

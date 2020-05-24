@@ -206,9 +206,9 @@ func (e *EpicDetail) AsEpic() (*Epic, error) {
 // EpicFiltersDataDetail => Epic filters data detail https://taigaio.github.io/taiga-doc/dist/api.html#object-epic-filters-data
 type EpicFiltersDataDetail struct {
 	AssignedTo []struct {
-		Count    int         `json:"count,omitempty"`
-		FullName string      `json:"full_name,omitempty"`
-		ID       interface{} `json:"id,omitempty"`
+		Count    int    `json:"count,omitempty"`
+		FullName string `json:"full_name,omitempty"`
+		ID       int    `json:"id,omitempty"`
 	} `json:"assigned_to,omitempty"`
 	Owners []struct {
 		Count    int    `json:"count,omitempty"`
@@ -223,9 +223,9 @@ type EpicFiltersDataDetail struct {
 		Order int    `json:"order,omitempty"`
 	} `json:"statuses,omitempty"`
 	Tags []struct {
-		Color interface{} `json:"color,omitempty"`
-		Count int         `json:"count,omitempty"`
-		Name  string      `json:"name,omitempty"`
+		Color TagsColors `json:"color,omitempty"`
+		Count int        `json:"count,omitempty"`
+		Name  string     `json:"name,omitempty"`
 	} `json:"tags,omitempty"`
 }
 

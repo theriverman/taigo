@@ -38,93 +38,6 @@ type Project struct {
 	ProjectDETAIL             *ProjectDetail
 }
 
-// ProjectDetail -> https://taigaio.github.io/taiga-doc/dist/api.html#object-project-detail
-type ProjectDetail struct {
-	AnonPermissions           []interface{}               `json:"anon_permissions"`
-	BlockedCode               interface{}                 `json:"blocked_code"`
-	CreatedDate               time.Time                   `json:"created_date"`
-	CreationTemplate          int                         `json:"creation_template"`
-	DefaultEpicStatus         int                         `json:"default_epic_status"`
-	DefaultIssueStatus        int                         `json:"default_issue_status"`
-	DefaultIssueType          int                         `json:"default_issue_type"`
-	DefaultPoints             int                         `json:"default_points"`
-	DefaultPriority           int                         `json:"default_priority"`
-	DefaultSeverity           int                         `json:"default_severity"`
-	DefaultTaskStatus         int                         `json:"default_task_status"`
-	DefaultUsStatus           int                         `json:"default_us_status"`
-	Description               string                      `json:"description"`
-	EpicCustomAttributes      []epicCustomAttributes      `json:"epic_custom_attributes"`
-	EpicStatuses              []epicStatuses              `json:"epic_statuses"`
-	EpicsCsvUUID              string                      `json:"epics_csv_uuid"`
-	IAmAdmin                  bool                        `json:"i_am_admin"`
-	IAmMember                 bool                        `json:"i_am_member"`
-	IAmOwner                  bool                        `json:"i_am_owner"`
-	ID                        int                         `json:"id"`
-	IsBacklogActivated        bool                        `json:"is_backlog_activated"`
-	IsContactActivated        bool                        `json:"is_contact_activated"`
-	IsEpicsActivated          bool                        `json:"is_epics_activated"`
-	IsFan                     bool                        `json:"is_fan"`
-	IsFeatured                bool                        `json:"is_featured"`
-	IsIssuesActivated         bool                        `json:"is_issues_activated"`
-	IsKanbanActivated         bool                        `json:"is_kanban_activated"`
-	IsLookingForPeople        bool                        `json:"is_looking_for_people"`
-	IsOutOfOwnerLimits        bool                        `json:"is_out_of_owner_limits"`
-	IsPrivate                 bool                        `json:"is_private"`
-	IsPrivateExtraInfo        IsPrivateExtraInfo          `json:"is_private_extra_info"`
-	IsWatcher                 bool                        `json:"is_watcher"`
-	IsWikiActivated           bool                        `json:"is_wiki_activated"`
-	IssueCustomAttributes     []issueCustomAttributes     `json:"issue_custom_attributes"`
-	IssueDuedates             []issueDuedates             `json:"issue_duedates"`
-	IssueStatuses             []issueStatuses             `json:"issue_statuses"`
-	IssueTypes                []issueTypes                `json:"issue_types"`
-	IssuesCsvUUID             interface{}                 `json:"issues_csv_uuid"`
-	LogoBigURL                string                      `json:"logo_big_url"`
-	LogoSmallURL              string                      `json:"logo_small_url"`
-	LookingForPeopleNote      string                      `json:"looking_for_people_note"`
-	MaxMemberships            int                         `json:"max_memberships"`
-	Members                   []members                   `json:"members"`
-	Milestones                []milestones                `json:"milestones"`
-	ModifiedDate              time.Time                   `json:"modified_date"`
-	MyHomepage                bool                        `json:"my_homepage"`
-	MyPermissions             []string                    `json:"my_permissions"`
-	Name                      string                      `json:"name"`
-	NotifyLevel               int                         `json:"notify_level"`
-	Owner                     Owner                       `json:"owner"`
-	Points                    []Points                    `json:"points"`
-	Priorities                []priorities                `json:"priorities"`
-	PublicPermissions         []string                    `json:"public_permissions"`
-	Roles                     []roles                     `json:"roles"`
-	Severities                []severities                `json:"severities"`
-	Slug                      string                      `json:"slug"`
-	Tags                      Tags                        `json:"tags"`
-	TagsColors                TagsColors                  `json:"tags_colors"`
-	TaskCustomAttributes      []taskCustomAttributes      `json:"task_custom_attributes"`
-	TaskDuedates              []taskDuedates              `json:"task_duedates"`
-	TaskStatuses              []taskStatuses              `json:"task_statuses"`
-	TasksCsvUUID              interface{}                 `json:"tasks_csv_uuid"`
-	TotalActivity             int                         `json:"total_activity"`
-	TotalActivityLastMonth    int                         `json:"total_activity_last_month"`
-	TotalActivityLastWeek     int                         `json:"total_activity_last_week"`
-	TotalActivityLastYear     int                         `json:"total_activity_last_year"`
-	TotalClosedMilestones     int                         `json:"total_closed_milestones"`
-	TotalFans                 int                         `json:"total_fans"`
-	TotalFansLastMonth        int                         `json:"total_fans_last_month"`
-	TotalFansLastWeek         int                         `json:"total_fans_last_week"`
-	TotalFansLastYear         int                         `json:"total_fans_last_year"`
-	TotalMemberships          int                         `json:"total_memberships"`
-	TotalMilestones           int                         `json:"total_milestones"`
-	TotalStoryPoints          float64                     `json:"total_story_points"`
-	TotalWatchers             int                         `json:"total_watchers"`
-	TotalsUpdatedDatetime     time.Time                   `json:"totals_updated_datetime"`
-	TransferToken             string                      `json:"transfer_token"`
-	UsDuedates                []usDuedates                `json:"us_duedates"`
-	UsStatuses                []usStatuses                `json:"us_statuses"`
-	UserstoriesCsvUUID        interface{}                 `json:"userstories_csv_uuid"`
-	UserstoryCustomAttributes []userstoryCustomAttributes `json:"userstory_custom_attributes"`
-	Videoconferences          interface{}                 `json:"videoconferences"`
-	VideoconferencesExtraData interface{}                 `json:"videoconferences_extra_data"`
-}
-
 // AsProject packs the returned ProjectDETAIL into a generic Project struct
 func (p *ProjectDetail) AsProject() (*Project, error) {
 	project := genericToProject(&p)
@@ -132,7 +45,95 @@ func (p *ProjectDetail) AsProject() (*Project, error) {
 	return project, nil
 }
 
-type epicCustomAttributes struct {
+// ProjectDetail -> https://taigaio.github.io/taiga-doc/dist/api.html#object-project-detail
+type ProjectDetail struct {
+	AnonPermissions           []string                   `json:"anon_permissions"`
+	BlockedCode               string                     `json:"blocked_code"`
+	CreatedDate               time.Time                  `json:"created_date"`
+	CreationTemplate          int                        `json:"creation_template"`
+	DefaultEpicStatus         int                        `json:"default_epic_status"`
+	DefaultIssueStatus        int                        `json:"default_issue_status"`
+	DefaultIssueType          int                        `json:"default_issue_type"`
+	DefaultPoints             int                        `json:"default_points"`
+	DefaultPriority           int                        `json:"default_priority"`
+	DefaultSeverity           int                        `json:"default_severity"`
+	DefaultTaskStatus         int                        `json:"default_task_status"`
+	DefaultUsStatus           int                        `json:"default_us_status"`
+	Description               string                     `json:"description"`
+	EpicCustomAttributes      []epicCustomAttribute      `json:"epic_custom_attributes"`
+	EpicStatuses              []epicStatus               `json:"epic_statuses"`
+	EpicsCsvUUID              string                     `json:"epics_csv_uuid"`
+	IAmAdmin                  bool                       `json:"i_am_admin"`
+	IAmMember                 bool                       `json:"i_am_member"`
+	IAmOwner                  bool                       `json:"i_am_owner"`
+	ID                        int                        `json:"id"`
+	IsBacklogActivated        bool                       `json:"is_backlog_activated"`
+	IsContactActivated        bool                       `json:"is_contact_activated"`
+	IsEpicsActivated          bool                       `json:"is_epics_activated"`
+	IsFan                     bool                       `json:"is_fan"`
+	IsFeatured                bool                       `json:"is_featured"`
+	IsIssuesActivated         bool                       `json:"is_issues_activated"`
+	IsKanbanActivated         bool                       `json:"is_kanban_activated"`
+	IsLookingForPeople        bool                       `json:"is_looking_for_people"`
+	IsOutOfOwnerLimits        bool                       `json:"is_out_of_owner_limits"`
+	IsPrivate                 bool                       `json:"is_private"`
+	IsPrivateExtraInfo        IsPrivateExtraInfo         `json:"is_private_extra_info"`
+	IsWatcher                 bool                       `json:"is_watcher"`
+	IsWikiActivated           bool                       `json:"is_wiki_activated"`
+	IssueCustomAttributes     []issueCustomAttribute     `json:"issue_custom_attributes"`
+	IssueDuedates             []issueDueDate             `json:"issue_duedates"`
+	IssueStatuses             []issueStatus              `json:"issue_statuses"`
+	IssueTypes                []issueType                `json:"issue_types"`
+	IssuesCsvUUID             string                     `json:"issues_csv_uuid"`
+	LogoBigURL                string                     `json:"logo_big_url"`
+	LogoSmallURL              string                     `json:"logo_small_url"`
+	LookingForPeopleNote      string                     `json:"looking_for_people_note"`
+	MaxMemberships            int                        `json:"max_memberships"`
+	Members                   []members                  `json:"members"`
+	Milestones                []milestone                `json:"milestones"`
+	ModifiedDate              time.Time                  `json:"modified_date"`
+	MyHomepage                bool                       `json:"my_homepage"`
+	MyPermissions             []string                   `json:"my_permissions"`
+	Name                      string                     `json:"name"`
+	NotifyLevel               int                        `json:"notify_level"`
+	Owner                     Owner                      `json:"owner"`
+	Points                    Points                     `json:"points"`
+	Priorities                []priority                 `json:"priorities"`
+	PublicPermissions         []string                   `json:"public_permissions"`
+	Roles                     []roles                    `json:"roles"`
+	Severities                []severity                 `json:"severities"`
+	Slug                      string                     `json:"slug"`
+	Tags                      Tags                       `json:"tags"`
+	TagsColors                TagsColors                 `json:"tags_colors"`
+	TaskCustomAttributes      []taskCustomAttribute      `json:"task_custom_attributes"`
+	TaskDuedates              []taskDueDates             `json:"task_duedates"`
+	TaskStatuses              []taskStatus               `json:"task_statuses"`
+	TasksCsvUUID              string                     `json:"tasks_csv_uuid"`
+	TotalActivity             int                        `json:"total_activity"`
+	TotalActivityLastMonth    int                        `json:"total_activity_last_month"`
+	TotalActivityLastWeek     int                        `json:"total_activity_last_week"`
+	TotalActivityLastYear     int                        `json:"total_activity_last_year"`
+	TotalClosedMilestones     int                        `json:"total_closed_milestones"`
+	TotalFans                 int                        `json:"total_fans"`
+	TotalFansLastMonth        int                        `json:"total_fans_last_month"`
+	TotalFansLastWeek         int                        `json:"total_fans_last_week"`
+	TotalFansLastYear         int                        `json:"total_fans_last_year"`
+	TotalMemberships          int                        `json:"total_memberships"`
+	TotalMilestones           int                        `json:"total_milestones"`
+	TotalStoryPoints          float64                    `json:"total_story_points"`
+	TotalWatchers             int                        `json:"total_watchers"`
+	TotalsUpdatedDatetime     time.Time                  `json:"totals_updated_datetime"`
+	TransferToken             string                     `json:"transfer_token"`
+	UsDuedates                []userStoryDueDate         `json:"us_duedates"`
+	UsStatuses                []userStoryStatus          `json:"us_statuses"`
+	UserstoriesCsvUUID        string                     `json:"userstories_csv_uuid"`
+	UserstoryCustomAttributes []userStoryCustomAttribute `json:"userstory_custom_attributes"`
+	Videoconferences          string                     `json:"videoconferences"`
+	VideoconferencesExtraData string                     `json:"videoconferences_extra_data"`
+}
+
+// epicCustomAttribute != EpicCustomAttribute
+type epicCustomAttribute struct {
 	CreatedDate  time.Time   `json:"created_date"`
 	Description  string      `json:"description"`
 	Extra        interface{} `json:"extra"`
@@ -143,7 +144,9 @@ type epicCustomAttributes struct {
 	ProjectID    int         `json:"project_id"`
 	Type         string      `json:"type"`
 }
-type epicStatuses struct {
+
+// epicStatus != EpicStatus
+type epicStatus struct {
 	Color     string `json:"color"`
 	ID        int    `json:"id"`
 	IsClosed  bool   `json:"is_closed"`
@@ -152,7 +155,9 @@ type epicStatuses struct {
 	ProjectID int    `json:"project_id"`
 	Slug      string `json:"slug"`
 }
-type issueCustomAttributes struct {
+
+// issueCustomAttribute != IssueCustomAttribute
+type issueCustomAttribute struct {
 	CreatedDate  time.Time   `json:"created_date"`
 	Description  string      `json:"description"`
 	Extra        interface{} `json:"extra"`
@@ -163,7 +168,8 @@ type issueCustomAttributes struct {
 	ProjectID    int         `json:"project_id"`
 	Type         string      `json:"type"`
 }
-type issueDuedates struct {
+
+type issueDueDate struct {
 	ByDefault bool   `json:"by_default"`
 	Color     string `json:"color"`
 	DaysToDue int    `json:"days_to_due"`
@@ -172,7 +178,9 @@ type issueDuedates struct {
 	Order     int    `json:"order"`
 	ProjectID int    `json:"project_id"`
 }
-type issueStatuses struct {
+
+// issueStatus != IssueStatus
+type issueStatus struct {
 	Color     string `json:"color"`
 	ID        int    `json:"id"`
 	IsClosed  bool   `json:"is_closed"`
@@ -181,38 +189,42 @@ type issueStatuses struct {
 	ProjectID int    `json:"project_id"`
 	Slug      string `json:"slug"`
 }
-type issueTypes struct {
+
+type issueType struct {
 	Color     string `json:"color"`
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	Order     int    `json:"order"`
 	ProjectID int    `json:"project_id"`
 }
+
 type members struct {
-	Color           string      `json:"color"`
-	FullName        string      `json:"full_name"`
-	FullNameDisplay string      `json:"full_name_display"`
-	GravatarID      string      `json:"gravatar_id"`
-	ID              int         `json:"id"`
-	IsActive        bool        `json:"is_active"`
-	Photo           interface{} `json:"photo"`
-	Role            int         `json:"role"`
-	RoleName        string      `json:"role_name"`
-	Username        string      `json:"username"`
+	Color           string `json:"color"`
+	FullName        string `json:"full_name"`
+	FullNameDisplay string `json:"full_name_display"`
+	GravatarID      string `json:"gravatar_id"`
+	ID              int    `json:"id"`
+	IsActive        bool   `json:"is_active"`
+	Photo           string `json:"photo"`
+	Role            int    `json:"role"`
+	RoleName        string `json:"role_name"`
+	Username        string `json:"username"`
 }
-type milestones struct {
+type milestone struct {
 	Closed bool   `json:"closed"`
 	ID     int    `json:"id"`
 	Name   string `json:"name"`
 	Slug   string `json:"slug"`
 }
-type priorities struct {
+
+type priority struct {
 	Color     string `json:"color"`
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	Order     int    `json:"order"`
 	ProjectID int    `json:"project_id"`
 }
+
 type roles struct {
 	Computable  bool     `json:"computable"`
 	ID          int      `json:"id"`
@@ -222,14 +234,17 @@ type roles struct {
 	ProjectID   int      `json:"project_id"`
 	Slug        string   `json:"slug"`
 }
-type severities struct {
+
+type severity struct {
 	Color     string `json:"color"`
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	Order     int    `json:"order"`
 	ProjectID int    `json:"project_id"`
 }
-type taskCustomAttributes struct {
+
+// taskCustomAttribute != TaskCustomAttribute
+type taskCustomAttribute struct {
 	CreatedDate  time.Time   `json:"created_date"`
 	Description  string      `json:"description"`
 	Extra        interface{} `json:"extra"`
@@ -240,7 +255,8 @@ type taskCustomAttributes struct {
 	ProjectID    int         `json:"project_id"`
 	Type         string      `json:"type"`
 }
-type taskDuedates struct {
+
+type taskDueDates struct {
 	ByDefault bool   `json:"by_default"`
 	Color     string `json:"color"`
 	DaysToDue int    `json:"days_to_due"`
@@ -249,7 +265,9 @@ type taskDuedates struct {
 	Order     int    `json:"order"`
 	ProjectID int    `json:"project_id"`
 }
-type taskStatuses struct {
+
+// taskStatus != TaskStatus
+type taskStatus struct {
 	Color     string `json:"color"`
 	ID        int    `json:"id"`
 	IsClosed  bool   `json:"is_closed"`
@@ -258,7 +276,8 @@ type taskStatuses struct {
 	ProjectID int    `json:"project_id"`
 	Slug      string `json:"slug"`
 }
-type usDuedates struct {
+
+type userStoryDueDate struct {
 	ByDefault bool   `json:"by_default"`
 	Color     string `json:"color"`
 	DaysToDue int    `json:"days_to_due"`
@@ -267,7 +286,9 @@ type usDuedates struct {
 	Order     int    `json:"order"`
 	ProjectID int    `json:"project_id"`
 }
-type usStatuses struct {
+
+// userStoryStatus != UserStoryStatus
+type userStoryStatus struct {
 	Color      string `json:"color"`
 	ID         int    `json:"id"`
 	IsArchived bool   `json:"is_archived"`
@@ -278,7 +299,9 @@ type usStatuses struct {
 	Slug       string `json:"slug"`
 	WipLimit   int    `json:"wip_limit"`
 }
-type userstoryCustomAttributes struct {
+
+// userStoryCustomAttribute != UserStoryCustomAttribute
+type userStoryCustomAttribute struct {
 	CreatedDate  time.Time   `json:"created_date"`
 	Description  string      `json:"description"`
 	Extra        interface{} `json:"extra"`
@@ -350,14 +373,6 @@ type ProjectsList []struct {
 	DefaultTaskStatus         int          `json:"default_task_status"`
 }
 
-func (p *ProjectsList) toProject() ([]Project, error) {
-	projects := genericToProjects(&p)
-	for i := 0; i < len(projects); i++ {
-		projects[i].ProjectsLIST = p
-	}
-	return projects, nil
-}
-
 // ProjectModulesConfiguration -> https://taigaio.github.io/taiga-doc/dist/api.html#object-project-modules-detail
 type ProjectModulesConfiguration struct {
 	Bitbucket struct {
@@ -370,9 +385,9 @@ type ProjectModulesConfiguration struct {
 		WebhooksURL string `json:"webhooks_url"`
 	} `json:"github"`
 	Gitlab struct {
-		Secret         string        `json:"secret"`
-		ValidOriginIps []interface{} `json:"valid_origin_ips"`
-		WebhooksURL    string        `json:"webhooks_url"`
+		Secret         string   `json:"secret"`
+		ValidOriginIps []string `json:"valid_origin_ips"`
+		WebhooksURL    string   `json:"webhooks_url"`
 	} `json:"gitlab"`
 	Gogs struct {
 		Secret      string `json:"secret"`

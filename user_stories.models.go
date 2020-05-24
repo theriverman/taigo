@@ -145,10 +145,10 @@ type UserStoryDetail struct {
 	CreatedDate         time.Time           `json:"created_date,omitempty"`
 	Description         string              `json:"description,omitempty"`
 	DescriptionHTML     string              `json:"description_html,omitempty"`
-	DueDate             interface{}         `json:"due_date,omitempty"`
+	DueDate             string              `json:"due_date,omitempty"`
 	DueDateReason       string              `json:"due_date_reason,omitempty"`
 	DueDateStatus       string              `json:"due_date_status,omitempty"`
-	EpicOrder           interface{}         `json:"epic_order,omitempty"`
+	EpicOrder           int                 `json:"epic_order,omitempty"`
 	Epics               []struct {
 		Color   string `json:"color,omitempty"`
 		ID      int    `json:"id,omitempty"`
@@ -161,9 +161,9 @@ type UserStoryDetail struct {
 		Subject string `json:"subject,omitempty"`
 	} `json:"epics,omitempty"`
 	ExternalReference  interface{} `json:"external_reference,omitempty"`
-	FinishDate         interface{} `json:"finish_date,omitempty"`
-	GeneratedFromIssue interface{} `json:"generated_from_issue,omitempty"`
-	GeneratedFromTask  interface{} `json:"generated_from_task,omitempty"`
+	FinishDate         string      `json:"finish_date,omitempty"`
+	GeneratedFromIssue int         `json:"generated_from_issue,omitempty"`
+	GeneratedFromTask  int         `json:"generated_from_task,omitempty"`
 	ID                 int         `json:"id,omitempty"`
 	IsBlocked          bool        `json:"is_blocked,omitempty"`
 	IsClosed           bool        `json:"is_closed,omitempty"`
@@ -252,8 +252,8 @@ type UserStoryDetailGET struct {
 	MilestoneSlug       string              `json:"milestone_slug"`
 	ModifiedDate        time.Time           `json:"modified_date"`
 	Neighbors           Neighbors           `json:"neighbors"`
-	OriginIssue         interface{}         `json:"origin_issue"`
-	OriginTask          interface{}         `json:"origin_task"`
+	OriginIssue         int                 `json:"origin_issue"`
+	OriginTask          int                 `json:"origin_task"`
 	Owner               int                 `json:"owner"`
 	OwnerExtraInfo      OwnerExtraInfo      `json:"owner_extra_info"`
 	Points              Points              `json:"points"`
@@ -287,14 +287,14 @@ func (u *UserStoryDetailGET) AsUserStory() (*UserStory, error) {
 // IssueFiltersDataDetail => https://taigaio.github.io/taiga-doc/dist/api.html#object-userstory-filters-data
 type IssueFiltersDataDetail struct {
 	AssignedTo []struct {
-		Count    int         `json:"count,omitempty"`
-		FullName string      `json:"full_name,omitempty"`
-		ID       interface{} `json:"id,omitempty"`
+		Count    int    `json:"count,omitempty"`
+		FullName string `json:"full_name,omitempty"`
+		ID       int    `json:"id,omitempty"`
 	} `json:"assigned_to,omitempty"`
 	AssignedUsers []struct {
-		Count    int         `json:"count,omitempty"`
-		FullName string      `json:"full_name,omitempty"`
-		ID       interface{} `json:"id,omitempty"`
+		Count    int    `json:"count,omitempty"`
+		FullName string `json:"full_name,omitempty"`
+		ID       int    `json:"id,omitempty"`
 	} `json:"assigned_users,omitempty"`
 	Epics  []EpicMinimal `json:"epics,omitempty"`
 	Owners []struct {
@@ -303,11 +303,11 @@ type IssueFiltersDataDetail struct {
 		ID       int    `json:"id,omitempty"`
 	} `json:"owners,omitempty"`
 	Roles []struct {
-		Color interface{} `json:"color,omitempty"`
-		Count int         `json:"count,omitempty"`
-		ID    int         `json:"id,omitempty"`
-		Name  string      `json:"name,omitempty"`
-		Order int         `json:"order,omitempty"`
+		Color string `json:"color,omitempty"`
+		Count int    `json:"count,omitempty"`
+		ID    int    `json:"id,omitempty"`
+		Name  string `json:"name,omitempty"`
+		Order int    `json:"order,omitempty"`
 	} `json:"roles,omitempty"`
 	Statuses []struct {
 		Color string `json:"color,omitempty"`
@@ -317,9 +317,9 @@ type IssueFiltersDataDetail struct {
 		Order int    `json:"order,omitempty"`
 	} `json:"statuses,omitempty"`
 	Tags []struct {
-		Color interface{} `json:"color,omitempty"`
-		Count int         `json:"count,omitempty"`
-		Name  string      `json:"name,omitempty"`
+		Color TagsColors `json:"color,omitempty"`
+		Count int        `json:"count,omitempty"`
+		Name  string     `json:"name,omitempty"`
 	} `json:"tags,omitempty"`
 }
 

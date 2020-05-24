@@ -62,8 +62,8 @@ type attachmentsQueryParams struct {
 
 // Neighbors represents a read-only field
 type Neighbors struct {
-	Next     Next        `json:"next"`
-	Previous interface{} `json:"previous"`
+	Next     Next     `json:"next"`
+	Previous Previous `json:"previous"`
 }
 
 // Next represents a read-only field
@@ -74,21 +74,17 @@ type Next struct {
 }
 
 // Previous represents a read-only field
-type Previous struct {
-	ID      int    `json:"id"`
-	Ref     int    `json:"ref"`
-	Subject string `json:"subject"`
-}
+type Previous = Next
 
 // Owner represents the owner of an object
 type Owner struct {
 	BigPhoto        string `json:"big_photo,omitempty"`
-	Photo           string `json:"photo,omitempty"`
-	GravatarID      string `json:"gravatar_id,omitempty"`
 	FullNameDisplay string `json:"full_name_display,omitempty"`
-	Username        string `json:"username,omitempty"`
+	GravatarID      string `json:"gravatar_id,omitempty"`
 	ID              int    `json:"id,omitempty"`
 	IsActive        bool   `json:"is_active,omitempty"`
+	Photo           string `json:"photo,omitempty"`
+	Username        string `json:"username,omitempty"`
 }
 
 // TagsColors represent color code and color name combinations for a tag
@@ -104,22 +100,16 @@ type UserStoriesCounts struct {
 }
 
 /*
-	// READ-ONLY FIELDS
+	READ-ONLY FIELDS
+
 	All  fields ending in `_extra_info` (`assigned_to_extra_info`, `is_private_extra_info`, `owner_extra_info`, `project_extra_info`,
-	`status_extra_info`, `status_extra_info`, `user_story_extra_info`…​) are read-only fields.
+	`status_extra_info`, `status_extra_info`, `user_story_extra_info`…​) are read-only fields
+
 	https://taigaio.github.io/taiga-doc/dist/api.html#_read_only_fields
 */
 
 // AssignedToExtraInfo is a read-only field
-type AssignedToExtraInfo struct {
-	BigPhoto        string `json:"big_photo,omitempty"`
-	FullNameDisplay string `json:"full_name_display,omitempty"`
-	GravatarID      string `json:"gravatar_id,omitempty"`
-	ID              int    `json:"id,omitempty"`
-	IsActive        bool   `json:"is_active,omitempty"`
-	Photo           string `json:"photo,omitempty"`
-	Username        string `json:"username,omitempty"`
-}
+type AssignedToExtraInfo = Owner
 
 // IsPrivateExtraInfo is a read-only field
 type IsPrivateExtraInfo struct {
@@ -135,22 +125,14 @@ type StatusExtraInfo struct {
 }
 
 // OwnerExtraInfo is a read-only field
-type OwnerExtraInfo struct {
-	BigPhoto        string      `json:"big_photo,omitempty"`
-	FullNameDisplay string      `json:"full_name_display,omitempty"`
-	GravatarID      string      `json:"gravatar_id,omitempty"`
-	ID              int         `json:"id,omitempty"`
-	IsActive        bool        `json:"is_active,omitempty"`
-	Photo           interface{} `json:"photo,omitempty"`
-	Username        string      `json:"username,omitempty"`
-}
+type OwnerExtraInfo = Owner
 
 // ProjectExtraInfo represents a read-only field
 type ProjectExtraInfo struct {
-	ID           int         `json:"id"`
-	LogoSmallURL interface{} `json:"logo_small_url"`
-	Name         string      `json:"name"`
-	Slug         string      `json:"slug"`
+	ID           int    `json:"id"`
+	LogoSmallURL string `json:"logo_small_url"`
+	Name         string `json:"name"`
+	Slug         string `json:"slug"`
 }
 
 // UserStoryExtraInfo is a read-only field

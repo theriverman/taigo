@@ -76,7 +76,7 @@ type IssueDetailLIST struct {
 	DueDate             string              `json:"due_date"`
 	DueDateReason       string              `json:"due_date_reason"`
 	DueDateStatus       string              `json:"due_date_status"`
-	ExternalReference   interface{}         `json:"external_reference"`
+	ExternalReference   int                 `json:"external_reference"`
 	FinishedDate        time.Time           `json:"finished_date"`
 	ID                  int                 `json:"id"`
 	IsBlocked           bool                `json:"is_blocked"`
