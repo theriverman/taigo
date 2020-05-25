@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 )
@@ -61,7 +62,7 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 //
 // Available Meta: *EpicDetailGET
 func (s *EpicService) Get(epicID int) (*Epic, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, epicID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epicID))
 	var e EpicDetailGET
 	_, err := s.client.Request.Get(url, &e)
 	if err != nil {
@@ -86,7 +87,7 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 
 	switch {
 	case project.ID > 0:
-		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, epicRef, project.ID))
+		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, (epicRef), project.ID))
 		break
 	case len(project.Slug) > 0:
 		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, epicRef, project.Slug))
@@ -105,7 +106,7 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 // Edit edits an Epic via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#epics-edit
 // Available Meta: EpicDetail
 func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, epic.ID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epic.ID))
 	var e EpicDetail
 
 	if epic.ID == 0 {
@@ -127,7 +128,7 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#epics-delete
 func (s *EpicService) Delete(epicID int) (*http.Response, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, epicID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epicID))
 	return s.client.Request.Delete(url)
 }
 
@@ -147,7 +148,7 @@ It seems to be pointless to implement this operation here. A for loop around `Cr
 
 // ListRelatedUserStories => https://taigaio.github.io/taiga-doc/dist/api.html#epics-related-user-stories-list
 func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStoryDetail, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d/related_userstories", s.Endpoint, epicID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epicID), "related_userstories")
 	var e []EpicRelatedUserStoryDetail
 	_, err := s.client.Request.Get(url, &e)
 	if err != nil {
@@ -161,7 +162,7 @@ func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStory
 // Mandatory parameters: `EpicID`; `UserStoryID`
 // Accepted UserStory values: `UserStory.ID`
 func (s *EpicService) CreateRelatedUserStory(EpicID int, UserStoryID int) (*EpicRelatedUserStoryDetail, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d/related_userstories", s.Endpoint, EpicID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(EpicID), "related_userstories")
 	e := EpicRelatedUserStoryDetail{EpicID: EpicID, UserStoryID: UserStoryID}
 	_, err := s.client.Request.Post(url, &e, &e)
 	if err != nil {
