@@ -3,6 +3,7 @@ package taigo
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 )
@@ -53,7 +54,7 @@ func (s *TaskService) Create(task *Task) (*Task, error) {
 
 // Get => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-get
 func (s *TaskService) Get(task *Task) (*Task, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, task.ID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(task.ID))
 	var t TaskDetailGET
 	_, err := s.client.Request.Get(url, &t)
 	if err != nil {

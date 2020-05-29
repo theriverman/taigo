@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 )
@@ -60,7 +61,7 @@ func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 
 // Get => https://taigaio.github.io/taiga-doc/dist/api.html#Milestones-get
 func (s *MilestoneService) Get(milestoneID int) (*Milestone, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, milestoneID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(milestoneID))
 	var m Milestone
 	_, err := s.client.Request.Get(url, &m)
 	if err != nil {
@@ -72,7 +73,8 @@ func (s *MilestoneService) Get(milestoneID int) (*Milestone, error) {
 // Edit edits an Milestone via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-edit
 // Available Meta: MilestoneDetail
 func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, milestone.ID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(milestone.ID))
+
 	var m Milestone
 	if milestone.ID == 0 {
 		return nil, errors.New("Passed Milestone does not have an ID yet. Does it exist?")
@@ -86,7 +88,7 @@ func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-delete
 func (s *MilestoneService) Delete(milestoneID int) (*http.Response, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, milestoneID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(milestoneID))
 	return s.client.Request.Delete(url)
 }
 
