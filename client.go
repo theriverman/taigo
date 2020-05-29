@@ -1,7 +1,6 @@
 package taigo
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -83,7 +82,7 @@ func (c *Client) GetDefaultProject() int {
 
 // GetDefaultProjectAsQueryParam returns the currently set Default Project ID formatted as a QueryParam
 func (c *Client) GetDefaultProjectAsQueryParam() string {
-	return fmt.Sprintf("?project=%d", c.defaultProjectID)
+	return "?project=" + strconv.Itoa(c.defaultProjectID)
 }
 
 // ClearDefaultProject resets the currently set Default Project ID to 0 (None)
@@ -103,10 +102,11 @@ func (c *Client) HasDefaultProject() bool {
 func (c *Client) Initialise() error {
 	// Taiga.Client safety guards
 	if len(c.BaseURL) < len("http://") { // compares for a minimum of len("http://")
-		return errors.New("BaseURL is not set or invalid")
+		return fmt.Errorf("BaseURL is not set or invalid")
+
 	}
 	if len(c.LoginType) <= 1 {
-		return errors.New("LoginType is not set")
+		return fmt.Errorf("LoginType is not set")
 	}
 	//Set basic token type
 	if len(c.TokenType) <= 1 {
@@ -208,7 +208,7 @@ func (c *Client) setContentTypeToJSON() {
 }
 
 func (c *Client) setToken() {
-	c.Headers.Add("Authorization", fmt.Sprintf("%s %s", c.TokenType, c.Token))
+	c.Headers.Add("Authorization", c.TokenType+" "+c.Token)
 }
 
 // loadHeaders takes an http.Request and maps locally stored Header values to its .Header

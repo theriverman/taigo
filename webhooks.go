@@ -2,6 +2,7 @@ package taigo
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 )
@@ -48,7 +49,7 @@ func (s *WebhookService) CreateWebhook(webhook *Webhook) (*Webhook, error) {
 // GetWebhook returns a Webhook by ID
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-get
 func (s *WebhookService) GetWebhook(webhook *Webhook) (*Webhook, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, webhook.ID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhook.ID))
 	var wh Webhook
 	_, err := s.client.Request.Get(url, &wh)
 	if err != nil {
@@ -61,7 +62,7 @@ func (s *WebhookService) GetWebhook(webhook *Webhook) (*Webhook, error) {
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-edit
 func (s *WebhookService) EditWebhook(webhook *Webhook) (*Webhook, error) {
 	var responseWebhook Webhook
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, webhook.ID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhook.ID))
 	_, err := s.client.Request.Patch(url, &webhook, &responseWebhook)
 	if err != nil {
 		return nil, err
@@ -72,7 +73,7 @@ func (s *WebhookService) EditWebhook(webhook *Webhook) (*Webhook, error) {
 // DeleteWebhook sends a DELETE request to delete a Webhook
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-delete
 func (s *WebhookService) DeleteWebhook(webhook *Webhook) error {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, webhook.ID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhook.ID))
 	_, err := s.client.Request.Delete(url)
 	if err != nil {
 		return err
@@ -83,7 +84,7 @@ func (s *WebhookService) DeleteWebhook(webhook *Webhook) error {
 // TestWebhook sends an empty POST request to test a webhook
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-test
 func (s *WebhookService) TestWebhook(webhook *Webhook) (*WebhookLog, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, webhook.ID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhook.ID))
 	var whLog WebhookLog
 	_, err := s.client.Request.Post(url, &webhook, &whLog)
 	if err != nil {
@@ -113,7 +114,7 @@ func (s *WebhookService) ListWebhookLogs(queryParameters *WebhookQueryParameters
 // GetWebhookLog returns a WebhookLog by ID
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooklogs-get
 func (s *WebhookService) GetWebhookLog(webhook *Webhook) (*WebhookLog, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.EndpointLogs, webhook.ID))
+	url := s.client.MakeURL(s.EndpointLogs, strconv.Itoa(webhook.ID))
 	var whLog WebhookLog
 	_, err := s.client.Request.Get(url, &whLog)
 	if err != nil {
@@ -125,7 +126,7 @@ func (s *WebhookService) GetWebhookLog(webhook *Webhook) (*WebhookLog, error) {
 // ResendWebhookRequest resends the request from a Webhook Log by ID
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooklogs-resend
 func (s *WebhookService) ResendWebhookRequest(webhookLog *WebhookLog) (*WebhookLog, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d/resend", s.EndpointLogs, webhookLog.ID))
+	url := s.client.MakeURL(s.EndpointLogs, strconv.Itoa(webhookLog.ID), "resend")
 	var whLog WebhookLog
 	_, err := s.client.Request.Post(url, &webhookLog, &whLog)
 	if err != nil {

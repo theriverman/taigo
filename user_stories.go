@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 )
@@ -59,7 +60,7 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 //
 // Available Meta: *UserStoryDetailGET
 func (s *UserStoryService) Get(userStoryID int) (*UserStory, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, userStoryID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userStoryID))
 	var us UserStoryDetailGET
 	_, err := s.client.Request.Get(url, &us)
 	if err != nil {
@@ -103,7 +104,7 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 // Edit sends a PATCH request to edit a User Story -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-edit
 // Available Meta: UserStoryDetail
 func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, us.ID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(us.ID))
 	var responseUS UserStoryDetail
 
 	if us.ID == 0 {
@@ -125,7 +126,7 @@ func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
 
 // Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-delete
 func (s *UserStoryService) Delete(usID int) (*http.Response, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, usID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(usID))
 	return s.client.Request.Delete(url)
 }
 

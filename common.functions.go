@@ -2,7 +2,7 @@ package taigo
 
 import (
 	"encoding/json"
-	"fmt"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 )
@@ -27,7 +27,7 @@ func listAttachmentsForEndpoint(c *Client, queryParams *attachmentsQueryParams) 
 
 // getAttachmentForEndpoint is a common method to get a specific attachment for an endpoint (epic, issue, etc...)
 func getAttachmentForEndpoint(c *Client, attachmentID int, endpointURI string) (*Attachment, error) {
-	url := c.MakeURL(endpointURI, fmt.Sprintf("attachments/%d", attachmentID))
+	url := c.MakeURL(endpointURI, "attachments", strconv.Itoa(attachmentID))
 	var a Attachment
 	_, err := c.Request.Get(url, &a)
 	if err != nil {

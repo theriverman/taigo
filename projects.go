@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 )
@@ -73,7 +74,7 @@ func (s *ProjectService) Create(project *Project) (*Project, error) {
 
 // Get -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get
 func (s *ProjectService) Get(projectID int) (*Project, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, projectID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(projectID))
 	var p ProjectDetail
 
 	_, err := s.client.Request.Get(url, &p)
@@ -85,7 +86,7 @@ func (s *ProjectService) Get(projectID int) (*Project, error) {
 
 // GetBySlug -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get-by-slug
 func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/by_slug?slug=%s", s.Endpoint, slug))
+	url := s.client.MakeURL(s.Endpoint, "by_slug?slug="+slug)
 	var p ProjectDetail
 
 	_, err := s.client.Request.Get(url, &p)
@@ -98,7 +99,7 @@ func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
 // Edit edits an Project via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#projects-edit
 // Available Meta: ProjectDetail
 func (s *ProjectService) Edit(project *Project) (*Project, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, project.ID))
+	url := s.client.MakeURL("%s/%d", s.Endpoint, strconv.Itoa(project.ID))
 	var p ProjectDetail
 
 	if project.ID == 0 {
@@ -114,6 +115,6 @@ func (s *ProjectService) Edit(project *Project) (*Project, error) {
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#projects-delete
 func (s *ProjectService) Delete(projectID int) (*http.Response, error) {
-	url := s.client.MakeURL(fmt.Sprintf("%s/%d", s.Endpoint, projectID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(projectID))
 	return s.client.Request.Delete(url)
 }
