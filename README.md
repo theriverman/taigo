@@ -1,7 +1,7 @@
 TAIGO
 -----
 
-![Travis CI(https://travis-ci.org/github/theriverman/taigo)](https://api.travis-ci.org/theriverman/taigo.svg?branch=master "Travis CI Build Status")
+[![Travis CI Build Status](https://travis-ci.org/theriverman/taigo.svg?branch=master)](https://travis-ci.org/theriverman/taigo)
 [![GoDoc](https://godoc.org/github.com/theriverman/taigo?status.svg)](https://pkg.go.dev/github.com/theriverman/taigo?tab=doc "Docs @ pkg.go.dev")
 [![Go Report Card](https://goreportcard.com/badge/github.com/theriverman/taigo)](https://goreportcard.com/report/github.com/theriverman/taigo)
 ![Taigo Banner](assets/banner_627x300.png "TAIGO Banner")
