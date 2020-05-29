@@ -22,7 +22,7 @@ import (
 ```
 
 # Documentation
-Documentation is located here: [TAIGO](https://godoc.org/github.com/theriverman/taigo/)
+Documentation is located at [pkg.go.dev/Taigo](https://pkg.go.dev/github.com/theriverman/taigo?tab=doc).
 
 # Architecture
 To use **Taigo**, you must instantiate a `*Client`, and authenticate against Taiga to either get a new token or validate the one given. To authenticate, use one of the following methods:
