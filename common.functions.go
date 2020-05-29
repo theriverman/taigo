@@ -39,7 +39,7 @@ func getAttachmentForEndpoint(c *Client, attachmentID int, endpointURI string) (
 // convertStructViaJSON takes a model struct and converts it to another struct
 //
 // Since Type Conversion (https://golang.org/ref/spec#Conversions) is limited to identical types in go,
-// JSON is used as an intermediate language to achive this functionality
+// JSON is used as an intermediate language to achieve this functionality
 //
 // NOTE: Both `sourcePtr` and `targetPtr` MUST BE POINTERS!
 func convertStructViaJSON(sourcePtr interface{}, targetPtr interface{}) error {

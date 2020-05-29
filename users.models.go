@@ -37,7 +37,7 @@ type User struct {
 	UUID                          string    `json:"uuid,omitempty"`
 }
 
-// GetToken returns teh token string embedded into User
+// GetToken returns the token string embedded into User
 func (u User) GetToken() string {
 	return u.authToken
 }

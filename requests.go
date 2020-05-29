@@ -153,7 +153,7 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	}
 	defer rawResponse.Body.Close()
 
-	// Evaluate response status code && return reponse
+	// Evaluate response status code && return response
 	rawResponseBody, err := ioutil.ReadAll(rawResponse.Body)
 	if err != nil {
 		return nil, err
