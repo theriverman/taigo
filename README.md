@@ -138,7 +138,7 @@ func main() {
 		Password: "123123",
 	})
 
-	// Set default project (optional. recommended for convenience)
+	// Set default project (optional. it is for convenience)
 	client.SetDefaultProjectBySlug("theriverman-test-1337")
 
 	// Get /users/me
