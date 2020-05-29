@@ -1,7 +1,12 @@
 TAIGO
 -----
 
-![alt text](assets/banner_627x300.png "TAIGO Banner")
+![Travis CI](https://api.travis-ci.org/theriverman/taigo.svg?branch=master&status=passed "Travis CI Logo")
+[![GoDoc](https://godoc.org/github.com/theriverman/taigo?status.svg)](https://pkg.go.dev/github.com/theriverman/taigo?tab=doc)
+[![Go Report Card](https://goreportcard.com/badge/github.com/theriverman/taigo)](https://goreportcard.com/report/github.com/theriverman/taigo)
+![Taigo Banner](assets/banner_627x300.png "TAIGO Banner")
+
+
 
 # Description
 **Taigo** is a driver written in GO for [Taiga](https://github.com/taigaio) targeting to implement all publicly available API v1 endpoints. <br>
