@@ -26,7 +26,6 @@ func main() {
 	client := taiga.Client{
 		BaseURL:    "https://api.taiga.io",
 		HTTPClient: &http.Client{},
-		LoginType:  "normal",
 	}
 	// Initialise client (authenticates to Taiga)
 	err := client.Initialise()

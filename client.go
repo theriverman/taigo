@@ -15,7 +15,6 @@ type Client struct {
 	BaseURL            string       // i.e.: "http://taiga.test" | Same value as `api` in `taiga-front-dist/dist/conf.json`
 	Headers            *http.Header // mostly set by system
 	HTTPClient         *http.Client // set by user
-	LoginType          string       // i.e.: "normal"; "github"; "ldap"
 	Token              string       // set by system; can be set manually
 	TokenType          string       // default=Bearer; options:Bearer,Application
 	Self               *User        // User logged in
@@ -105,9 +104,6 @@ func (c *Client) Initialise() error {
 		return fmt.Errorf("BaseURL is not set or invalid")
 
 	}
-	if len(c.LoginType) <= 1 {
-		return fmt.Errorf("LoginType is not set")
-	}
 	//Set basic token type
 	if len(c.TokenType) <= 1 {
 		c.TokenType = "Bearer"
@@ -152,10 +148,16 @@ func (c *Client) AuthByCredentials(credentials *Credentials) error {
 	if !c.isInitialised {
 		return fmt.Errorf("Client not initialised")
 	}
+
+	if len(credentials.Type) <= 1 {
+		return fmt.Errorf("LoginType is not set")
+	}
+
 	user, err := c.Auth.login(credentials)
 	if err != nil {
 		return err
 	}
+
 	c.Self = user.AsUser()
 	return nil
 }
