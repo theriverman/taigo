@@ -137,7 +137,7 @@ func main() {
 	
 	// Authenticate (get/set the JWT)
 	client.AuthByCredentials(&taiga.Credentials{
-		Type:     "normal",
+		Type:     "normal",  // normal, ldap, gitlab, etc...
 		Username: "my_pretty_username",
 		Password: "123123",
 	})
