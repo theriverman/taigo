@@ -207,18 +207,18 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 	defer resp.Body.Close()
 
 	// Evaluate response status code
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+	decoder := json.NewDecoder(resp.Body)
 	if SuccessfulHTTPRequest(resp) {
 		if resp.StatusCode == http.StatusNoContent { //  There's no body returned for 204 responses
 			return resp, nil
 		}
 		// We expect content so convert response JSON string to struct
-		json.Unmarshal([]byte(body), &ResponseBody) // responseBody contains a pointer to a struct
+		err = decoder.Decode(&ResponseBody)
+		if err != nil {
+			return nil, err
+		}
 		return resp, nil
 	}
 
-	return nil, fmt.Errorf("Request Failed. Returned body was:\n %s", body)
+	return nil, fmt.Errorf("Request Failed. Returned body was:\n %s", resp.Body)
 }
