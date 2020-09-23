@@ -129,28 +129,25 @@ func main() {
 		HTTPClient: &http.Client{},
 	}
 	
-	// Initialise client (authenticates to Taiga)
+	// Initialise client
 	err := client.Initialise()
 	if err != nil {
 		log.Fatalln(err)
 	}
 	
-	// Authenticate (get/set Token)
+	// Authenticate (get/set the JWT)
 	client.AuthByCredentials(&taiga.Credentials{
-		Type:     "normal",
+		Type:     "normal",  // normal, ldap, gitlab, etc...
 		Username: "my_pretty_username",
 		Password: "123123",
 	})
-
-	// Set default project (optional. it is for convenience)
-	client.SetDefaultProjectBySlug("theriverman-test-1337")
 
 	// Get /users/me
 	me, _ := client.User.Me()
 	fmt.Println("Me: (ID, Username, FullName)", me.ID, me.Username, me.FullName)
 
-  	// Get Project [ theriverman-api-dev-testing-1337 ]
-	slug := "theriverman-api-dev-testing-1337"
+  	// Get Project (by its slug)
+	slug := "therivermantaigo-taigo-public-test"
 	fmt.Printf("Getting Project (slug=%s)..\n", slug)
 	project, err := client.Project.GetBySlug(slug)
 	if err != nil {
@@ -186,12 +183,12 @@ newAttachment, err := client.Epic.CreateAttachment(&taiga.Attachment{ObjectID: 1
 ```
 
 ## Non-Standard Operations (Non-Standard)
-1. Clone Epic (with UserStories)
-2. Clone Epic (without UserStories)
-3. Clone UserStory (with sub-tasks)
-4. Clone UserStory (without sub-tasks)
-5. Clone Sub-Task
-6. Copy UserStory to another project [will lose comments and attachments]
+1. Clone Epic (with UserStories) -- To be implemented
+2. Clone Epic (without UserStories) -- To be implemented
+3. Clone UserStory (with sub-tasks) -- To be implemented
+4. Clone UserStory (without sub-tasks) -- To be implemented
+5. Clone Sub-Task -- To be implemented
+6. Copy UserStory to another project [will lose comments and attachments] -- To be implemented
 
 ## Advanced Operations
 Do you need access to a non yet implemented or special API endpoint? No problem! <br>
@@ -233,6 +230,8 @@ if err != nil {
 	fmt.Println(err)
 	fmt.Println(resp)
 } else {
+	fmt.Println("The following Epic Custom Attributes have been returned:")
+	fmt.Println("--------------------------------------------------------")
 	for i := 0; i < 3; i++ {
 		ca := epicCustomAttributes[i]
 		fmt.Println("  * ", ca.ID, ca.Name)
@@ -240,7 +239,7 @@ if err != nil {
 }
 ```
 
-Such raw requests return `(*http.Response, error)`.
+**Note:** Such raw requests return `(*http.Response, error)`.
 
 # Contribution
 You're contribution would be much appreciated! <br>
@@ -256,7 +255,7 @@ This package conforms to the stable HEAD philosophy.
   * **develop** is *not* <i>always</i> stable
 
 # Licenses & Recognitions
-|							|			|															|
+| Product					| License	| Author													|
 |---------------------------|-----------|-----------------------------------------------------------|
 | **Go Gopher**             | CC3.0     | [Renee French](https://www.instagram.com/reneefrench/) 	|
 | **Gopher Konstructor**    | CC0-1.0   | [quasilyte](https://github.com/quasilyte/gopherkon)    	|
