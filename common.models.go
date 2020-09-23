@@ -48,6 +48,14 @@ type Attachment struct {
 	filePath         string    // For package-internal use only
 }
 
+// GenericObjectAttachment represents an array of minimal attachment details
+// This array is filled when the `IncludeAttachments` query parameter is true
+type GenericObjectAttachment struct {
+	AttachedFile     string `json:"attached_file,omitempty"`
+	ID               int    `json:"id,omitempty"`
+	ThumbnailCardURL string `json:"thumbnail_card_url,omitempty"`
+}
+
 // SetFilePath takes the path to the file be uploaded
 func (a *Attachment) SetFilePath(FilePath string) {
 	a.filePath = FilePath
@@ -137,10 +145,10 @@ type ProjectExtraInfo struct {
 
 // UserStoryExtraInfo is a read-only field
 type UserStoryExtraInfo struct {
-	Epics   EpicMinimal `json:"epics"`
-	ID      int         `json:"id"`
-	Ref     int         `json:"ref"`
-	Subject string      `json:"subject"`
+	Epics   []EpicMinimal `json:"epics"`
+	ID      int           `json:"id"`
+	Ref     int           `json:"ref"`
+	Subject string        `json:"subject"`
 }
 
 // Pagination represents the information returned via headers

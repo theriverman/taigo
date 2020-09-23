@@ -16,6 +16,23 @@ func genericToProjects(anyProjectObjectSlice interface{}) []Project {
 	return payloadProjectsSlice
 }
 
+// ProjectPoints represeints the registered Agile Points to a project
+type ProjectPoints struct {
+	Order     int      `json:"order"`
+	Name      string   `json:"name"`
+	ID        int      `json:"id"`
+	ProjectID int      `json:"project_id"`
+	Value     *float32 `json:"value"`
+}
+
+// IsValueNil returns true if ProjectPoints.Value is nil
+func (pp ProjectPoints) IsValueNil() bool {
+	if pp.Value == nil {
+		return true
+	}
+	return false
+}
+
 // Project is a subset of all possible Project type variants
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#projects-create
@@ -92,12 +109,12 @@ type ProjectDetail struct {
 	Members                   []members                  `json:"members"`
 	Milestones                []milestone                `json:"milestones"`
 	ModifiedDate              time.Time                  `json:"modified_date"`
-	MyHomepage                bool                       `json:"my_homepage"`
+	MyHomepage                int                        `json:"my_homepage"`
 	MyPermissions             []string                   `json:"my_permissions"`
 	Name                      string                     `json:"name"`
 	NotifyLevel               int                        `json:"notify_level"`
 	Owner                     Owner                      `json:"owner"`
-	Points                    Points                     `json:"points"`
+	Points                    []ProjectPoints            `json:"points"`
 	Priorities                []priority                 `json:"priorities"`
 	PublicPermissions         []string                   `json:"public_permissions"`
 	Roles                     []roles                    `json:"roles"`
