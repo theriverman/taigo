@@ -98,7 +98,13 @@ func (c *Client) HasDefaultProject() bool {
 }
 
 // Initialise returns a new Taiga Client which is the entrypoint of the driver
+// Initialise() is automatically called by the `AuthByCredentials` and `AuthByToken` methods.
+// If you, for some reason, would like to manually set the Client.Token field, then Initialise() must be called manually!
 func (c *Client) Initialise() error {
+	// Skip if already Initialised
+	if c.isInitialised {
+		return nil
+	}
 	// Taiga.Client safety guards
 	if len(c.BaseURL) < len("http://") { // compares for a minimum of len("http://")
 		return fmt.Errorf("BaseURL is not set or invalid")
@@ -146,7 +152,7 @@ func (c *Client) Initialise() error {
 // AuthByCredentials authenticates to Taiga using the provided basic credentials
 func (c *Client) AuthByCredentials(credentials *Credentials) error {
 	if !c.isInitialised {
-		return fmt.Errorf("Client not initialised")
+		return c.Initialise()
 	}
 
 	if len(credentials.Type) <= 1 {
@@ -165,7 +171,7 @@ func (c *Client) AuthByCredentials(credentials *Credentials) error {
 // AuthByToken authenticates to Taiga using provided Token by requesting users/me
 func (c *Client) AuthByToken(tokenType, token string) error {
 	if !c.isInitialised {
-		return fmt.Errorf("Client not initialised")
+		return c.Initialise()
 	}
 	c.TokenType = tokenType
 	c.Token = token

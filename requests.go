@@ -165,7 +165,7 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 		return &responseBody, nil
 	}
 
-	return nil, fmt.Errorf("Request Failed. Returned body was:\n %s", rawResponseBody)
+	return nil, fmt.Errorf("Request Failed. Returned body was:\n %s", string(rawResponseBody))
 }
 
 func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL string, Payload interface{}) (*http.Response, error) {
@@ -207,12 +207,12 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 	defer resp.Body.Close()
 
 	// Evaluate response status code
-	decoder := json.NewDecoder(resp.Body)
 	if SuccessfulHTTPRequest(resp) {
 		if resp.StatusCode == http.StatusNoContent { //  There's no body returned for 204 responses
 			return resp, nil
 		}
 		// We expect content so convert response JSON string to struct
+		decoder := json.NewDecoder(resp.Body)
 		err = decoder.Decode(&ResponseBody)
 		if err != nil {
 			return nil, err
@@ -220,5 +220,10 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 		return resp, nil
 	}
 
-	return nil, fmt.Errorf("Request Failed. Returned body was:\n %s", resp.Body)
+	rawResponseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("Request Failed. Returned body was:\n %s", string(rawResponseBody))
 }
