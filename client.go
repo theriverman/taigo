@@ -151,8 +151,8 @@ func (c *Client) Initialise() error {
 
 // AuthByCredentials authenticates to Taiga using the provided basic credentials
 func (c *Client) AuthByCredentials(credentials *Credentials) error {
-	if !c.isInitialised {
-		return c.Initialise()
+	if err := c.Initialise(); err != nil {
+		return err
 	}
 
 	if len(credentials.Type) <= 1 {
@@ -170,8 +170,8 @@ func (c *Client) AuthByCredentials(credentials *Credentials) error {
 
 // AuthByToken authenticates to Taiga using provided Token by requesting users/me
 func (c *Client) AuthByToken(tokenType, token string) error {
-	if !c.isInitialised {
-		return c.Initialise()
+	if err := c.Initialise(); err != nil {
+		return err
 	}
 	c.TokenType = tokenType
 	c.Token = token
