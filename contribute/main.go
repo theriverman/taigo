@@ -13,18 +13,15 @@ func main() {
 		BaseURL:    "https://api.taiga.io",
 		HTTPClient: &http.Client{},
 	}
-	// Initialise client (authenticates to Taiga)
-	err := client.Initialise()
-	if err != nil {
-		panic(err)
-	}
 
 	// Authenticate (get/set Token)
-	client.AuthByCredentials(&taiga.Credentials{
+	if err := client.AuthByCredentials(&taiga.Credentials{
 		Type:     "normal",
 		Username: "admin",
 		Password: "123123",
-	})
+	}); err != nil {
+		panic(err)
+	}
 	me, err := client.User.Me()
 	if err != nil {
 		panic(err)
