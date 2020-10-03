@@ -107,4 +107,4 @@ venv.bak/
 .vscode/settings.json
 
 # Development files
-dev
+contribute/*

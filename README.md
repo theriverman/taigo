@@ -129,18 +129,14 @@ func main() {
 		HTTPClient: &http.Client{},
 	}
 	
-	// Initialise client
-	err := client.Initialise()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	
-	// Authenticate (get/set the JWT)
-	client.AuthByCredentials(&taiga.Credentials{
-		Type:     "normal",  // normal, ldap, gitlab, etc...
-		Username: "my_pretty_username",
+	// Authenticate (get/set Token)
+	if err := client.AuthByCredentials(&taiga.Credentials{
+		Type:     "normal",
+		Username: "admin",
 		Password: "123123",
-	})
+	}); err != nil {
+		panic(err)
+	}
 
 	// Get /users/me
 	me, _ := client.User.Me()
