@@ -215,7 +215,7 @@ type EpicCustomAttributeDetail struct {
 }
 ```
 
-Then initialise an instance which is going to store the reponse:
+Then initialise an instance which is going to store the response:
 ```go
 epicCustomAttributes := []EpicCustomAttributeDetail{}
 ```

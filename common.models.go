@@ -11,12 +11,12 @@ import (
 //
 // JSON Representation example:
 /*
-"points": {
-                "1": 12,
-                "2": 2,
-                "3": 5,
-                "4": 5
-            },
+	"points": {
+		"1": 12,
+		"2": 2,
+		"3": 5,
+		"4": 5
+	},
 */
 type AgilePoints map[string]float64
 
