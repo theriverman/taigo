@@ -109,7 +109,7 @@ type ProjectDetail struct {
 	Members                   []members                  `json:"members"`
 	Milestones                []milestone                `json:"milestones"`
 	ModifiedDate              time.Time                  `json:"modified_date"`
-	MyHomepage                int                        `json:"my_homepage"`
+	MyHomepage                interface{}                `json:"my_homepage"`
 	MyPermissions             []string                   `json:"my_permissions"`
 	Name                      string                     `json:"name"`
 	NotifyLevel               int                        `json:"notify_level"`
