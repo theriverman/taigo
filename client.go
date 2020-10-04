@@ -74,8 +74,8 @@ func (c *Client) SetDefaultProjectBySlug(projectSlug string) error {
 	return nil
 }
 
-// GetDefaultProject returns the currently set Default Project ID
-func (c *Client) GetDefaultProject() int {
+// GetDefaultProjectID returns the currently set Default Project's ID
+func (c *Client) GetDefaultProjectID() int {
 	return c.defaultProjectID
 }
 
