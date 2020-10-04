@@ -347,4 +347,39 @@ func main() {
 		fmt.Printf("  * meta.FinishedDate = %s\n\n", meta.FinishedDate)
 	}
 
+	/**
+	 * Get Epic Custom Attributes Values Detail
+	 * See README.md for further details
+	 */
+
+	// TaigoSandboxEpicCustomAttributeFields represents the unique fields of your project's (epic) custom attribute values
+	type TaigoSandboxEpicCustomAttributeFields struct {
+		SupportTeamName       string `json:"9216"`
+		EstimatedDeliveryDate string `json:"9217"`
+		CostUSD               int    `json:"9218"`
+	}
+	// TaigoSandboxEpicCustomAttribValues is a unique struct based on the generic taiga.EpicCustomAttribValues
+	// setting the type of AttributesValues to TaigoSandboxEpicCustomAttributeFields
+	type TaigoSandboxEpicCustomAttribValues struct {
+		taiga.EpicCustomAttributeValues
+		// taiga.UserStoryCustomAttribValues
+		// taiga.TaskCustomAttribValues
+		// taiga.IssueCustomAttribValues
+		AttributesValues TaigoSandboxEpicCustomAttributeFields `json:"attributes_values,omitempty"`
+	}
+
+	cavs := TaigoSandboxEpicCustomAttribValues{} // Custom Attribute Value(s)
+
+	resp2, err := client.Request.Get(client.MakeURL("epics", "custom-attributes-values", strconv.Itoa(sandboxEpicID2)), &cavs)
+	if err != nil {
+		log.Println(err)
+		log.Println(resp2)
+		return
+	}
+	fmt.Println("cavs.Epic", cavs.Epic)
+	fmt.Println("cavs.Version", cavs.Version)
+	fmt.Println("cavs.AttributesValues", cavs.AttributesValues)
+	fmt.Println("cavs.AttributesValues.SupportTeamName", cavs.AttributesValues.SupportTeamName)
+	fmt.Println("cavs.AttributesValues.EstimatedDeliveryDate", cavs.AttributesValues.EstimatedDeliveryDate)
+	fmt.Println("cavs.AttributesValues.CostUSD", cavs.AttributesValues.CostUSD)
 }

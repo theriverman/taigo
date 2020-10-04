@@ -142,6 +142,15 @@ type ProjectExtraInfo struct {
 	Slug         string `json:"slug"`
 }
 
+// TgObjectCAVD is the default type for object custom attribute values
+type TgObjectCAVD map[string]interface{}
+
+// TgObjCAVDBase is the bare minimum for all tgCustomAttirbuteValue structs
+type TgObjCAVDBase struct {
+	AttributesValues TgObjectCAVD `json:"attributes_values,omitempty"`
+	Version          int          `json:"version,omitempty"`
+}
+
 // UserStoryExtraInfo is a read-only field
 type UserStoryExtraInfo struct {
 	Epics   []EpicMinimal `json:"epics"`

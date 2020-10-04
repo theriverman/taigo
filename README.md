@@ -237,6 +237,75 @@ if err != nil {
 
 **Note:** Such raw requests return `(*http.Response, error)`.
 
+### \<Taiga Object\> Custom Attributes
+The custom attribute of various Taiga objects are made of two major corner stones:
+  - Field Definitions
+  - Field Values
+
+**Field Definitions** internally connect a field's name to an ID (int). <br>
+Requesting `http://localhost:8000/api/v1/epic-custom-attributes/14` results in something like this:
+```json
+{
+    "created_date": "2020-07-02T11:57:22.124Z",
+    "description": "nesciunt consectetur culpa ullam harum fugit veritatis eius dolorem assumenda",
+    "extra": null,
+    "id": 14,
+    "modified_date": "2020-07-03T08:40:34.667Z",
+    "name": "Duration 1",
+    "order": 1,
+    "project": 3,
+    "type": "url"
+}
+```
+
+**Field Values** internally connect the user-provided unique values to the internal IDs. <br>
+Requesting `http://localhost:8000/api/v1/epics/custom-attributes-values/15` results in something like this:
+```json
+{
+    "attributes_values": {
+        "14": "240 min"
+    },
+    "epic": 15,
+    "version": 2
+}
+```
+Observe that `Duration 1` has ID `14` in the declaration and that's used as the field's name.
+
+If you request the custom field values of a Taiga object, the values will be returned in a `map[string]interface{}` style by default.
+
+You have the option to manually declare the expected custom attribute fields and types in advance, and use
+your custom struct for serializing the returned values.
+
+For example here's the custom epic custom attribute struct for Taigo's Sandbox Project:
+```go
+import (
+	taiga "github.com/theriverman/taigo"
+)
+
+type TaigoSandboxEpicCustomAttributeFields struct {
+	SupportTeamName       string `json:"9216"`
+	EstimatedDeliveryDate string `json:"9217"`
+	CostUSD               int    `json:"9218"`
+}
+type TaigoSandboxEpicCustomAttribValues struct {
+	taiga.EpicCustomAttributeValues
+	AttributesValues TaigoSandboxEpicCustomAttributeFields `json:"attributes_values,omitempty"`
+}
+```
+
+Observe how the custom `TaigoSandboxEpicCustomAttributeFields` is promoted in the custom `TaigoSandboxEpicCustomAttribValues` struct.
+
+All that's left is to create an instance of `TaigoSandboxEpicCustomAttribValues` and use it to serialze the returned JSON:
+```go
+cavs := TaigoSandboxEpicCustomAttribValues{} // Custom Attribute Value(s)
+resp, err := client.Request.Get(client.MakeURL("epics", "custom-attributes-values", strconv.Itoa("your-epics-id")), &cavs)
+if err != nil {
+	log.Println(err)
+	log.Println(resp)
+	return
+}
+```
+
 # Contribution
 You're contribution would be much appreciated! <br>
 Feel free to open Issue tickets or create Pull requests. <br>
