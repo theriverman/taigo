@@ -13,19 +13,23 @@ import (
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#user-stories
 type UserStoryService struct {
-	client   *Client
-	Endpoint string
+	client           *Client
+	defaultProjectID int
+	Endpoint         string
 }
 
 // List returns all User Stories | https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-list
 // Available Meta: *[]UserStoryDetailLIST
-func (s *UserStoryService) List(queryParameters *UserStoryQueryParams) ([]UserStory, error) {
+func (s *UserStoryService) List(queryParams *UserStoryQueryParams) ([]UserStory, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	if queryParameters != nil {
-		paramValues, _ := query.Values(queryParameters)
+	switch {
+	case queryParams != nil:
+		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	} else if s.client.HasDefaultProject() {
-		url = url + s.client.GetDefaultProjectAsQueryParam()
+		break
+	case s.defaultProjectID != 0:
+		url = url + projectIDQueryParam(s.defaultProjectID)
+		break
 	}
 	var userstories UserStoryDetailLIST
 	_, err := s.client.Request.Get(url, &userstories)

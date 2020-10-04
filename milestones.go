@@ -13,19 +13,23 @@ import (
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#milestones
 type MilestoneService struct {
-	client   *Client
-	Endpoint string
+	client           *Client
+	defaultProjectID int
+	Endpoint         string
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#Milestones-list
 func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone, *MilestoneTotalInfo, error) {
 	// prepare url & parameters
 	url := s.client.MakeURL(s.Endpoint)
-	if queryParams != nil {
+	switch {
+	case queryParams != nil:
 		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	} else if s.client.HasDefaultProject() {
-		url = url + s.client.GetDefaultProjectAsQueryParam()
+		break
+	case s.defaultProjectID != 0:
+		url = url + projectIDQueryParam(s.defaultProjectID)
+		break
 	}
 	// execute requests
 	var Milestones []Milestone

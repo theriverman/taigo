@@ -13,8 +13,44 @@ import (
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#projects
 type ProjectService struct {
-	client   *Client
-	Endpoint string
+	client           *Client
+	defaultProjectID int
+	Endpoint         string
+	// Mapped services for simple access
+	areMappedServicesConfigured bool
+	Auth                        *AuthService
+	Epic                        *EpicService
+	Issue                       *IssueService
+	Milestone                   *MilestoneService
+	Resolver                    *ResolverService
+	Stats                       *StatsService
+	Task                        *TaskService
+	UserStory                   *UserStoryService
+	User                        *UserService
+	Webhook                     *WebhookService
+	Wiki                        *WikiService
+}
+
+// ConfigureMappedServices maps all services to the *ProjectService with a selected project preconfigured
+func (s *ProjectService) ConfigureMappedServices(ProjectID int) {
+	s.Auth = &AuthService{s.client, ProjectID, "auth"}
+	s.Epic = &EpicService{s.client, ProjectID, "epics"}
+	s.Issue = &IssueService{s.client, ProjectID, "issues"}
+	s.Milestone = &MilestoneService{s.client, ProjectID, "milestones"}
+	s.Resolver = &ResolverService{s.client, ProjectID, "resolver"}
+	s.Stats = &StatsService{s.client, ProjectID, "stats"}
+	s.Task = &TaskService{s.client, ProjectID, "tasks"}
+	s.UserStory = &UserStoryService{s.client, ProjectID, "userstories"}
+	s.User = &UserService{s.client, ProjectID, "users"}
+	s.Webhook = &WebhookService{s.client, ProjectID, "webhooks", "webhooklogs"}
+	s.Wiki = &WikiService{s.client, ProjectID, "wiki"}
+
+	s.areMappedServicesConfigured = true
+}
+
+// AreMappedServicesConfigured returns true if project-related mapped services have been configured
+func (s *ProjectService) AreMappedServicesConfigured() bool {
+	return s.areMappedServicesConfigured
 }
 
 // List -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-list

@@ -11,16 +11,22 @@ import (
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#users
 type UserService struct {
-	client   *Client
-	Endpoint string
+	client           *Client
+	defaultProjectID int
+	Endpoint         string
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#users-list
 func (s *UserService) List(queryParams *UsersQueryParams) ([]User, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	if queryParams != nil {
+	switch {
+	case queryParams != nil:
 		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
+		break
+	case s.defaultProjectID != 0:
+		url = url + projectIDQueryParam(s.defaultProjectID)
+		break
 	}
 	var users []User
 	_, err := s.client.Request.Get(url, &users)

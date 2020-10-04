@@ -16,8 +16,9 @@ NOTES ON LOGIC:
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#resolver
 type ResolverService struct {
-	client   *Client
-	Endpoint string
+	client           *Client
+	defaultProjectID int
+	Endpoint         string
 }
 
 // ResolveProject => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-projects

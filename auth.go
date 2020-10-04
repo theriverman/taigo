@@ -6,8 +6,9 @@ import "log"
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#auths
 type AuthService struct {
-	client   *Client
-	Endpoint string
+	client           *Client
+	defaultProjectID int
+	Endpoint         string
 }
 
 // PublicRegistry => https://taigaio.github.io/taiga-doc/dist/api.html#auth-public-registry

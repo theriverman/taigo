@@ -66,3 +66,8 @@ func isEmpty(structField interface{}) bool {
 	}
 	return false
 }
+
+// projectIDQueryParam returns gives project ID formatted as a generic QueryParam
+func projectIDQueryParam(ProjectID int) string {
+	return "?project=" + strconv.Itoa(ProjectID)
+}

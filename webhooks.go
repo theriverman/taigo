@@ -11,18 +11,24 @@ import (
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks
 type WebhookService struct {
-	client       *Client
-	Endpoint     string
-	EndpointLogs string
+	client           *Client
+	defaultProjectID int
+	Endpoint         string
+	EndpointLogs     string
 }
 
 // ListWebhooks returns all Webhooks
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-list
-func (s *WebhookService) ListWebhooks(queryParameters *WebhookQueryParameters) ([]Webhook, error) {
+func (s *WebhookService) ListWebhooks(queryParams *WebhookQueryParameters) ([]Webhook, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	if queryParameters != nil {
-		paramValues, _ := query.Values(queryParameters)
+	switch {
+	case queryParams != nil:
+		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
+		break
+	case s.defaultProjectID != 0:
+		url = url + projectIDQueryParam(s.defaultProjectID)
+		break
 	}
 	var webhooks []Webhook
 

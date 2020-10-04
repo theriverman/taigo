@@ -12,18 +12,22 @@ import (
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#tasks
 type TaskService struct {
-	client   *Client
-	Endpoint string
+	client           *Client
+	defaultProjectID int
+	Endpoint         string
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-list
-func (s *TaskService) List(queryParameters *TasksQueryParams) ([]Task, error) {
+func (s *TaskService) List(queryParams *TasksQueryParams) ([]Task, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	if queryParameters != nil {
-		paramValues, _ := query.Values(queryParameters)
+	switch {
+	case queryParams != nil:
+		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	} else if s.client.HasDefaultProject() {
-		url = url + s.client.GetDefaultProjectAsQueryParam()
+		break
+	case s.defaultProjectID != 0:
+		url = url + projectIDQueryParam(s.defaultProjectID)
+		break
 	}
 	var tasks TaskDetailLIST
 	_, err := s.client.Request.Get(url, &tasks)

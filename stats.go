@@ -3,8 +3,9 @@ package taigo
 // StatsService is a handle to Stats operations
 // -> https://taigaio.github.io/taiga-doc/dist/api.html#stats
 type StatsService struct {
-	client   *Client
-	Endpoint string
+	client           *Client
+	defaultProjectID int
+	Endpoint         string
 }
 
 // GetDiscoverStats => https://taigaio.github.io/taiga-doc/dist/api.html#discover-stats

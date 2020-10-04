@@ -86,9 +86,6 @@ func main() {
 		return
 	}
 
-	// Set default project (optional. recommended for convenience)
-	client.SetDefaultProjectBySlug(sandboxProjectSlug)
-
 	// Get /users/me
 	me, err := client.User.Me()
 	if err != nil {
@@ -105,6 +102,9 @@ func main() {
 		return
 	}
 	fmt.Printf("\nProject name: %s | ID:%d \n", project.Name, project.ID)
+
+	// Configure project as default -> services accessed via `client.Project` which is of `*taiga.Project` will automatically filter for this project's ID
+	client.Project.ConfigureMappedServices(project.ID)
 
 	// Get Project Agile Points
 	fmt.Println("Registered Agile Points for Project:", project.Name)
@@ -130,7 +130,7 @@ func main() {
 	// Get Epics
 	// (total of 3; limited by the for-loop)
 	log.Println("\nGetting all Epics and printing the first 3 to the console:")
-	epics, err := client.Epic.List(nil)
+	epics, err := client.Project.Epic.List(nil) // Accessing the `Epic.List` method through client.Project -> returned Epics are filtered for selected Project automatically
 	if err != nil {
 		log.Println(err)
 		return
@@ -155,8 +155,8 @@ func main() {
 
 	// Get milestones (for default project if set)
 	// (total of 3; limited by the for-loop)
-	log.Println("Getting all Milestones(Sprints) and printing the first 3 to the console:")
-	milestones, mti, err := client.Milestone.List(nil)
+	log.Printf("Getting all Milestones(Sprints) for Project ID=%d, and printing the first 3 to the console:\n", project.ID)
+	milestones, mti, err := client.Project.Milestone.List(nil)
 	if err != nil {
 		log.Println(err)
 		return
@@ -170,7 +170,7 @@ func main() {
 		}
 	}
 
-	// Get UserStories ( for project.ID -- see UserStoryQueryParams )
+	// Get UserStories ( for project.ID --> See UserStoryQueryParams )
 	// (total of 3; limited by the for-loop)
 	log.Println("\nGetting all UserStories and printing the first 3 to the console:")
 	userstories, err := client.UserStory.List(
@@ -331,15 +331,15 @@ func main() {
 	fmt.Printf("\n  * Attachment (ID=%d) has size: %d\n", attachmentAgain.ID, attachmentAgain.Size)
 
 	// List Issues
-	log.Println("Getting all issues [for default project]")
-	issueList, err := client.Issue.List(&taiga.IssueQueryParams{Project: client.GetDefaultProjectID()})
+	log.Println("Getting all issues [no query, no filtering for project]")
+	issuesList, err := client.Project.Issue.List(nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	for i := 0; i < 3; i++ {
-		issue := issueList[i]
+		issue := issuesList[i]
 		meta := (*issue.IssueDetailLIST)[i] // Dereference to the MetaList, then access by slice index
 		log.Println("  * ", issue.ID, issue.Subject)
 		log.Println("  *  Meta :: ID", meta.ID)

@@ -4,8 +4,9 @@ package taigo
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#tasks
 type WikiService struct {
-	client   *Client
-	Endpoint string
+	client           *Client
+	defaultProjectID int
+	Endpoint         string
 }
 
 // CreateAttachment creates a new Wiki attachment -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-create-attachment

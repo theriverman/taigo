@@ -18,7 +18,6 @@ type Client struct {
 	Token              string       // set by system; can be set manually
 	TokenType          string       // default=Bearer; options:Bearer,Application
 	Self               *User        // User logged in
-	defaultProjectID   int          // Project used in query params by default
 	pagination         *Pagination  // Pagination details extracted from the LAST http response
 	paginationDisabled bool         // indicates pagination status
 	isInitialised      bool         // indicates if taiga.Client has been initialised already
@@ -50,51 +49,6 @@ type Client struct {
 //  * Suffixes are appended to the URL joined by a slash (/)
 func (c *Client) MakeURL(EndpointParts ...string) string {
 	return c.APIURL + "/" + strings.Join(EndpointParts, "/")
-}
-
-// SetDefaultProject takes an int and uses that to internally set the default project ID.
-func (c *Client) SetDefaultProject(projectID int) error {
-	if !(projectID > 0) {
-		return fmt.Errorf("Could not set Default Project ID. Provided projectID was: %d", projectID)
-	}
-	c.defaultProjectID = projectID
-	return nil
-}
-
-// SetDefaultProjectBySlug takes an slug string and uses that to internally set the default project ID.
-func (c *Client) SetDefaultProjectBySlug(projectSlug string) error {
-	if projectSlug == "" {
-		return fmt.Errorf("Could not set Default Project ID. Provided projectSlug was: %s", projectSlug)
-	}
-	proj, err := c.Project.GetBySlug(projectSlug)
-	if err != nil {
-		return err
-	}
-	c.defaultProjectID = proj.ID
-	return nil
-}
-
-// GetDefaultProjectID returns the currently set Default Project's ID
-func (c *Client) GetDefaultProjectID() int {
-	return c.defaultProjectID
-}
-
-// GetDefaultProjectAsQueryParam returns the currently set Default Project ID formatted as a QueryParam
-func (c *Client) GetDefaultProjectAsQueryParam() string {
-	return "?project=" + strconv.Itoa(c.defaultProjectID)
-}
-
-// ClearDefaultProject resets the currently set Default Project ID to 0 (None)
-func (c *Client) ClearDefaultProject() {
-	c.defaultProjectID = 0
-}
-
-// HasDefaultProject returns true if there's a Default Project ID set
-func (c *Client) HasDefaultProject() bool {
-	if c.defaultProjectID > 0 {
-		return true
-	}
-	return false
 }
 
 // Initialise returns a new Taiga Client which is the entrypoint of the driver
@@ -131,18 +85,22 @@ func (c *Client) Initialise() error {
 	// Bootstrapping Services
 	c.Request = &RequestService{c}
 
-	c.Auth = &AuthService{c, "auth"}
-	c.Epic = &EpicService{c, "epics"}
-	c.Issue = &IssueService{c, "issues"}
-	c.Milestone = &MilestoneService{c, "milestones"}
-	c.Project = &ProjectService{c, "projects"}
-	c.Resolver = &ResolverService{c, "resolver"}
-	c.Stats = &StatsService{c, "stats"}
-	c.Task = &TaskService{c, "tasks"}
-	c.UserStory = &UserStoryService{c, "userstories"}
-	c.User = &UserService{c, "users"}
-	c.Webhook = &WebhookService{c, "webhooks", "webhooklogs"}
-	c.Wiki = &WikiService{c, "wiki"}
+	pServices := ProjectService{}
+	pServices.client = c
+	pServices.Endpoint = "projects"
+
+	c.Auth = &AuthService{c, 0, "auth"}
+	c.Epic = &EpicService{c, 0, "epics"}
+	c.Issue = &IssueService{c, 0, "issues"}
+	c.Milestone = &MilestoneService{c, 0, "milestones"}
+	c.Project = &pServices
+	c.Resolver = &ResolverService{c, 0, "resolver"}
+	c.Stats = &StatsService{c, 0, "stats"}
+	c.Task = &TaskService{c, 0, "tasks"}
+	c.UserStory = &UserStoryService{c, 0, "userstories"}
+	c.User = &UserService{c, 0, "users"}
+	c.Webhook = &WebhookService{c, 0, "webhooks", "webhooklogs"}
+	c.Wiki = &WikiService{c, 0, "wiki"}
 
 	// Final steps
 	c.isInitialised = true
