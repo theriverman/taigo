@@ -7,6 +7,14 @@ import (
 	"strings"
 )
 
+// TokenBearer is the standard token type for authentication in Taiga
+const TokenBearer string = "Bearer"
+
+// TokenApplication is the Token type used for external apps
+// These tokens are associated to an existing user and an Application. They can be manually created via the Django ADMIN or programatically via API
+// They work in the same way than standard Taiga authentication tokens but the "Authorization" header change slightly.
+const TokenApplication string = "Application"
+
 // Client is the session manager of Taiga Driver
 type Client struct {
 	Credentials        *Credentials
@@ -133,6 +141,7 @@ func (c *Client) AuthByToken(tokenType, token string) error {
 	}
 	c.TokenType = tokenType
 	c.Token = token
+	c.setToken() // Add to headers
 
 	var err error
 	c.Self, err = c.User.Me()
