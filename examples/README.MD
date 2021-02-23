@@ -111,3 +111,32 @@ if err != nil {
 fmt.Println("  * epic.EpicDetailGET.ID", epic.EpicDetailGET.ID)
 fmt.Printf("  * epic.Subject = %s\n\n", epic.Subject)
 ```
+
+## Get User Story Custom Attributes
+```go
+storyID := 123456
+cavs := taiga.UserStoryCustomAttribValues{}
+_, err = p.client.Request.Get(p.client.MakeURL("userstories", "custom-attributes-values", strconv.Itoa(storyID)), &cavs)
+if err != nil {
+    panic(err)
+}
+for attrDefId, attrValue := range cavs.AttributesValues {
+    fmt.Printf("  * DefinitionID=%s Value=%v\n", attrDefId, attrValue)
+}
+```
+
+## Update User Story Custom Attributes
+```go
+storyID := 123456
+// All fields have to be sent: https://github.com/taigaio/taiga-back/issues/1029
+updateAttributes := taiga.TgObjCAVDBase{}
+updateAttributes.Version = cavs.Version // copy old/original version number (see previous example)
+updateAttributes.AttributesValues = cavs.AttributesValues // copy old/original attribute values (see previous example)
+// Now override attribute values that should be changed
+updateAttributes.AttributesValues["1"] = "value1"
+updateAttributes.AttributesValues["2"] = 987654321
+_, err = p.client.Request.Patch(p.client.MakeURL("userstories", "custom-attributes-values", strconv.Itoa(storyID)), updateAttributes, nil)
+if err != nil {
+    panic(err)
+}
+```
