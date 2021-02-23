@@ -120,7 +120,7 @@ import (
   "fmt"
   "net/http"
 
-  taiga "github.com/theriverman/taigo/gotaiga"
+  taiga "github.com/theriverman/taigo"
 )
 func main() {
 	// Create client
