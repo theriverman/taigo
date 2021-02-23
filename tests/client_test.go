@@ -19,29 +19,29 @@ package main
 // 		return // client already set; skipping
 // 	}
 
-// 	url, ok := os.LookupEnv("env_ServerURL")
+// 	url, ok := os.LookupEnv("CI_URL")
 // 	if !ok {
-// 		panic("Missing Environment Variable: env_ServerURL")
+// 		panic("Missing Environment Variable: CI_URL")
 // 	}
-// 	username, ok := os.LookupEnv("env_ServerUsername")
+// 	username, ok := os.LookupEnv("CI_USERNAME")
 // 	if !ok {
-// 		panic("Missing Environment Variable: env_ServerUsername")
+// 		panic("Missing Environment Variable: CI_USERNAME")
 // 	}
-// 	password, ok := os.LookupEnv("env_ServerPassword")
+// 	password, ok := os.LookupEnv("CI_PASSWORD")
 // 	if !ok {
-// 		panic("Missing Environment Variable: env_ServerPassword")
+// 		panic("Missing Environment Variable: CI_PASSWORD")
 // 	}
-// 	loginType := os.Getenv("env_LoginType")
+// 	loginType := os.Getenv("CI_LOGIN_TYPE")
 // 	if loginType == "" {
 // 		loginType = "normal"
 // 	}
-// 	dProjID, ok := os.LookupEnv("env_DummyProjectID")
+// 	dProjID, ok := os.LookupEnv("CI_DUMMY_PROJECT_ID")
 // 	if !ok {
-// 		panic("Missing Environment Variable: env_ServerPassword")
+// 		panic("Missing Environment Variable: CI_PASSWORD")
 // 	}
 // 	pid, err := strconv.Atoi(dProjID)
 // 	if err != nil {
-// 		panic("env_DummyProjectID: Invalid Project ID integer")
+// 		panic("CI_DUMMY_PROJECT_ID: Invalid Project ID integer")
 // 	} else {
 // 		dummyProjectID = pid
 // 	}
