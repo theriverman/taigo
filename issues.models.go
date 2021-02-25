@@ -23,30 +23,30 @@ func genericToIssues(anyIssueObjectSlice interface{}) []Issue {
 // Issue represents the mandatory fields of an Issue only
 type Issue struct {
 	TaigaBaseObject
-	ID              int       `json:"id"`
-	Ref             int       `json:"ref"`
-	Version         int       `json:"version"`
-	AssignedTo      int       `json:"assigned_to"`
-	BlockedNote     string    `json:"blocked_note"`
-	Description     string    `json:"description"`
-	IsBlocked       bool      `json:"is_blocked"`
-	IsClosed        bool      `json:"is_closed"`
-	Milestone       int       `json:"milestone"`
-	Owner           int       `json:"owner"`
-	Priority        int       `json:"priority"`
+	ID              int       `json:"id,omitempty"`
+	Ref             int       `json:"ref,omitempty"`
+	Version         int       `json:"version,omitempty"`
+	AssignedTo      int       `json:"assigned_to,omitempty"`
+	BlockedNote     string    `json:"blocked_note,omitempty"`
+	Description     string    `json:"description,omitempty"`
+	IsBlocked       bool      `json:"is_blocked,omitempty"`
+	IsClosed        bool      `json:"is_closed,omitempty"`
+	Milestone       int       `json:"milestone,omitempty"`
+	Owner           int       `json:"owner,omitempty"`
+	Priority        int       `json:"priority,omitempty"`
 	Project         int       `json:"project"`
-	Severity        int       `json:"severity"`
-	Status          int       `json:"status"`
+	Severity        int       `json:"severity,omitempty"`
+	Status          int       `json:"status,omitempty"`
 	Subject         string    `json:"subject"`
-	Tags            Tags      `json:"tags"`
-	Type            int       `json:"type"`
-	Watchers        []int     `json:"watchers"`
-	CreatedDate     time.Time `json:"created_date"`
-	ModifiedDate    time.Time `json:"modified_date"`
-	FinishedDate    time.Time `json:"finished_date"`
-	DueDate         string    `json:"due_date"`
-	DueDateReason   string    `json:"due_date_reason"`
-	DueDateStatus   string    `json:"due_date_status"`
+	Tags            Tags      `json:"tags,omitempty"`
+	Type            int       `json:"type,omitempty"`
+	Watchers        []int     `json:"watchers,omitempty"`
+	CreatedDate     time.Time `json:"created_date,omitempty"`
+	ModifiedDate    time.Time `json:"modified_date,omitempty"`
+	FinishedDate    time.Time `json:"finished_date,omitempty"`
+	DueDate         string    `json:"due_date,omitempty"`
+	DueDateReason   string    `json:"due_date_reason,omitempty"`
+	DueDateStatus   string    `json:"due_date_status,omitempty"`
 	IssueDetail     *IssueDetail
 	IssueDetailGET  *IssueDetailGET
 	IssueDetailLIST *IssueDetailLIST
