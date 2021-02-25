@@ -64,93 +64,93 @@ func (p *ProjectDetail) AsProject() (*Project, error) {
 
 // ProjectDetail -> https://taigaio.github.io/taiga-doc/dist/api.html#object-project-detail
 type ProjectDetail struct {
-	AnonPermissions           []string                   `json:"anon_permissions"`
-	BlockedCode               string                     `json:"blocked_code"`
-	CreatedDate               time.Time                  `json:"created_date"`
-	CreationTemplate          int                        `json:"creation_template"`
-	DefaultEpicStatus         int                        `json:"default_epic_status"`
-	DefaultIssueStatus        int                        `json:"default_issue_status"`
-	DefaultIssueType          int                        `json:"default_issue_type"`
-	DefaultPoints             int                        `json:"default_points"`
-	DefaultPriority           int                        `json:"default_priority"`
-	DefaultSeverity           int                        `json:"default_severity"`
-	DefaultTaskStatus         int                        `json:"default_task_status"`
-	DefaultUsStatus           int                        `json:"default_us_status"`
-	Description               string                     `json:"description"`
-	EpicCustomAttributes      []epicCustomAttribute      `json:"epic_custom_attributes"`
-	EpicStatuses              []epicStatus               `json:"epic_statuses"`
-	EpicsCsvUUID              string                     `json:"epics_csv_uuid"`
-	IAmAdmin                  bool                       `json:"i_am_admin"`
-	IAmMember                 bool                       `json:"i_am_member"`
-	IAmOwner                  bool                       `json:"i_am_owner"`
-	ID                        int                        `json:"id"`
-	IsBacklogActivated        bool                       `json:"is_backlog_activated"`
-	IsContactActivated        bool                       `json:"is_contact_activated"`
-	IsEpicsActivated          bool                       `json:"is_epics_activated"`
-	IsFan                     bool                       `json:"is_fan"`
-	IsFeatured                bool                       `json:"is_featured"`
-	IsIssuesActivated         bool                       `json:"is_issues_activated"`
-	IsKanbanActivated         bool                       `json:"is_kanban_activated"`
-	IsLookingForPeople        bool                       `json:"is_looking_for_people"`
-	IsOutOfOwnerLimits        bool                       `json:"is_out_of_owner_limits"`
-	IsPrivate                 bool                       `json:"is_private"`
-	IsPrivateExtraInfo        IsPrivateExtraInfo         `json:"is_private_extra_info"`
-	IsWatcher                 bool                       `json:"is_watcher"`
-	IsWikiActivated           bool                       `json:"is_wiki_activated"`
-	IssueCustomAttributes     []issueCustomAttribute     `json:"issue_custom_attributes"`
-	IssueDuedates             []issueDueDate             `json:"issue_duedates"`
-	IssueStatuses             []issueStatus              `json:"issue_statuses"`
-	IssueTypes                []issueType                `json:"issue_types"`
-	IssuesCsvUUID             string                     `json:"issues_csv_uuid"`
-	LogoBigURL                string                     `json:"logo_big_url"`
-	LogoSmallURL              string                     `json:"logo_small_url"`
-	LookingForPeopleNote      string                     `json:"looking_for_people_note"`
-	MaxMemberships            int                        `json:"max_memberships"`
-	Members                   []members                  `json:"members"`
-	Milestones                []milestone                `json:"milestones"`
-	ModifiedDate              time.Time                  `json:"modified_date"`
-	MyHomepage                interface{}                `json:"my_homepage"`
-	MyPermissions             []string                   `json:"my_permissions"`
-	Name                      string                     `json:"name"`
-	NotifyLevel               int                        `json:"notify_level"`
-	Owner                     Owner                      `json:"owner"`
-	Points                    []ProjectPoints            `json:"points"`
-	Priorities                []priority                 `json:"priorities"`
-	PublicPermissions         []string                   `json:"public_permissions"`
-	Roles                     []roles                    `json:"roles"`
-	Severities                []severity                 `json:"severities"`
-	Slug                      string                     `json:"slug"`
-	Tags                      Tags                       `json:"tags"`
-	TagsColors                TagsColors                 `json:"tags_colors"`
-	TaskCustomAttributes      []taskCustomAttribute      `json:"task_custom_attributes"`
-	TaskDuedates              []taskDueDates             `json:"task_duedates"`
-	TaskStatuses              []taskStatus               `json:"task_statuses"`
-	TasksCsvUUID              string                     `json:"tasks_csv_uuid"`
-	TotalActivity             int                        `json:"total_activity"`
-	TotalActivityLastMonth    int                        `json:"total_activity_last_month"`
-	TotalActivityLastWeek     int                        `json:"total_activity_last_week"`
-	TotalActivityLastYear     int                        `json:"total_activity_last_year"`
-	TotalClosedMilestones     int                        `json:"total_closed_milestones"`
-	TotalFans                 int                        `json:"total_fans"`
-	TotalFansLastMonth        int                        `json:"total_fans_last_month"`
-	TotalFansLastWeek         int                        `json:"total_fans_last_week"`
-	TotalFansLastYear         int                        `json:"total_fans_last_year"`
-	TotalMemberships          int                        `json:"total_memberships"`
-	TotalMilestones           int                        `json:"total_milestones"`
-	TotalStoryPoints          float64                    `json:"total_story_points"`
-	TotalWatchers             int                        `json:"total_watchers"`
-	TotalsUpdatedDatetime     time.Time                  `json:"totals_updated_datetime"`
-	TransferToken             string                     `json:"transfer_token"`
-	UsDuedates                []userStoryDueDate         `json:"us_duedates"`
-	UsStatuses                []userStoryStatus          `json:"us_statuses"`
-	UserstoriesCsvUUID        string                     `json:"userstories_csv_uuid"`
-	UserstoryCustomAttributes []userStoryCustomAttribute `json:"userstory_custom_attributes"`
-	Videoconferences          string                     `json:"videoconferences"`
-	VideoconferencesExtraData string                     `json:"videoconferences_extra_data"`
+	AnonPermissions           []string                             `json:"anon_permissions"`
+	BlockedCode               string                               `json:"blocked_code"`
+	CreatedDate               time.Time                            `json:"created_date"`
+	CreationTemplate          int                                  `json:"creation_template"`
+	DefaultEpicStatus         int                                  `json:"default_epic_status"`
+	DefaultIssueStatus        int                                  `json:"default_issue_status"`
+	DefaultIssueType          int                                  `json:"default_issue_type"`
+	DefaultPoints             int                                  `json:"default_points"`
+	DefaultPriority           int                                  `json:"default_priority"`
+	DefaultSeverity           int                                  `json:"default_severity"`
+	DefaultTaskStatus         int                                  `json:"default_task_status"`
+	DefaultUsStatus           int                                  `json:"default_us_status"`
+	Description               string                               `json:"description"`
+	EpicCustomAttributes      []EpicCustomAttributeDefinition      `json:"epic_custom_attributes"`
+	EpicStatuses              []epicStatus                         `json:"epic_statuses"`
+	EpicsCsvUUID              string                               `json:"epics_csv_uuid"`
+	IAmAdmin                  bool                                 `json:"i_am_admin"`
+	IAmMember                 bool                                 `json:"i_am_member"`
+	IAmOwner                  bool                                 `json:"i_am_owner"`
+	ID                        int                                  `json:"id"`
+	IsBacklogActivated        bool                                 `json:"is_backlog_activated"`
+	IsContactActivated        bool                                 `json:"is_contact_activated"`
+	IsEpicsActivated          bool                                 `json:"is_epics_activated"`
+	IsFan                     bool                                 `json:"is_fan"`
+	IsFeatured                bool                                 `json:"is_featured"`
+	IsIssuesActivated         bool                                 `json:"is_issues_activated"`
+	IsKanbanActivated         bool                                 `json:"is_kanban_activated"`
+	IsLookingForPeople        bool                                 `json:"is_looking_for_people"`
+	IsOutOfOwnerLimits        bool                                 `json:"is_out_of_owner_limits"`
+	IsPrivate                 bool                                 `json:"is_private"`
+	IsPrivateExtraInfo        IsPrivateExtraInfo                   `json:"is_private_extra_info"`
+	IsWatcher                 bool                                 `json:"is_watcher"`
+	IsWikiActivated           bool                                 `json:"is_wiki_activated"`
+	IssueCustomAttributes     []IssueCustomAttributeDefinition     `json:"issue_custom_attributes"`
+	IssueDuedates             []issueDueDate                       `json:"issue_duedates"`
+	IssueStatuses             []issueStatus                        `json:"issue_statuses"`
+	IssueTypes                []issueType                          `json:"issue_types"`
+	IssuesCsvUUID             string                               `json:"issues_csv_uuid"`
+	LogoBigURL                string                               `json:"logo_big_url"`
+	LogoSmallURL              string                               `json:"logo_small_url"`
+	LookingForPeopleNote      string                               `json:"looking_for_people_note"`
+	MaxMemberships            int                                  `json:"max_memberships"`
+	Members                   []members                            `json:"members"`
+	Milestones                []milestone                          `json:"milestones"`
+	ModifiedDate              time.Time                            `json:"modified_date"`
+	MyHomepage                interface{}                          `json:"my_homepage"`
+	MyPermissions             []string                             `json:"my_permissions"`
+	Name                      string                               `json:"name"`
+	NotifyLevel               int                                  `json:"notify_level"`
+	Owner                     Owner                                `json:"owner"`
+	Points                    []ProjectPoints                      `json:"points"`
+	Priorities                []priority                           `json:"priorities"`
+	PublicPermissions         []string                             `json:"public_permissions"`
+	Roles                     []roles                              `json:"roles"`
+	Severities                []severity                           `json:"severities"`
+	Slug                      string                               `json:"slug"`
+	Tags                      Tags                                 `json:"tags"`
+	TagsColors                TagsColors                           `json:"tags_colors"`
+	TaskCustomAttributes      []TaskCustomAttributeDefinition      `json:"task_custom_attributes"`
+	TaskDuedates              []taskDueDates                       `json:"task_duedates"`
+	TaskStatuses              []taskStatus                         `json:"task_statuses"`
+	TasksCsvUUID              string                               `json:"tasks_csv_uuid"`
+	TotalActivity             int                                  `json:"total_activity"`
+	TotalActivityLastMonth    int                                  `json:"total_activity_last_month"`
+	TotalActivityLastWeek     int                                  `json:"total_activity_last_week"`
+	TotalActivityLastYear     int                                  `json:"total_activity_last_year"`
+	TotalClosedMilestones     int                                  `json:"total_closed_milestones"`
+	TotalFans                 int                                  `json:"total_fans"`
+	TotalFansLastMonth        int                                  `json:"total_fans_last_month"`
+	TotalFansLastWeek         int                                  `json:"total_fans_last_week"`
+	TotalFansLastYear         int                                  `json:"total_fans_last_year"`
+	TotalMemberships          int                                  `json:"total_memberships"`
+	TotalMilestones           int                                  `json:"total_milestones"`
+	TotalStoryPoints          float64                              `json:"total_story_points"`
+	TotalWatchers             int                                  `json:"total_watchers"`
+	TotalsUpdatedDatetime     time.Time                            `json:"totals_updated_datetime"`
+	TransferToken             string                               `json:"transfer_token"`
+	UsDuedates                []userStoryDueDate                   `json:"us_duedates"`
+	UsStatuses                []userStoryStatus                    `json:"us_statuses"`
+	UserstoriesCsvUUID        string                               `json:"userstories_csv_uuid"`
+	UserstoryCustomAttributes []UserStoryCustomAttributeDefinition `json:"userstory_custom_attributes"`
+	Videoconferences          string                               `json:"videoconferences"`
+	VideoconferencesExtraData string                               `json:"videoconferences_extra_data"`
 }
 
-// epicCustomAttribute != EpicCustomAttribute
-type epicCustomAttribute struct {
+// EpicCustomAttributeDefinition != EpicCustomAttribute
+type EpicCustomAttributeDefinition struct {
 	CreatedDate  time.Time   `json:"created_date"`
 	Description  string      `json:"description"`
 	Extra        interface{} `json:"extra"`
@@ -173,8 +173,8 @@ type epicStatus struct {
 	Slug      string `json:"slug"`
 }
 
-// issueCustomAttribute != IssueCustomAttribute
-type issueCustomAttribute struct {
+// IssueCustomAttributeDefinition != IssueCustomAttribute
+type IssueCustomAttributeDefinition struct {
 	CreatedDate  time.Time   `json:"created_date"`
 	Description  string      `json:"description"`
 	Extra        interface{} `json:"extra"`
@@ -260,8 +260,8 @@ type severity struct {
 	ProjectID int    `json:"project_id"`
 }
 
-// taskCustomAttribute != TaskCustomAttribute
-type taskCustomAttribute struct {
+// TaskCustomAttributeDefinition != TaskCustomAttribute
+type TaskCustomAttributeDefinition struct {
 	CreatedDate  time.Time   `json:"created_date"`
 	Description  string      `json:"description"`
 	Extra        interface{} `json:"extra"`
@@ -317,8 +317,8 @@ type userStoryStatus struct {
 	WipLimit   int    `json:"wip_limit"`
 }
 
-// userStoryCustomAttribute != UserStoryCustomAttribute
-type userStoryCustomAttribute struct {
+// UserStoryCustomAttributeDefinition != UserStoryCustomAttribute
+type UserStoryCustomAttributeDefinition struct {
 	CreatedDate  time.Time   `json:"created_date"`
 	Description  string      `json:"description"`
 	Extra        interface{} `json:"extra"`
