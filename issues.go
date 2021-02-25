@@ -46,6 +46,9 @@ func (s *IssueService) CreateAttachment(attachment *Attachment, task *Task) (*At
 	return newfileUploadRequest(s.client, url, attachment, task)
 }
 
+// Get -> https://taigaio.github.io/taiga-doc/dist/api.html#issues-get
+//
+// Available Meta: *IssueDetailGET
 func (s *IssueService) Get(issueID int) (*Issue, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueID))
 	var issue IssueDetailGET
@@ -56,6 +59,8 @@ func (s *IssueService) Get(issueID int) (*Issue, error) {
 	return issue.AsIssue()
 }
 
+// Edit sends a PATCH request to edit a Issue -> https://taigaio.github.io/taiga-doc/dist/api.html#issues-edit
+// Available Meta: IssueDetail
 func (s *IssueService) Edit(issue *Issue) (*Issue, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issue.ID))
 	var responseIssue IssueDetail
