@@ -1,7 +1,9 @@
 package taigo
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 )
@@ -42,4 +44,36 @@ func (s *IssueService) List(queryParams *IssueQueryParams) ([]Issue, error) {
 func (s *IssueService) CreateAttachment(attachment *Attachment, task *Task) (*Attachment, error) {
 	url := s.client.MakeURL(s.Endpoint, "attachments")
 	return newfileUploadRequest(s.client, url, attachment, task)
+}
+
+func (s *IssueService) Get(issueID int) (*Issue, error) {
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueID))
+	var issue IssueDetailGET
+	_, err := s.client.Request.Get(url, &issue)
+	if err != nil {
+		return nil, err
+	}
+	return issue.AsIssue()
+}
+
+func (s *IssueService) Edit(issue *Issue) (*Issue, error) {
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issue.ID))
+	var responseIssue IssueDetail
+
+	if issue.ID == 0 {
+		return nil, errors.New("Passed Issue does not have an ID yet. Does it exist?")
+	}
+
+	// Taiga OCC
+	remoteIssue, err := s.Get(issue.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	issue.Version = remoteIssue.Version
+	_, err = s.client.Request.Patch(url, &issue, &responseIssue)
+	if err != nil {
+		return nil, err
+	}
+	return responseIssue.AsIssue()
 }
