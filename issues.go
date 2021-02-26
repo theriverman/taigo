@@ -82,3 +82,24 @@ func (s *IssueService) Edit(issue *Issue) (*Issue, error) {
 	}
 	return responseIssue.AsIssue()
 }
+
+// Create creates a new Issue | https://taigaio.github.io/taiga-doc/dist/api.html#issues-create
+//
+// Available Meta: *IssueDetail
+func (s *IssueService) Create(issue *Issue) (*Issue, error) {
+	url := s.client.MakeURL(s.Endpoint)
+	var issueDetail IssueDetail
+
+	// Check for required fields
+	// project, subject
+	if isEmpty(issue.Project) || isEmpty(issue.Subject) {
+		return nil, errors.New("A mandatory field is missing. See API documentataion")
+	}
+
+	_, err := s.client.Request.Post(url, &issue, &issueDetail)
+	if err != nil {
+		return nil, err
+	}
+
+	return issueDetail.AsIssue()
+}
