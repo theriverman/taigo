@@ -1,7 +1,7 @@
 TAIGO
 -----
 
-[![Travis CI Build Status](https://travis-ci.org/theriverman/taigo.svg?branch=master)](https://travis-ci.org/theriverman/taigo)
+[![Go](https://github.com/theriverman/taigo/actions/workflows/go.yml/badge.svg)](https://github.com/theriverman/taigo/actions/workflows/go.yml)
 [![GoDoc](https://godoc.org/github.com/theriverman/taigo?status.svg)](https://pkg.go.dev/github.com/theriverman/taigo?tab=doc "Docs @ pkg.go.dev")
 [![Go Report Card](https://goreportcard.com/badge/github.com/theriverman/taigo)](https://goreportcard.com/report/github.com/theriverman/taigo)
 ![Taigo Banner](assets/banner_627x300.png "TAIGO Banner")
@@ -119,7 +119,7 @@ import (
   "fmt"
   "net/http"
 
-  taiga "github.com/theriverman/taigo/gotaiga"
+  taiga "github.com/theriverman/taigo"
 )
 func main() {
 	// Create client
