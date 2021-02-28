@@ -88,21 +88,5 @@
       "total_activity_last_month": 5,
       "total_activity_last_year": 5
     }
-  },
-  {
-    "model": "projects.membership",
-    "pk": 2,
-    "fields": {
-      "user": 5,
-      "project": 2,
-      "role": 11,
-      "is_admin": true,
-      "email": "taigo@demo.com",
-      "created_at": "2021-02-28T14:05:51.390Z",
-      "token": null,
-      "invited_by": null,
-      "invitation_extra_text": null,
-      "user_order": 0
-    }
   }
 ]
