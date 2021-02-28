@@ -8,11 +8,9 @@ import (
 
 // TODO
 /*
-
 	Find a way to fetch and store custom Taiga headers:
 	  - Taiga-Info-Total-Opened-Milestones
 	  - Taiga-Info-Total-Closed-Milestones
-
 */
 
 // Milestone represents all fields of a Milestone(Sprint)
@@ -25,7 +23,7 @@ type Milestone struct {
 	EstimatedFinish    string           `json:"estimated_finish"`
 	EstimatedStart     string           `json:"estimated_start"`
 	Closed             bool             `json:"closed,omitempty"`
-	ClosedPoints       int              `json:"closed_points,omitempty"`
+	ClosedPoints       float64          `json:"closed_points,omitempty"`
 	CreatedDate        time.Time        `json:"created_date,omitempty"`
 	Disponibility      float64          `json:"disponibility,omitempty"`
 	ModifiedDate       time.Time        `json:"modified_date,omitempty"`

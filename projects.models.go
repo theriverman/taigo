@@ -22,7 +22,7 @@ type ProjectPoints struct {
 	Name      string   `json:"name"`
 	ID        int      `json:"id"`
 	ProjectID int      `json:"project_id"`
-	Value     *float32 `json:"value"`
+	Value     *float64 `json:"value"`
 }
 
 // IsValueNil returns true if ProjectPoints.Value is nil
@@ -71,7 +71,7 @@ type ProjectDetail struct {
 	DefaultEpicStatus         int                                  `json:"default_epic_status"`
 	DefaultIssueStatus        int                                  `json:"default_issue_status"`
 	DefaultIssueType          int                                  `json:"default_issue_type"`
-	DefaultPoints             int                                  `json:"default_points"`
+	DefaultPoints             float64                              `json:"default_points"`
 	DefaultPriority           int                                  `json:"default_priority"`
 	DefaultSeverity           int                                  `json:"default_severity"`
 	DefaultTaskStatus         int                                  `json:"default_task_status"`
@@ -361,7 +361,7 @@ type ProjectsList []struct {
 	IAmAdmin                  bool         `json:"i_am_admin"`
 	DefaultIssueStatus        int          `json:"default_issue_status"`
 	CreationTemplate          int          `json:"creation_template"`
-	TotalStoryPoints          int          `json:"total_story_points"`
+	TotalStoryPoints          float64      `json:"total_story_points"`
 	AnonPermissions           []string     `json:"anon_permissions"`
 	TotalFans                 int          `json:"total_fans"`
 	IsBacklogActivated        bool         `json:"is_backlog_activated"`
@@ -386,7 +386,7 @@ type ProjectsList []struct {
 	TotalActivity             int          `json:"total_activity"`
 	IAmMember                 bool         `json:"i_am_member"`
 	TotalFansLastYear         int          `json:"total_fans_last_year"`
-	DefaultPoints             int          `json:"default_points"`
+	DefaultPoints             float64      `json:"default_points"`
 	DefaultTaskStatus         int          `json:"default_task_status"`
 }
 
