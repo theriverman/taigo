@@ -29,7 +29,5 @@ jobs:
         run: git submodule update --init && git submodule foreach 'git checkout stable'
       - name: Build the stack
         run: cd tests/taiga-docker && docker-compose up -d
-      - name: Wait for Taiga migrations to apply
-        run: cd tests && ./wait_for_taiga.bash
-      - name: Load initial test data
+      - name: Wait for Taiga migrations to apply, then Load initial test data
         run: cd tests && ./load_initial_test_data.bash
