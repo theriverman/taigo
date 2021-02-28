@@ -2,9 +2,9 @@ name: Go
 
 on:
   push:
-    branches: [ master ]
+    branches: [ 'master', 'ci-docker-test' ]
   pull_request:
-    branches: [ master ]
+    branches: [ 'master', 'ci-docker-test' ]
 
 jobs:
 
