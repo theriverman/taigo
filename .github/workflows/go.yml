@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build the stack
-        run: docker-compose up -d
+        run: echo "CWD=$(pwd)" && ls && docker-compose up -d
       - name: Wait for Taiga migrations to apply
         run: cd tests && ./wait_for_taiga.bash
       - name: Load initial test data
