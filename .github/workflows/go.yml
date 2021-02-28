@@ -25,8 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Initialise the taiga-docker submodule and switch to the stable branch
+        run: git submodule update --init && git submodule foreach 'git checkout stable'
       - name: Build the stack
-        run: echo "CWD=$(pwd)" && ls && docker-compose up -d
+        run: cd tests/taiga-docker && docker-compose up -d
       - name: Wait for Taiga migrations to apply
         run: cd tests && ./wait_for_taiga.bash
       - name: Load initial test data
