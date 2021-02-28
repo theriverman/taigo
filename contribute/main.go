@@ -53,6 +53,14 @@ func init() {
 	 * fileAttachmentUploadPath = "C:\\Images\\Bad-puns-make-me-sic.1.jpg"				// WINDOWS
 	 */
 
+	for _, v := range []string{taigaUsername, taigaPassword, sandboxProjectSlug, sandboxEpicID, sandboxFileUploadPath} {
+		if v == "" {
+			log.Fatalln("All mandatory values must be set through an environment variable.",
+				"See README.md in the contribute folder for details!",
+			)
+		}
+	}
+
 	// Convert Epic ID string to int
 	var e error
 	sandboxEpicID2, e = strconv.Atoi(sandboxEpicID)
@@ -156,7 +164,7 @@ func main() {
 	// Get milestones (for default project if set)
 	// (total of 3; limited by the for-loop)
 	log.Printf("Getting all Milestones(Sprints) for Project ID=%d, and printing the first 3 to the console:\n", project.ID)
-	milestones, mti, err := client.Project.Milestone.List(nil)
+	milestones, mti, err := client.Project.Milestone.List(&taiga.MilestonesQueryParams{Project: project.ID})
 	if err != nil {
 		log.Println(err)
 		return
