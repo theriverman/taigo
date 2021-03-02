@@ -39,13 +39,18 @@ func TestUsers(t *testing.T) {
 	// Patch the retrieved adminUser
 	adminUserBioText := "Some text in user's bio"
 	adminUser.Bio = adminUserBioText
-	adminUser.Email = ""  // exclude from payload to avoid "_error_message": "Duplicated email"
+	adminUser.Email = "" // exclude from payload to avoid "_error_message": "Duplicated email"
 	adminUserPatched, err := Client.User.Edit(adminUser)
 	if err != nil {
 		t.Error(err)
 	}
 	if adminUserPatched.Bio != adminUserBioText {
 		t.Errorf("got %q, want %q", adminUserPatched.Bio, adminUserBioText)
+	}
+	// Reset to original; check again
+	adminUser.Bio = ""
+	if adminUserPatched.Bio != adminUserBioText {
+		t.Errorf("got %q, want %q", "", "")
 	}
 
 	// Destroy taiga.Client{}

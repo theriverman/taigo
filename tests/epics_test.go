@@ -45,10 +45,59 @@ func TestEpics(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Delete Epic by ID
-	_, err = Client.Epic.Delete(epic.ID)
+	// Edit Epic
+	newEpicSubject := "This is the updated Subject"
+	epicCopyBase := *e2
+	epicCopyBase.Subject = newEpicSubject
+	epicPatched, err := Client.Epic.Edit(&epicCopyBase)
 	if err != nil {
 		t.Error(err)
+	}
+	if epicPatched.Subject != newEpicSubject {
+		t.Errorf("got %q, want %q", epicPatched.Subject, newEpicSubject)
+	}
+
+	/*
+		Testing `ListRelatedUserStories` & `CreateRelatedUserStory`
+		* An Epic is needed, so we create one
+		* A User Story is needed, so we create one
+		* We connect this UserStory to our Epic with `CreateRelatedUserStory`
+		* We list the related USs with `ListRelatedUserStories` which should return a total of 1 US
+	*/
+	epicForUs, err := Client.Epic.Create(&taiga.Epic{Project: testProjID, Subject: "A regular Epic"})
+	if err != nil {
+		t.Error(err)
+	}
+	usToBeRelated, err := Client.UserStory.Create(&taiga.UserStory{Project: testProjID, Subject: "A US related to an Epic"})
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Create a Related UserStory
+	_, err = Client.Epic.CreateRelatedUserStory(epicForUs.ID, usToBeRelated.ID)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// List Related User Stories
+	relatedUsList, err := Client.Epic.ListRelatedUserStories(epicForUs.ID)
+	if err != nil {
+		t.Error(err)
+	}
+	totalNoOfUs := len(relatedUsList)
+	if totalNoOfUs != 1 {
+		t.Errorf("got %q, want %q", totalNoOfUs, 1)
+	}
+
+	// Create an Epic Attachment
+	// attachment, err := Client.Epic.CreateAttachment(&taiga.Attachment{}, epicForUs)
+
+	// Delete Epic by ID
+	for _, e := range []taiga.Epic{*epic, *epicForUs} {
+		_, err = Client.Epic.Delete(e.ID)
+		if err != nil {
+			t.Error(err)
+		}
 	}
 
 	// Destroy taiga.Client{}
