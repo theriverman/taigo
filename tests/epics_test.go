@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	taiga "github.com/theriverman/taigo"
@@ -8,11 +10,19 @@ import (
 
 func TestEpics(t *testing.T) {
 	setupClient()
+	t.Cleanup(teardownClient)
 
-	// List Epics
-	_, err := Client.Epic.List(&taiga.EpicsQueryParams{Project: testProjID})
+	cwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
+	}
+
+	// List Epics
+	epics, err := Client.Epic.List(&taiga.EpicsQueryParams{Project: testProjID})
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Logf("Total Epics: %d", len(epics))
 	}
 
 	// Create Epic
@@ -90,7 +100,20 @@ func TestEpics(t *testing.T) {
 	}
 
 	// Create an Epic Attachment
-	// attachment, err := Client.Epic.CreateAttachment(&taiga.Attachment{}, epicForUs)
+	attachment := &taiga.Attachment{
+		Name:        "A random project file",
+		Description: "This is a test file uploaded via TAIGO",
+	}
+	testFileName := "initial_test_data.json"
+	attachment.SetFilePath(fmt.Sprintf("%s%s%s", cwd, string(os.PathSeparator), testFileName))
+	attachmentDetails, err := Client.Epic.CreateAttachment(attachment, epicForUs)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if attachmentDetails.Name != testFileName {
+		t.Errorf("got %q, want %q", attachmentDetails.Name, testFileName)
+	}
 
 	// Delete Epic by ID
 	for _, e := range []taiga.Epic{*epic, *epicForUs} {
@@ -101,5 +124,5 @@ func TestEpics(t *testing.T) {
 	}
 
 	// Destroy taiga.Client{}
-	teardownClient()
+
 }
