@@ -177,9 +177,9 @@ func (s *EpicService) CreateRelatedUserStory(EpicID int, UserStoryID int) (*Epic
 
 // CreateAttachment creates a new Epic attachment => https://taigaio.github.io/taiga-doc/dist/api.html#epics-create-attachment
 //
-func (s *EpicService) CreateAttachment(attachment *Attachment, task *Task) (*Attachment, error) {
+func (s *EpicService) CreateAttachment(attachment *Attachment, epic *Epic) (*Attachment, error) {
 	url := s.client.MakeURL(s.Endpoint, "attachments")
-	return newfileUploadRequest(s.client, url, attachment, task)
+	return newfileUploadRequest(s.client, url, attachment, epic)
 }
 
 // Clone takes an *Epic struct with loaded properties and duplicates it

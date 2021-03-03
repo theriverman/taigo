@@ -135,9 +135,9 @@ func (s *UserStoryService) Delete(usID int) (*http.Response, error) {
 }
 
 // CreateAttachment creates a new UserStory attachment => https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-create-attachment
-func (s *UserStoryService) CreateAttachment(attachment *Attachment, task *Task) (*Attachment, error) {
+func (s *UserStoryService) CreateAttachment(attachment *Attachment, userstory *UserStory) (*Attachment, error) {
 	url := s.client.MakeURL(s.Endpoint, "attachments")
-	return newfileUploadRequest(s.client, url, attachment, task)
+	return newfileUploadRequest(s.client, url, attachment, userstory)
 }
 
 /*

@@ -41,9 +41,9 @@ func (s *IssueService) List(queryParams *IssueQueryParams) ([]Issue, error) {
 }
 
 // CreateAttachment creates a new Issue attachment => https://taigaio.github.io/taiga-doc/dist/api.html#issues-create-attachment
-func (s *IssueService) CreateAttachment(attachment *Attachment, task *Task) (*Attachment, error) {
+func (s *IssueService) CreateAttachment(attachment *Attachment, issue *Issue) (*Attachment, error) {
 	url := s.client.MakeURL(s.Endpoint, "attachments")
-	return newfileUploadRequest(s.client, url, attachment, task)
+	return newfileUploadRequest(s.client, url, attachment, issue)
 }
 
 // Get -> https://taigaio.github.io/taiga-doc/dist/api.html#issues-get
