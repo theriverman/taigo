@@ -159,6 +159,12 @@ type UserStoryExtraInfo struct {
 	Subject string        `json:"subject"`
 }
 
+// TribeGig represents a Tribe Gig object (implied by https://github.com/taigaio/taiga-back/blob/fca65ef7ebe56658a558bb253076eecc2e027f9d/tests/integration/test_userstories.py#L1377)
+type TribeGig struct {
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+}
+
 // Pagination represents the information returned via headers
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#_pagination

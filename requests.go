@@ -100,12 +100,6 @@ func (s *RequestService) Trace() {
 	panic("TRACE requests are not implemented")
 }
 
-/*
-func evaluateResponseAndStatusCode() {
-	// Consider moving here all parts after `defer resp.Body.Close()` until the very last return statement. Keep it DRY!
-}
-*/
-
 // NOTE: responseBody must always be a pointer otherwise we lose the response data!
 func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObject TaigaBaseObject) (*Attachment, error) {
 	// Map Object details into *Attachment
