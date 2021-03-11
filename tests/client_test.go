@@ -1,53 +1,12 @@
 package main
 
 import (
-	"net/http"
 	"testing"
-
-	taiga "github.com/theriverman/taigo"
 )
-
-const testHostURL string = "http://localhost:9000"
-const testUsername string = "admin"
-const testPassword string = "admin"
-const testProjSlug string = "taigo-test"
-const testProjID int = 2
-const testUserID int = 5
-
-var Client *taiga.Client = nil
-
-func setupClient() {
-	if Client != nil {
-		return // client already set; skipping
-	}
-
-	// Create client
-	client := taiga.Client{
-		BaseURL:    testHostURL,
-		HTTPClient: &http.Client{},
-	}
-	// Initialise client (authenticates to Taiga)
-	err := client.Initialise()
-	if err != nil {
-		panic(err)
-	}
-	err = client.AuthByCredentials(&taiga.Credentials{
-		Type:     "normal",
-		Username: testUsername,
-		Password: testPassword,
-	})
-	if err != nil {
-		panic(err)
-	}
-	Client = &client
-}
-
-func teardownClient() {
-	Client = nil
-}
 
 func TestClient(t *testing.T) {
 	setupClient()
+	t.Cleanup(teardownClient)
 
 	var makeurltests = []struct {
 		in  []string

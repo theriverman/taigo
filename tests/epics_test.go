@@ -83,6 +83,12 @@ func TestEpics(t *testing.T) {
 		t.Error(err)
 	}
 
+	defer func() {
+		if _, err := Client.UserStory.Delete(usToBeRelated.ID); err != nil {
+			t.Error(err)
+		}
+	}()
+
 	// Create a Related UserStory
 	_, err = Client.Epic.CreateRelatedUserStory(epicForUs.ID, usToBeRelated.ID)
 	if err != nil {
@@ -122,7 +128,5 @@ func TestEpics(t *testing.T) {
 			t.Error(err)
 		}
 	}
-
-	// Destroy taiga.Client{}
 
 }

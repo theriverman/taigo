@@ -8,6 +8,7 @@ import (
 
 func TestUsers(t *testing.T) {
 	setupClient()
+	t.Cleanup(teardownClient)
 
 	// List Users
 	users, err := Client.User.List(&taiga.UsersQueryParams{Project: testProjID})
@@ -53,6 +54,4 @@ func TestUsers(t *testing.T) {
 		t.Errorf("got %q, want %q", "", "")
 	}
 
-	// Destroy taiga.Client{}
-	teardownClient()
 }

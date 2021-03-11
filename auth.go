@@ -12,6 +12,14 @@ type AuthService struct {
 }
 
 // PublicRegistry => https://taigaio.github.io/taiga-doc/dist/api.html#auth-public-registry
+/*
+	type with value "public"
+	username (required)
+	password (required)
+	email (required)
+	full_name (required)
+	accepted_terms (required): boolean
+*/
 func (s *AuthService) PublicRegistry(credentials *Credentials) (*UserAuthenticationDetail, error) {
 	url := s.client.MakeURL(s.Endpoint, "register")
 	u := UserAuthenticationDetail{}
