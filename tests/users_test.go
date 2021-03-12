@@ -14,9 +14,8 @@ func TestUsers(t *testing.T) {
 	users, err := Client.User.List(&taiga.UsersQueryParams{Project: testProjID})
 	if err != nil {
 		t.Error(err)
-	}
-	if len(users) != 1 {
-		t.Errorf("got %q, want %q", len(users), 1)
+	} else {
+		t.Logf("Total Users: %d", len(users))
 	}
 
 	// Get /users/me
@@ -25,7 +24,7 @@ func TestUsers(t *testing.T) {
 		t.Error(err)
 	}
 	if me.ID != testUserID {
-		t.Errorf("got %q, want %q", me.ID, testUserID)
+		t.Errorf("got %d, want %d", me.ID, testUserID)
 	}
 
 	// Get /users/{{ .testUserID }} and compare the retrieved FullNameDisplay
@@ -34,7 +33,7 @@ func TestUsers(t *testing.T) {
 		t.Error(err)
 	}
 	if adminUser.FullNameDisplay != "admin" {
-		t.Errorf("got %q, want %q", adminUser.FullName, "admin")
+		t.Errorf("got %s, want %s", adminUser.FullName, "admin")
 	}
 
 	// Patch the retrieved adminUser
@@ -46,12 +45,12 @@ func TestUsers(t *testing.T) {
 		t.Error(err)
 	}
 	if adminUserPatched.Bio != adminUserBioText {
-		t.Errorf("got %q, want %q", adminUserPatched.Bio, adminUserBioText)
+		t.Errorf("got %s, want %s", adminUserPatched.Bio, adminUserBioText)
 	}
 	// Reset to original; check again
 	adminUser.Bio = ""
 	if adminUserPatched.Bio != adminUserBioText {
-		t.Errorf("got %q, want %q", "", "")
+		t.Errorf("got %s, want %s", "", "")
 	}
 
 }

@@ -21,7 +21,7 @@ func TestClient(t *testing.T) {
 	for _, tt := range makeurltests {
 		s := Client.MakeURL(tt.in...)
 		if s != tt.out {
-			t.Errorf("got %q, want %q", s, tt.out)
+			t.Errorf("got %s, want %s", s, tt.out)
 		}
 	}
 

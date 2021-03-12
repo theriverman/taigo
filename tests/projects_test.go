@@ -14,9 +14,8 @@ func TestProjects(t *testing.T) {
 	users, err := Client.User.List(&taiga.UsersQueryParams{Project: testProjID})
 	if err != nil {
 		t.Error(err)
-	}
-	if len(users) != 1 {
-		t.Errorf("got %q, want %q", len(users), 1)
+	} else {
+		t.Logf("Total Users: %d", len(users))
 	}
 
 	// List Projects
@@ -27,9 +26,8 @@ func TestProjects(t *testing.T) {
 	projects, err := projectsList.AsProjects() // Convert the initial ProjectsLIST into a more generic Project
 	if err != nil {
 		t.Error(err)
-	}
-	if len(projects) != 1 {
-		t.Errorf("got %q, want %q", len(users), 1)
+	} else {
+		t.Logf("Total Projects: %d", len(projects))
 	}
 
 	// Get Project by slug
@@ -38,7 +36,7 @@ func TestProjects(t *testing.T) {
 		t.Error(err)
 	}
 	if projectBySlug.ID != testProjID {
-		t.Errorf("got %q, want %q", projectBySlug.ID, testProjID)
+		t.Errorf("got %d, want %d", projectBySlug.ID, testProjID)
 	}
 
 	// Get Project by ID
@@ -47,7 +45,7 @@ func TestProjects(t *testing.T) {
 		t.Error(err)
 	}
 	if projectByID.ID != testProjID {
-		t.Errorf("got %q, want %q", projectByID.ID, testProjID)
+		t.Errorf("got %d, want %d", projectByID.ID, testProjID)
 	}
 
 }

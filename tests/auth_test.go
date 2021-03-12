@@ -13,20 +13,21 @@ func TestAuth(t *testing.T) {
 	// Test Public Registry
 	randomString := randomString(12)
 	username := "test_" + randomString
+	fullName := "Taigo Test User"
 	credentials := taiga.Credentials{
 		Type:          "public",
 		Username:      username,
-		Password:      "test1",
+		Password:      randomString,
 		Email:         username + "@taigo.com",
-		FullName:      "Taigo Test User",
+		FullName:      fullName,
 		AcceptedTerms: true,
 	}
 	userAuthDetail, err := Client.Auth.PublicRegistry(&credentials)
 	if err != nil {
 		t.Error(err)
 	}
-	if userAuthDetail.Username != username {
-		t.Errorf("got %q, want %q", userAuthDetail.Username, username)
+	if userAuthDetail.FullName != fullName {
+		t.Errorf("got %s, want %s", userAuthDetail.FullName, fullName)
 	}
 
 }
