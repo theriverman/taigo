@@ -24,10 +24,8 @@ func (s *IssueService) List(queryParams *IssueQueryParams) ([]Issue, error) {
 	case queryParams != nil:
 		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-		break
 	case s.defaultProjectID != 0:
 		url = url + projectIDQueryParam(s.defaultProjectID)
-		break
 	}
 
 	// execute requests
@@ -66,7 +64,7 @@ func (s *IssueService) Edit(issue *Issue) (*Issue, error) {
 	var responseIssue IssueDetail
 
 	if issue.ID == 0 {
-		return nil, errors.New("Passed Issue does not have an ID yet. Does it exist?")
+		return nil, errors.New("passed Issue does not have an ID yet. Does it exist?")
 	}
 
 	// Taiga OCC
@@ -93,7 +91,7 @@ func (s *IssueService) Create(issue *Issue) (*Issue, error) {
 	// Check for required fields
 	// project, subject
 	if isEmpty(issue.Project) || isEmpty(issue.Subject) {
-		return nil, errors.New("A mandatory field is missing. See API documentataion")
+		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
 
 	_, err := s.client.Request.Post(url, &issue, &issueDetail)

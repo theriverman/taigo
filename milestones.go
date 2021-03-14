@@ -26,10 +26,8 @@ func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone
 	case queryParams != nil:
 		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-		break
 	case s.defaultProjectID != 0:
 		url = url + projectIDQueryParam(s.defaultProjectID)
-		break
 	}
 	// execute requests
 	var Milestones []Milestone
@@ -54,7 +52,7 @@ func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 		isEmpty(milestone.Name)) ||
 		isEmpty(milestone.EstimatedStart) ||
 		isEmpty(milestone.EstimatedFinish) {
-		return nil, errors.New("A mandatory field is missing. See API documentataion")
+		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
 	_, err := s.client.Request.Post(url, &milestone, &respMilestone)
 	if err != nil {
@@ -81,7 +79,7 @@ func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
 
 	var m Milestone
 	if milestone.ID == 0 {
-		return nil, errors.New("Passed Milestone does not have an ID yet. Does it exist?")
+		return nil, errors.New("passed Milestone does not have an ID yet. Does it exist?")
 	}
 	_, err := s.client.Request.Patch(url, &milestone, &m)
 	if err != nil {

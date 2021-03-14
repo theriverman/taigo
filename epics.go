@@ -27,10 +27,8 @@ func (s *EpicService) List(queryParams *EpicsQueryParams) ([]Epic, error) {
 	case queryParams != nil:
 		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-		break
 	case s.defaultProjectID != 0:
 		url = url + projectIDQueryParam(s.defaultProjectID)
-		break
 	}
 	var epics EpicDetailLIST
 	_, err := s.client.Request.Get(url, &epics)
@@ -51,7 +49,7 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 	// Check for required fields
 	// project, subject
 	if isEmpty(epic.Project) || isEmpty(epic.Subject) {
-		return nil, errors.New("A mandatory field(Project, Subject) is missing. See API documentataion")
+		return nil, errors.New("a mandatory field(Project, Subject) is missing. See API documentataion")
 	}
 
 	_, err := s.client.Request.Post(url, &epic, &e)
@@ -92,12 +90,10 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 	switch {
 	case project.ID > 0:
 		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, (epicRef), project.ID))
-		break
 	case len(project.Slug) > 0:
 		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, epicRef, project.Slug))
-		break
 	default:
-		return nil, errors.New("No ID or Ref defined in passed project struct")
+		return nil, errors.New("no ID or Ref defined in passed project struct")
 	}
 
 	_, err := s.client.Request.Get(url, &e)
@@ -114,7 +110,7 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 	var e EpicDetail
 
 	if epic.ID == 0 {
-		return nil, errors.New("Passed Epic does not have an ID yet. Does it exist?")
+		return nil, errors.New("passed Epic does not have an ID yet. Does it exist?")
 	}
 
 	// Taiga OCC

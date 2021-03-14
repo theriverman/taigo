@@ -26,10 +26,8 @@ func (s *UserStoryService) List(queryParams *UserStoryQueryParams) ([]UserStory,
 	case queryParams != nil:
 		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-		break
 	case s.defaultProjectID != 0:
 		url = url + projectIDQueryParam(s.defaultProjectID)
-		break
 	}
 	var userstories UserStoryDetailLIST
 	_, err := s.client.Request.Get(url, &userstories)
@@ -49,7 +47,7 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 	// Check for required fields
 	// project, subject
 	if isEmpty(userStory.Project) || isEmpty(userStory.Subject) {
-		return nil, errors.New("A mandatory field is missing. See API documentataion")
+		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
 
 	_, err := s.client.Request.Post(url, &userStory, &us)
@@ -90,12 +88,10 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 	switch {
 	case project.ID != 0:
 		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, userStoryRef, project.ID))
-		break
 	case len(project.Slug) > 0:
 		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, userStoryRef, project.Slug))
-		break
 	default:
-		return nil, errors.New("No ID or Ref defined in passed project struct")
+		return nil, errors.New("no ID or Ref defined in passed project struct")
 	}
 
 	_, err := s.client.Request.Get(url, &us)
@@ -112,7 +108,7 @@ func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
 	var responseUS UserStoryDetail
 
 	if us.ID == 0 {
-		return nil, errors.New("Passed UserStory does not have an ID yet. Does it exist?")
+		return nil, errors.New("passed UserStory does not have an ID yet. Does it exist?")
 	}
 
 	// Taiga OCC

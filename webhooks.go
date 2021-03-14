@@ -25,10 +25,8 @@ func (s *WebhookService) ListWebhooks(queryParams *WebhookQueryParameters) ([]We
 	case queryParams != nil:
 		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-		break
 	case s.defaultProjectID != 0:
 		url = url + projectIDQueryParam(s.defaultProjectID)
-		break
 	}
 	var webhooks []Webhook
 

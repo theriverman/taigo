@@ -23,10 +23,8 @@ func (s *UserService) List(queryParams *UsersQueryParams) ([]User, error) {
 	case queryParams != nil:
 		paramValues, _ := query.Values(queryParams)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-		break
 	case s.defaultProjectID != 0:
 		url = url + projectIDQueryParam(s.defaultProjectID)
-		break
 	}
 	var users []User
 	_, err := s.client.Request.Get(url, &users)

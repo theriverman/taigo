@@ -146,7 +146,7 @@ func (c *Client) AuthByToken(tokenType, token string) error {
 	var err error
 	c.Self, err = c.User.Me()
 	if err != nil {
-		return fmt.Errorf("Authentication has failed. Reason: %s", err)
+		return fmt.Errorf("authentication failed: %s", err)
 	}
 	return nil
 }

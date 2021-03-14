@@ -37,30 +37,27 @@ type ProjectTagsColors map[string]string
 
 // IsValueNil returns true if ProjectPoints.Value is nil
 func (pp ProjectPoints) IsValueNil() bool {
-	if pp.Value == nil {
-		return true
-	}
-	return false
+	return pp.Value == nil
 }
 
 // Project is a subset of all possible Project type variants
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#projects-create
 type Project struct {
-	ID                        int     `json:"id"`
-	Slug                      string  `json:"slug"`
-	CreationTemplate          int     `json:"creation_template"`
-	Description               string  `json:"description"`
-	IsBacklogActivated        bool    `json:"is_backlog_activated"`
-	IsIssuesActivated         bool    `json:"is_issues_activated"`
-	IsKanbanActivated         bool    `json:"is_kanban_activated"`
-	IsPrivate                 bool    `json:"is_private"`
-	IsWikiActivated           bool    `json:"is_wiki_activated"`
-	Name                      string  `json:"name"`
-	TotalMilestones           int     `json:"total_milestones"`
-	TotalStoryPoints          float64 `json:"total_story_points"`
-	Videoconferences          string  `json:"videoconferences"`
-	VideoconferencesExtraData string  `json:"videoconferences_extra_data"`
+	ID                        int     `json:"id,omitempty"`
+	Slug                      string  `json:"slug,omitempty"`
+	CreationTemplate          int     `json:"creation_template,omitempty"`
+	Description               string  `json:"description,omitempty"`
+	IsBacklogActivated        bool    `json:"is_backlog_activated,omitempty"`
+	IsIssuesActivated         bool    `json:"is_issues_activated,omitempty"`
+	IsKanbanActivated         bool    `json:"is_kanban_activated,omitempty"`
+	IsPrivate                 bool    `json:"is_private,omitempty"`
+	IsWikiActivated           bool    `json:"is_wiki_activated,omitempty"`
+	Name                      string  `json:"name,omitempty"`
+	TotalMilestones           int     `json:"total_milestones,omitempty"`
+	TotalStoryPoints          float64 `json:"total_story_points,omitempty"`
+	Videoconferences          string  `json:"videoconferences,omitempty"`
+	VideoconferencesExtraData string  `json:"videoconferences_extra_data,omitempty"`
 	ProjectsLIST              *ProjectsList
 	ProjectDETAIL             *ProjectDetail
 }

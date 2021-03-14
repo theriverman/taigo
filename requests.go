@@ -119,7 +119,7 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	writer := multipart.NewWriter(body)
 	part, err := writer.CreateFormFile("attached_file", fileName)
 	if err != nil {
-		return nil, fmt.Errorf("Could not write file to buffer")
+		return nil, fmt.Errorf("could not write file to buffer")
 	}
 	io.Copy(part, f)
 
@@ -159,7 +159,7 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 		return &responseBody, nil
 	}
 
-	return nil, fmt.Errorf("Request Failed. Returned body was:\n %s", string(rawResponseBody))
+	return nil, fmt.Errorf(string(rawResponseBody))
 }
 
 func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL string, Payload interface{}) (*http.Response, error) {
@@ -173,7 +173,6 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 		if err != nil {
 			return nil, err
 		}
-		break
 
 	case Payload != nil:
 		body, err := json.Marshal(Payload)
@@ -184,10 +183,9 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 		if err != nil {
 			return nil, err
 		}
-		break
 
 	default:
-		return nil, fmt.Errorf("Failed to build request because the received payload could not be processed")
+		return nil, fmt.Errorf("failed to build request because the received payload could not be processed")
 	}
 
 	// Load Headers
@@ -219,5 +217,5 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("Request Failed. Returned body was:\n %s", string(rawResponseBody))
+	return nil, fmt.Errorf(string(rawResponseBody))
 }

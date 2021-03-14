@@ -14,7 +14,7 @@ import (
 // https://taigaio.github.io/taiga-doc/dist/api.html#projects
 type ProjectService struct {
 	client           *Client
-	defaultProjectID int
+	// defaultProjectID int
 	Endpoint         string
 	// Mapped services for simple access
 	areMappedServicesConfigured bool
@@ -93,13 +93,14 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 }
 
 // Create -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-create
+// Required fields: name, description
 func (s *ProjectService) Create(project *Project) (*Project, error) {
 	url := s.client.MakeURL(s.Endpoint)
 	var p ProjectDetail
 	// Check for required fields
 	// name, description
 	if isEmpty(project.Name) || isEmpty(project.Description) {
-		return nil, errors.New("A mandatory field is missing. See API documentataion")
+		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
 	_, err := s.client.Request.Post(url, &project, &p)
 	if err != nil {
@@ -135,11 +136,11 @@ func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
 // Edit edits an Project via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#projects-edit
 // Available Meta: ProjectDetail
 func (s *ProjectService) Edit(project *Project) (*Project, error) {
-	url := s.client.MakeURL("%s/%d", s.Endpoint, strconv.Itoa(project.ID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(project.ID))
 	var p ProjectDetail
 
 	if project.ID == 0 {
-		return nil, errors.New("Passed Project does not have an ID yet. Does it exist?")
+		return nil, errors.New("passed Project does not have an ID yet. Does it exist?")
 	}
 
 	_, err := s.client.Request.Patch(url, &project, &p)
