@@ -28,6 +28,6 @@ jobs:
       - name: Initialise the taiga-docker submodule and switch to the stable branch
         run: git submodule update --init && git submodule foreach 'git checkout stable'
       - name: Build the stack
-        run: cd tests/taiga-docker && docker-compose up -d
+        run: cd tests && docker-compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml up -d
       - name: Wait for Taiga migrations to apply, then Load initial test data
         run: cd tests && ./load_initial_test_data.bash
