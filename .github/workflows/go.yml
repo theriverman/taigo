@@ -31,3 +31,5 @@ jobs:
         run: cd tests && docker-compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml up -d
       - name: Wait for Taiga migrations to apply, then Load initial test data
         run: cd tests && ./load_initial_test_data.bash
+      - name: Execute tests
+        run: go test ./tests
