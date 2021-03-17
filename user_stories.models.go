@@ -67,6 +67,12 @@ func (us *UserStory) GetProject() int {
 	return us.Project
 }
 
+type UserStoryOrigin struct {
+	ID      int    `json:"id,omitempty"`
+	Ref     int    `json:"ref,omitempty"`
+	Subject string `json:"subject,omitempty"`
+}
+
 // UserStoryDetailLIST => https://taigaio.github.io/taiga-doc/dist/api.html#object-userstory-detail-list
 type UserStoryDetailLIST []struct {
 	AssignedTo          int                       `json:"assigned_to,omitempty"`
@@ -97,8 +103,8 @@ type UserStoryDetailLIST []struct {
 	MilestoneName       string                    `json:"milestone_name,omitempty"`
 	MilestoneSlug       string                    `json:"milestone_slug,omitempty"`
 	ModifiedDate        time.Time                 `json:"modified_date,omitempty"`
-	OriginIssue         int                       `json:"origin_issue,omitempty"`
-	OriginTask          int                       `json:"origin_task,omitempty"`
+	OriginIssue         *UserStoryOrigin          `json:"origin_issue,omitempty"`
+	OriginTask          *UserStoryOrigin          `json:"origin_task,omitempty"`
 	Owner               int                       `json:"owner,omitempty"`
 	OwnerExtraInfo      OwnerExtraInfo            `json:"owner_extra_info,omitempty"`
 	Points              AgilePoints               `json:"points,omitempty"`
@@ -176,8 +182,8 @@ type UserStoryDetail struct {
 			Subject string `json:"subject,omitempty"`
 		} `json:"previous,omitempty"`
 	} `json:"neighbors,omitempty"`
-	OriginIssue      interface{}           `json:"origin_issue,omitempty"`
-	OriginTask       interface{}           `json:"origin_task,omitempty"`
+	OriginIssue      *UserStoryOrigin      `json:"origin_issue,omitempty"`
+	OriginTask       *UserStoryOrigin      `json:"origin_task,omitempty"`
 	Owner            int                   `json:"owner,omitempty"`
 	OwnerExtraInfo   OwnerExtraInfo        `json:"owner_extra_info,omitempty"`
 	Points           AgilePoints           `json:"points,omitempty"`
@@ -243,7 +249,7 @@ type UserStoryDetailGET struct {
 	ModifiedDate        time.Time                 `json:"modified_date"`
 	Neighbors           Neighbors                 `json:"neighbors"`
 	OriginIssue         int                       `json:"origin_issue"`
-	OriginTask          int                       `json:"origin_task"`
+	OriginTask          *UserStoryOrigin          `json:"origin_task"`
 	Owner               int                       `json:"owner"`
 	OwnerExtraInfo      OwnerExtraInfo            `json:"owner_extra_info"`
 	Points              Points                    `json:"points"`
