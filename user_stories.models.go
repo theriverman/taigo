@@ -67,6 +67,8 @@ func (us *UserStory) GetProject() int {
 	return us.Project
 }
 
+// UserStoryOrigin stores the bare minimum fields of the original User Story as a reference
+// https://github.com/taigaio/taiga-back/blob/886ef47d0621388a11aeea61a269f00d13d32f8d/taiga/projects/userstories/serializers.py#L34
 type UserStoryOrigin struct {
 	ID      int    `json:"id,omitempty"`
 	Ref     int    `json:"ref,omitempty"`
