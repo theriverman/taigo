@@ -26,7 +26,9 @@ func autoLogin() (err error) {
 			Username: taigoUsername,
 			Password: taigoPassword,
 		}); err == nil {
-			log.Println("authenticated with manually provided credentials")
+			if appVerboseMode {
+				log.Println("authenticated with manually provided credentials")
+			}
 			return // OK
 		}
 	}
@@ -34,7 +36,9 @@ func autoLogin() (err error) {
 	// 2nd attempt - try with saved token
 	client.BaseURL = config.String("TAIGO_HOST")
 	if err = client.AuthByToken("Bearer", config.String("TAIGO_TOKEN")); err == nil {
-		log.Println("authenticated with token saved in .taigo.json")
+		if appVerboseMode {
+			log.Println("authenticated with token saved in .taigo.json")
+		}
 		return // OK
 	}
 
@@ -50,8 +54,14 @@ func autoLogin() (err error) {
 		Username: taigoUsername,
 		Password: taigoPassword,
 	}); err == nil {
-		log.Println("authenticated with credentials saved in .taigo.json")
+		if appVerboseMode {
+			log.Println("authenticated with credentials saved in .taigo.json")
+		}
 		return // OK
 	}
 	return fmt.Errorf("authentication has failed with all possible methods")
+}
+
+func hasDefaultProject() bool {
+	return *defaultProjectID > 0
 }

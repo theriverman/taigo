@@ -42,7 +42,6 @@ func loginToTaiga(c *cli.Context) error {
 			config.Set("TAIGO_HOST", taigoHostAddr)
 			config.Set("TAIGO_USERNAME", taigoUsername)
 			config.Set("TAIGO_TOKEN", client.Token)
-			dumpConfigToFile(configPath)
 			log.Println("login credentials have been saved locally")
 		}
 	}
@@ -64,6 +63,20 @@ func actionVersion(c *cli.Context) error {
 	FAVOURITES
 */
 func actionFavouritesList(c *cli.Context) error {
+	hasNoDefaultSelected := true
+	fmt.Println("Your saved favourite projects:")
+	for pid, pn := range configStruct.FavouriteProjects {
+		if pid == *defaultProjectID {
+			fmt.Printf("  * %d\t%s [selected as default]\n", pid, pn)
+			hasNoDefaultSelected = false
+		} else {
+			fmt.Printf("  * %d\t%s\n", pid, pn)
+		}
+	}
+	if hasNoDefaultSelected {
+		fmt.Println("---------------------------------------------")
+		fmt.Println("  You have no project selected as default. See ./taigo favourites select -h")
+	}
 	return nil
 }
 
@@ -79,15 +92,49 @@ func actionFavouritesAdd(c *cli.Context) (err error) {
 			return err
 		}
 	default:
-		return fmt.Errorf("--id or --ref must be provided to add a project to favourites")
+		return fmt.Errorf("--id or --slug must be provided to add a project to favourites")
 	}
-	fmt.Printf("Project name: %s \n\n", project.Name)
-	fmt.Printf("Project ID: %d \n\n", project.ID)
-	// favouriteProjects[project.Name] = project.ID
-	// config.Set("TAIGO_HOST", taigoHostAddr)
+
+	if configStruct.FavouriteProjects == nil {
+		configStruct.FavouriteProjects = make(FavouriteProjects)
+	}
+	configStruct.FavouriteProjects[project.ID] = project.Name
+	config.Set("FavouriteProjects", configStruct.FavouriteProjects)
 	return nil
 }
 
 func actionFavouritesRemove(c *cli.Context) error {
+	delete(configStruct.FavouriteProjects, projectID)
+	config.Set("FavouriteProjects", configStruct.FavouriteProjects)
 	return nil
+}
+
+func actionFavouritesSelect(c *cli.Context) (err error) {
+	if err = actionFavouritesAdd(c); err != nil {
+		return err
+	}
+	err = config.Set("FavouriteProjectID", projectID)
+	return
+}
+
+/*
+	EPICS
+*/
+func actionEpicList(c *cli.Context) (err error) {
+	qp := taiga.EpicsQueryParams{}
+	// defaultProjectID
+
+	if projectID > 0 {
+		qp.Project = projectID
+	} else if *defaultProjectID > 0 {
+		qp.Project = *defaultProjectID
+	} else {
+		return fmt.Errorf("add flag --id to define which project to use")
+	}
+
+	epics, err := client.Epic.List(&qp)
+	for _, epic := range epics {
+		fmt.Printf("  * ID: %d\tRef: %d\tSubject: %s\n", epic.ID, epic.Ref, epic.Subject)
+	}
+	return
 }

@@ -21,8 +21,8 @@ var (
 )
 
 var (
-	projectID, projectIndex int
-	projectSlug             string
+	projectID   int
+	projectSlug string
 )
 
 func getApplicationCommands() []*cli.Command {
@@ -102,12 +102,12 @@ func getApplicationCommands() []*cli.Command {
 					Flags: []cli.Flag{
 						&cli.StringFlag{
 							Name:        "slug",
-							Usage:       "Project's unique slug from the URL (e.g.: riverman-taigo-demo)",
+							Usage:       "Project unique slug from the URL (e.g.: riverman-taigo-demo)",
 							Destination: &projectSlug,
 						},
 						&cli.IntFlag{
 							Name:        "id",
-							Usage:       "Project's ID from the URL",
+							Usage:       "Project internal ID",
 							Destination: &projectID,
 						},
 					},
@@ -116,20 +116,70 @@ func getApplicationCommands() []*cli.Command {
 					Name:   "remove",
 					Usage:  "Remove a project from your favourites",
 					Action: actionFavouritesRemove,
+					Flags: []cli.Flag{
+						&cli.IntFlag{
+							Name:        "id",
+							Usage:       "Project internal ID",
+							Destination: &projectID,
+							Required:    true,
+						},
+					},
 				},
 				{
 					Name:   "select",
 					Usage:  "Select a project from your favourites as default",
-					Action: actionFavouritesRemove,
+					Action: actionFavouritesSelect,
 					Flags: []cli.Flag{
 						&cli.IntFlag{
-							Name:        "index",
-							Usage:       "Project's index from the list",
-							Destination: &projectIndex,
+							Name:        "id",
+							Usage:       "Project internal ID",
+							Destination: &projectID,
+							Required:    true,
 						},
 					},
 				},
 			},
+		},
+		{
+			Name:    "project",
+			Usage:   "Read/Write project details",
+			Aliases: []string{"p", "proj"},
+		},
+		{
+			Name:    "epic",
+			Usage:   "Read/Write epic details",
+			Aliases: []string{"e"},
+			Subcommands: []*cli.Command{
+				{
+					Name:   "list",
+					Usage:  "List all epics in a project",
+					Action: actionEpicList,
+				},
+			},
+			Flags: []cli.Flag{
+				&cli.IntFlag{
+					Name:        "id",
+					Usage:       "Project internal ID",
+					Destination: &projectID,
+					Value:       *defaultProjectID,
+					Required:    !hasDefaultProject(),
+				},
+			},
+		},
+		{
+			Name:    "sprint",
+			Usage:   "Read/Write sprint details",
+			Aliases: []string{"s"},
+		},
+		{
+			Name:    "userstory",
+			Usage:   "Read/Write userstory details",
+			Aliases: []string{"us"},
+		},
+		{
+			Name:    "task",
+			Usage:   "Read/Write task details",
+			Aliases: []string{"t", "subtask"},
 		},
 		{
 			Name:   "version",

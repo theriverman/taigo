@@ -7,11 +7,14 @@ import (
 	"github.com/gookit/config/v2"
 )
 
+type FavouriteProjects map[int]string
+
 var configStruct = struct {
-	TaigoHost         string            `mapstructure:"TAIGO_HOST"`
-	TaigoToken        string            `mapstructure:"TAIGO_TOKEN"`
-	TaigoUsername     string            `mapstructure:"TAIGO_USERNAME"`
-	FavouriteProjects FavouriteProjects `mapstructure:"FavouriteProjects"`
+	TaigoHost          string            `mapstructure:"TAIGO_HOST"`
+	TaigoToken         string            `mapstructure:"TAIGO_TOKEN"`
+	TaigoUsername      string            `mapstructure:"TAIGO_USERNAME"`
+	FavouriteProjectID int               `mapstructure:"FavouriteProjectID"`
+	FavouriteProjects  FavouriteProjects `mapstructure:"FavouriteProjects"`
 }{}
 
 func dumpConfigToFile(path string) error {
@@ -25,6 +28,8 @@ func dumpConfigToFile(path string) error {
 	if _, err = config.WriteTo(f); err != nil {
 		return err
 	}
-	log.Printf("config written to %s\n", path)
+	if appVerboseMode {
+		log.Printf("config written to %s\n", path)
+	}
 	return nil
 }

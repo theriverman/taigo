@@ -21,9 +21,13 @@ var (
 	AppSemVersion    string = "no-version"
 	AppCopyrightText string = "no copyright"
 	GitCommit        string = "commit-id-could-not-be-retrieved"
-	configPath       string
+)
+
+// runtime variables
+var (
 	client           taiga.Client
-	// taigoAuthToken   *string = &client.Token
+	configPath       string
+	defaultProjectID *int = &configStruct.FavouriteProjectID
 )
 
 func init() {
@@ -45,9 +49,15 @@ func init() {
 	err = config.LoadFiles(configPath)
 	if err != nil {
 		log.Println(err)
-		dumpConfigToFile(configPath) // dump default config b/c it doesn't exist
-	} else {
+	} else if appVerboseMode {
 		log.Printf("config loaded from %s\n", configPath)
+	}
+
+	if err = config.BindStruct("", &configStruct); err != nil {
+		log.Println(err)
+	}
+	if appVerboseMode {
+		log.Printf("config: %+v\n", configStruct)
 	}
 }
 

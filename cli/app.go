@@ -48,6 +48,10 @@ func NewCLIApplication() *cli.App {
 			}
 			return nil
 		},
+		After: func(c *cli.Context) error {
+			dumpConfigToFile(configPath)
+			return nil
+		},
 		Commands:  getApplicationCommands(),
 		Copyright: AppCopyrightText,
 		// see the urfave/cli documentation for all possible options: https://github.com/urfave/cli/blob/master/docs/v2/manual.md
