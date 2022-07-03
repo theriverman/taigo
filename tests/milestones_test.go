@@ -11,7 +11,7 @@ func TestMilestones(t *testing.T) {
 	t.Cleanup(teardownClient)
 
 	// Create a milestone(sprint)
-	randomString := randomString(12) // we need unique milestone names
+	randomString := RandStringBytesMaskImprSrcUnsafe(12) // we need unique milestone names
 	milestone, err := Client.Milestone.Create(&taiga.Milestone{
 		Name:            "A test milestone_" + randomString,
 		Project:         testProjID,
@@ -25,7 +25,7 @@ func TestMilestones(t *testing.T) {
 	}
 
 	// List milestones
-	milestones, msTotalInfo,  err := Client.Milestone.List(&taiga.MilestonesQueryParams{Project: testProjID})
+	milestones, msTotalInfo, err := Client.Milestone.List(&taiga.MilestonesQueryParams{Project: testProjID})
 	if err != nil {
 		t.Error(err)
 	} else {
@@ -39,8 +39,8 @@ func TestMilestones(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if ms.Name != "A test milestone_" + randomString {
-		t.Errorf("got %s, want %s", ms.Name, "A test milestone_" + randomString)
+	if ms.Name != "A test milestone_"+randomString {
+		t.Errorf("got %s, want %s", ms.Name, "A test milestone_"+randomString)
 	}
 
 	// Edit a milestone
@@ -50,8 +50,8 @@ func TestMilestones(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if msEdited.Name != "A test milestone_" + randomString + "_EDITED" {
-		t.Errorf("got %s, want %s", msEdited.Name, "A test milestone_" + randomString + "_EDITED")
+	if msEdited.Name != "A test milestone_"+randomString+"_EDITED" {
+		t.Errorf("got %s, want %s", msEdited.Name, "A test milestone_"+randomString+"_EDITED")
 	}
 
 	// Delete Milestone
