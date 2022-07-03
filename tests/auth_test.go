@@ -84,10 +84,12 @@ func TestAuthService_RefreshAuthToken(t *testing.T) {
 func TestTokenRefreshRoutine(t *testing.T) {
 	// we need a custom client here to set `AutoRefreshTickerDuration` to 5 seconds
 	// otherwise the the test would fail b/c the default ticker duration is 12hrs
+	customWaitTime := 5 * time.Second
+
 	client := &taiga.Client{
 		BaseURL:                   testHostURL,
 		HTTPClient:                &http.Client{},
-		AutoRefreshTickerDuration: 5 * time.Second,
+		AutoRefreshTickerDuration: customWaitTime,
 	}
 	// Initialise client (authenticates to Taiga)
 	err := client.Initialise()
@@ -103,8 +105,11 @@ func TestTokenRefreshRoutine(t *testing.T) {
 		panic(err)
 	}
 
+	testLoopLength := 5 // if you increase this, tests may fail due to timeout (usually 30s)
+	tokens := make(map[string]struct{})
+	tokenCounter := 0
+
 	// Let's loop for 35 seconds to observe the routine working
-	testLoopLength := 5
 	for i := 0; i < testLoopLength; i++ {
 		if i == testLoopLength {
 			break
@@ -112,10 +117,12 @@ func TestTokenRefreshRoutine(t *testing.T) {
 		t.Logf("Loop %d | client.Token  : %s\n", i, client.Token)
 		t.Logf("Loop %d | client.Refresh: %s\n", i, client.RefreshToken)
 		t.Logf("----------------------------\n")
-		time.Sleep(5 * time.Second)
+		tokens[client.Token] = struct{}{}
+		tokenCounter++
+		time.Sleep(customWaitTime)
 	}
 	client = nil
-
-	// TODO: Add test evaluation
-
+	if len(tokens) != tokenCounter {
+		t.Errorf("Total Unique Tokens: %d wanted unique tokens count: %d", len(tokens), tokenCounter)
+	}
 }
