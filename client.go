@@ -36,6 +36,7 @@ type Client struct {
 	pagination                *Pagination                          // Pagination details extracted from the LAST http response
 	paginationDisabled        bool                                 // indicates pagination status
 	isInitialised             bool                                 // indicates if taiga.Client has been initialised already
+	Verbose                   bool                                 // internal Taigo events are logged in a more verbose fashion
 	AutoRefreshDisabled       bool                                 // if true before initialisation, RefreshTokenRoutine never gets called
 	AutoRefreshTickerDuration time.Duration                        // time.Duration between two token refresh requests
 
@@ -122,6 +123,9 @@ func (c *Client) Initialise() error {
 
 	// Token Refresh Routine
 	if c.AutoRefreshDisabled {
+		if c.Verbose {
+			log.Println("automatic token refresh subroutine will not be started because AutoRefreshDisabled = false")
+		}
 		return nil
 	}
 	if c.AutoRefreshTickerDuration == 0 {
@@ -132,7 +136,9 @@ func (c *Client) Initialise() error {
 		*/
 		c.AutoRefreshTickerDuration = 12 * time.Hour
 	}
-	// log.Println("AutoRefreshTickerDuration:", c.AutoRefreshTickerDuration)
+	if c.Verbose {
+		log.Printf("AutoRefreshTickerDuration: %s\n", c.AutoRefreshTickerDuration)
+	}
 	c.tokenRefreshDone = make(chan bool)
 	if c.TokenRefreshTicker == nil {
 		c.TokenRefreshTicker = time.NewTicker(c.AutoRefreshTickerDuration)
@@ -147,7 +153,9 @@ func (c *Client) Initialise() error {
 func (c *Client) DisableAutomaticTokenRefresh() {
 	c.TokenRefreshTicker.Stop()
 	c.tokenRefreshDone <- true
-	log.Println("automatic token refresh has been disabled")
+	if c.Verbose {
+		log.Println("automatic token refresh has been disabled")
+	}
 }
 
 // AuthByCredentials authenticates to Taiga using the provided basic credentials
@@ -236,10 +244,14 @@ func defaultTokenRefreshRoutine(c *Client, ticker *time.Ticker) {
 		for {
 			select {
 			case <-c.tokenRefreshDone:
-				log.Println("TokenRefreshRoutine has been stopped")
+				if c.Verbose {
+					log.Println("TokenRefreshRoutine has been stopped")
+				}
 				return
 			case t := <-ticker.C:
-				log.Println("TokenRefreshRoutine tick at", t, "-> Refreshing the stored tokens")
+				if c.Verbose {
+					log.Println("TokenRefreshRoutine tick at", t, "-> Refreshing the stored tokens")
+				}
 				if refreshData, err := c.Auth.RefreshAuthToken(true); err != nil {
 					log.Println(err)
 					return

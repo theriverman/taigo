@@ -310,6 +310,17 @@ if err != nil {
 }
 ```
 
+# Logging & Verbose Mode
+## Logging
+
+## Verbose Mode
+Verbose mode can be enabled by setting the `Verbose` field to `true` in `taiga.Client`. For example:
+```go
+client := taiga.Client{
+	Verbose:    true
+}
+```
+
 # Contribution
 You're contribution would be much appreciated! <br>
 Feel free to open Issue tickets or create Pull requests. <br>
@@ -321,6 +332,7 @@ For more details, see [TAIGO Contribution](CONTRIBUTION.md).
 ## Branching Strategy
   * **master** is <i>always</i> stable
   * **develop** is *not* <i>always</i> stable
+  * **feature_\*** branches are used for introducing larger changes
 
 # Licenses & Recognitions
 | Product					| License	| Author													|
