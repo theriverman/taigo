@@ -4,23 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
  
-## [Unreleased] - 2022-07-??
+## [Unreleased] - 2022-08-??
  
-Taiga has changed it's authentication system to a more robust JWT. This requires the user to refresh their token every 24 hours (default setting.) If you're using Taigo in a long-running environment, such as, a webserver where your taigo.Client instance is preserved for days/weeks/months, then you need a way to keep your stored Token refreshed.
+Taiga has changed its authentication system to a more sophisticated JWT implementation. This requires the user to refresh their token every 24 hours (default setting). If you're using Taigo in a system which tends to run for longer than 24 hours, such as, a webserver where your `taigo.Client` instance is preserved for days/weeks/months, then you need a way to keep your stored token fresh.
 
 Taigo gets this task done automatically by polling a ticker in a goroutine and refreshing the stored tokens every 12 hours.
 
 If you'd like to implement your own token refreshing mechanism, you have two options:
 - implement your own routine based on `defaultTokenRefreshRoutine(c *Client, ticker *time.Ticker)`
-- disable the `RefreshTokenRoutine` by calling `DisableAutomaticTokenRefresh()` and do the Token update your way.
-  don't forget to update the contents of `Client.Headers`.
+- disable the `RefreshTokenRoutine` by calling `DisableAutomaticTokenRefresh()` and do the Token update your way (don't forget to update the contents of `Client.Headers`).
  
 ### Added
 - `AuthService.RefreshAuthToken()` implemented
 - New fields added to `Client`:
-  - AutoRefreshDisabled
-  - AutoRefreshTickerDuration
-  - TokenRefreshTicker
+  - `AutoRefreshDisabled`
+  - `AutoRefreshTickerDuration`
+  - `TokenRefreshTicker`
 - New methods added to `Client`:
   - `DisableAutomaticTokenRefresh()`
 

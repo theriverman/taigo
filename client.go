@@ -147,7 +147,7 @@ func (c *Client) Initialise() error {
 func (c *Client) DisableAutomaticTokenRefresh() {
 	c.TokenRefreshTicker.Stop()
 	c.tokenRefreshDone <- true
-	log.Println("Automatic refresh to tokens has been disabled")
+	log.Println("automatic token refresh has been disabled")
 }
 
 // AuthByCredentials authenticates to Taiga using the provided basic credentials
