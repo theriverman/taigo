@@ -2,9 +2,14 @@ package taigo
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // TokenBearer is the standard token type for authentication in Taiga
@@ -17,18 +22,23 @@ const TokenApplication string = "Application"
 
 // Client is the session manager of Taiga Driver
 type Client struct {
-	Credentials        *Credentials
-	APIURL             string       // set by system
-	APIversion         string       // default: "v1"
-	BaseURL            string       // i.e.: "http://taiga.test" | Same value as `api` in `taiga-front-dist/dist/conf.json`
-	Headers            *http.Header // mostly set by system
-	HTTPClient         *http.Client // set by user
-	Token              string       // set by system; can be set manually
-	TokenType          string       // default=Bearer; options:Bearer,Application
-	Self               *User        // User logged in
-	pagination         *Pagination  // Pagination details extracted from the LAST http response
-	paginationDisabled bool         // indicates pagination status
-	isInitialised      bool         // indicates if taiga.Client has been initialised already
+	Credentials               *Credentials
+	APIURL                    string                               // set by system
+	APIversion                string                               // default: "v1"
+	BaseURL                   string                               // i.e.: "http://taiga.test" | Same value as `api` in `taiga-front-dist/dist/conf.json`
+	Headers                   *http.Header                         // mostly set by system
+	HTTPClient                *http.Client                         // set by user
+	Token                     string                               // set by system; can be set manually
+	TokenType                 string                               // default=Bearer; options:Bearer,Application
+	RefreshToken              string                               // set by system; can be set manually
+	RefreshTokenRoutine       func(c *Client, ticker *time.Ticker) // routine periodically refreshing the token
+	Self                      *User                                // User logged in
+	pagination                *Pagination                          // Pagination details extracted from the LAST http response
+	paginationDisabled        bool                                 // indicates pagination status
+	isInitialised             bool                                 // indicates if taiga.Client has been initialised already
+	Verbose                   bool                                 // internal Taigo events are logged in a more verbose fashion
+	AutoRefreshDisabled       bool                                 // if true before initialisation, RefreshTokenRoutine never gets called
+	AutoRefreshTickerDuration time.Duration                        // time.Duration between two token refresh requests
 
 	// Core Services
 	Request *RequestService
@@ -46,6 +56,10 @@ type Client struct {
 	User      *UserService
 	Webhook   *WebhookService
 	Wiki      *WikiService
+
+	// Token Refresh Helpers
+	TokenRefreshTicker *time.Ticker
+	tokenRefreshDone   chan bool
 }
 
 // MakeURL accepts an Endpoint URL and returns a compiled absolute URL
@@ -92,16 +106,11 @@ func (c *Client) Initialise() error {
 
 	// Bootstrapping Services
 	c.Request = &RequestService{c}
-
-	pServices := ProjectService{}
-	pServices.client = c
-	pServices.Endpoint = "projects"
-
 	c.Auth = &AuthService{c, 0, "auth"}
 	c.Epic = &EpicService{c, 0, "epics"}
 	c.Issue = &IssueService{c, 0, "issues"}
 	c.Milestone = &MilestoneService{c, 0, "milestones"}
-	c.Project = &pServices
+	c.Project = &ProjectService{client: c, Endpoint: "projects"}
 	c.Resolver = &ResolverService{c, 0, "resolver"}
 	c.Stats = &StatsService{c, 0, "stats"}
 	c.Task = &TaskService{c, 0, "tasks"}
@@ -110,9 +119,43 @@ func (c *Client) Initialise() error {
 	c.Webhook = &WebhookService{c, 0, "webhooks", "webhooklogs"}
 	c.Wiki = &WikiService{c, 0, "wiki"}
 
-	// Final steps
 	c.isInitialised = true
+
+	// Token Refresh Routine
+	if c.AutoRefreshDisabled {
+		if c.Verbose {
+			log.Println("automatic token refresh subroutine will not be started because AutoRefreshDisabled = false")
+		}
+		return nil
+	}
+	if c.AutoRefreshTickerDuration == 0 {
+		/*
+			https://github.com/kaleidos-ventures/taiga-back/blob/0be90e6a661de51bf9e95744322060f33dafa347/taiga/auth/settings.py#L50
+			According to the base settings in Taiga, the default `REFRESH_TOKEN_LIFETIME` is `timedelta(days=1)`.
+			Let's play safe, and take only half of that, so we refresh our tokens every 12 hours.
+		*/
+		c.AutoRefreshTickerDuration = 12 * time.Hour
+	}
+	if c.Verbose {
+		log.Printf("AutoRefreshTickerDuration: %s\n", c.AutoRefreshTickerDuration)
+	}
+	c.tokenRefreshDone = make(chan bool)
+	if c.TokenRefreshTicker == nil {
+		c.TokenRefreshTicker = time.NewTicker(c.AutoRefreshTickerDuration)
+	}
+	if c.RefreshTokenRoutine == nil {
+		c.RefreshTokenRoutine = defaultTokenRefreshRoutine
+	}
+	c.RefreshTokenRoutine(c, c.TokenRefreshTicker) // calling the Token Refresh Routine
 	return nil
+}
+
+func (c *Client) DisableAutomaticTokenRefresh() {
+	c.TokenRefreshTicker.Stop()
+	c.tokenRefreshDone <- true
+	if c.Verbose {
+		log.Println("automatic token refresh has been disabled")
+	}
 }
 
 // AuthByCredentials authenticates to Taiga using the provided basic credentials
@@ -135,12 +178,13 @@ func (c *Client) AuthByCredentials(credentials *Credentials) error {
 }
 
 // AuthByToken authenticates to Taiga using provided Token by requesting users/me
-func (c *Client) AuthByToken(tokenType, token string) error {
+func (c *Client) AuthByToken(tokenType, token, refreshToken string) error {
 	if err := c.Initialise(); err != nil {
 		return err
 	}
 	c.TokenType = tokenType
 	c.Token = token
+	c.RefreshToken = refreshToken
 	c.setToken() // Add to headers
 
 	var err error
@@ -153,9 +197,8 @@ func (c *Client) AuthByToken(tokenType, token string) error {
 
 // DisablePagination controls the value of header `x-disable-pagination`.
 func (c *Client) DisablePagination(b bool) {
-	var decision string = strings.Title(strconv.FormatBool(b))
 	m := map[string]string{
-		"x-disable-pagination": decision,
+		"x-disable-pagination": cases.Title(language.BritishEnglish).String(strconv.FormatBool(b)),
 	}
 	c.LoadExternalHeaders(m)
 	c.paginationDisabled = b
@@ -183,6 +226,7 @@ func (c *Client) setContentTypeToJSON() {
 }
 
 func (c *Client) setToken() {
+	c.Headers.Del("Authorization") // avoid header duplication
 	c.Headers.Add("Authorization", c.TokenType+" "+c.Token)
 }
 
@@ -193,4 +237,30 @@ func (c *Client) loadHeaders(request *http.Request) {
 			request.Header.Add(key, value)
 		}
 	}
+}
+
+func defaultTokenRefreshRoutine(c *Client, ticker *time.Ticker) {
+	go func() {
+		for {
+			select {
+			case <-c.tokenRefreshDone:
+				if c.Verbose {
+					log.Println("TokenRefreshRoutine has been stopped")
+				}
+				return
+			case t := <-ticker.C:
+				if c.Verbose {
+					log.Println("TokenRefreshRoutine tick at", t, "-> Refreshing the stored tokens")
+				}
+				if refreshData, err := c.Auth.RefreshAuthToken(true); err != nil {
+					log.Println(err)
+					return
+				} else {
+					c.Token = refreshData.AuthToken
+					c.RefreshToken = refreshData.Refresh
+					c.setToken()
+				}
+			}
+		}
+	}()
 }
