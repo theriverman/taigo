@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
  
-## [Unreleased] - 2022-08-??
+## [1.5.0] - 2022-08-03
  
 Taiga has changed its authentication system to a more sophisticated JWT implementation. This requires the user to refresh their token every 24 hours (default setting). If you're using Taigo in a system which tends to run for longer than 24 hours, such as, a webserver where your `taigo.Client` instance is preserved for days/weeks/months, then you need a way to keep your stored token fresh.
 
