@@ -1,9 +1,5 @@
 package taigo
 
-import (
-	"log"
-)
-
 // AuthService is a handle to actions related to Auths
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#auths
@@ -68,7 +64,6 @@ func (s *AuthService) login(credentials *Credentials) (*UserAuthenticationDetail
 
 	_, err := s.client.Request.Post(url, &credentials, &u)
 	if err != nil {
-		log.Println("Failed to authenticate to Taiga.")
 		return nil, err
 	}
 	s.client.Token = u.AuthToken
