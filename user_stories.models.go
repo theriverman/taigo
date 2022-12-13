@@ -332,7 +332,7 @@ type UserStoryQueryParams struct {
 	MilestoneIsNull    bool   `url:"milestone__isnull,omitempty"`
 	Status             int    `url:"status,omitempty"`
 	StatusIsArchived   bool   `url:"status__is_archived,omitempty"`
-	Tags               string `url:"tags,omitempty"` // Comma separated strings (no whitespace)
+	Tags               string `url:"tags,omitempty"` // comma-separated strings w/o whitespace
 	Watchers           int    `url:"watchers,omitempty"`
 	AssignedTo         int    `url:"assigned_to,omitempty"`
 	Epic               int    `url:"epic,omitempty"`
@@ -340,12 +340,11 @@ type UserStoryQueryParams struct {
 	StatusIsClosed     bool   `url:"status__is_closed,omitempty"`
 	IncludeAttachments bool   `url:"include_attachments,omitempty"`
 	IncludeTasks       bool   `url:"include_tasks,omitempty"`
-
-	ExcludeStatus     int `url:"exclude_status,omitempty"`
-	ExcludeTags       int `url:"exclude_tags,omitempty"` // Comma separated strings (no whitespace)
-	ExcludeAssignedTo int `url:"exclude_assigned_to,omitempty"`
-	ExcludeRole       int `url:"exclude_role,omitempty"`
-	ExcludeEpic       int `url:"exclude_epic,omitempty"`
+	ExcludeStatus      int    `url:"exclude_status,omitempty"`
+	ExcludeTags        string `url:"exclude_tags,omitempty"` // comma-separated strings w/o whitespace
+	ExcludeAssignedTo  int    `url:"exclude_assigned_to,omitempty"`
+	ExcludeRole        int    `url:"exclude_role,omitempty"`
+	ExcludeEpic        int    `url:"exclude_epic,omitempty"`
 }
 
 // UserStoryNestedTask is returned only when IncludeTasks is set to true in UserStoryQueryParams

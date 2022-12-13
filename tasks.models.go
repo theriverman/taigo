@@ -256,7 +256,7 @@ type TasksQueryParams struct {
 	AssignedTo         int      `url:"assigned_to,omitempty"`
 	StatusIsClosed     bool     `url:"status__is_closed,omitempty"`
 	ExcludeStatus      int      `url:"exclude_status,omitempty"`
-	ExcludeTags        int      `url:"exclude_tags,omitempty"`
+	ExcludeTags        string   `url:"exclude_tags,omitempty"` // comma-separated strings w/o whitespace
 	ExcludeRole        int      `url:"exclude_role,omitempty"`
 	ExcludeOwner       int      `url:"exclude_owner,omitempty"`
 	ExcludeAssignedTo  int      `url:"exclude_assigned_to,omitempty"`
