@@ -65,10 +65,10 @@ type Client struct {
 // MakeURL accepts an Endpoint URL and returns a compiled absolute URL
 //
 // For example:
-//	* If the given endpoint URLs are [epics, attachments]
-//	* If the BaseURL is https://api.taiga.io
-//	* It returns https://api.taiga.io/api/v1/epics/attachments
-//  * Suffixes are appended to the URL joined by a slash (/)
+//   - If the given endpoint URLs are [epics, attachments]
+//   - If the BaseURL is https://api.taiga.io
+//   - It returns https://api.taiga.io/api/v1/epics/attachments
+//   - Suffixes are appended to the URL joined by a slash (/)
 func (c *Client) MakeURL(EndpointParts ...string) string {
 	return c.APIURL + "/" + strings.Join(EndpointParts, "/")
 }
@@ -84,7 +84,6 @@ func (c *Client) Initialise() error {
 	// Taiga.Client safety guards
 	if len(c.BaseURL) < len("http://") { // compares for a minimum of len("http://")
 		return fmt.Errorf("BaseURL is not set or invalid")
-
 	}
 	//Set basic token type
 	if len(c.TokenType) <= 1 {
