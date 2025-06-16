@@ -40,8 +40,8 @@ func SuccessfulHTTPRequest(Response *http.Response) bool {
 
 // Get a handler for composing a new HTTP GET request
 //
-//  * URL must be an absolute (full) URL to the desired endpoint
-//  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
+//   - URL must be an absolute (full) URL to the desired endpoint
+//   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) Get(URL string, ResponseBody interface{}) (*http.Response, error) {
 	return newRawRequest("GET", s.client, ResponseBody, URL, nil)
 }
@@ -53,34 +53,34 @@ func (s *RequestService) Head() {
 
 // Post a handler for composing a new HTTP POST request
 //
-//  * URL must be an absolute (full) URL to the desired endpoint
-//  * Payload must be a pointer to a complete struct which will be sent to Taiga
-//  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
+//   - URL must be an absolute (full) URL to the desired endpoint
+//   - Payload must be a pointer to a complete struct which will be sent to Taiga
+//   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) Post(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
 	return newRawRequest("POST", s.client, ResponseBody, URL, Payload)
 }
 
 // Put a handler for composing a new HTTP PUT request
 //
-//  * URL must be an absolute (full) URL to the desired endpoint
-//  * Payload must be a pointer to a complete struct which will be sent to Taiga
-//  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
+//   - URL must be an absolute (full) URL to the desired endpoint
+//   - Payload must be a pointer to a complete struct which will be sent to Taiga
+//   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) Put(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
 	return newRawRequest("PUT", s.client, ResponseBody, URL, Payload)
 }
 
 // Patch a handler for composing a new HTTP PATCH request
 //
-//  * URL must be an absolute (full) URL to the desired endpoint
-//  * Payload must be a pointer to a complete struct which will be sent to Taiga
-//  * ResponseBody must be a pointer to a struct representing the fields returned by Taiga
+//   - URL must be an absolute (full) URL to the desired endpoint
+//   - Payload must be a pointer to a complete struct which will be sent to Taiga
+//   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) Patch(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
 	return newRawRequest("PATCH", s.client, ResponseBody, URL, Payload)
 }
 
 // Delete a handler for composing a new HTTP DELETE request
 //
-//  * URL must be an absolute (full) URL to the desired endpoint
+//   - URL must be an absolute (full) URL to the desired endpoint
 func (s *RequestService) Delete(URL string) (*http.Response, error) {
 	return newRawRequest("DELETE", s.client, nil, URL, nil)
 }
@@ -159,7 +159,7 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 		return &responseBody, nil
 	}
 
-	return nil, fmt.Errorf(string(rawResponseBody))
+	return nil, fmt.Errorf("%s", rawResponseBody)
 }
 
 func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL string, Payload interface{}) (*http.Response, error) {
@@ -167,14 +167,13 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 	var request *http.Request
 	var err error
 
-	switch {
-	case Payload == nil:
+	switch Payload {
+	case nil:
 		request, err = http.NewRequest(RequestType, URL, nil)
 		if err != nil {
 			return nil, err
 		}
-
-	case Payload != nil:
+	default:
 		body, err := json.Marshal(Payload)
 		if err != nil {
 			return nil, err
@@ -183,9 +182,6 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 		if err != nil {
 			return nil, err
 		}
-
-	default:
-		return nil, fmt.Errorf("failed to build request because the received payload could not be processed")
 	}
 
 	// Load Headers
@@ -212,10 +208,10 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 		return resp, nil
 	}
 
-	rawResponseBody, err := ioutil.ReadAll(resp.Body)
+	rawResponseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf(string(rawResponseBody))
+	return nil, fmt.Errorf("%s", rawResponseBody)
 }

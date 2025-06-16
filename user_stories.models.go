@@ -25,6 +25,7 @@ type UserStory struct {
 	BlockedNote         string      `json:"blocked_note,omitempty"`
 	ClientRequirement   bool        `json:"client_requirement,omitempty"`
 	Description         string      `json:"description,omitempty"`
+	ExternalReference   []string    `json:"external_reference,omitempty"`
 	IsBlocked           bool        `json:"is_blocked,omitempty"`
 	IsClosed            bool        `json:"is_closed,omitempty"`
 	KanbanOrder         int64       `json:"kanban_order,omitempty"`

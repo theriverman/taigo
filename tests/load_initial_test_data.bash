@@ -12,6 +12,9 @@ done
 
 echo "Taiga is up!"
 
+# Dump the running compose services
+docker compose ps
+
 # Copy initial_test_data.json into /taiga-back/media through the `taiga-docker-stable-taiga-back-1` container
 docker cp initial_test_data.json taiga-docker-stable-taiga-back-1:/taiga-back/media/initial_test_data.json  || exit 1
 
