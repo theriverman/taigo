@@ -12,8 +12,8 @@ done
 
 echo "Taiga is up!"
 
-# Copy initial_test_data.json into /taiga-back/media through the `taiga-docker_taiga-back_1` container
-docker cp initial_test_data.json taiga-docker_taiga-back_1:/taiga-back/media/initial_test_data.json  || exit 1
+# Copy initial_test_data.json into /taiga-back/media through the `taiga-docker-stable-taiga-back-1` container
+docker cp initial_test_data.json taiga-docker-stable-taiga-back-1:/taiga-back/media/initial_test_data.json  || exit 1
 
 # Move into the taiga-docker submodule's folder
 cd taiga-docker || exit 1
