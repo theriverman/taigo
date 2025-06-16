@@ -19,4 +19,4 @@ docker cp initial_test_data.json taiga-docker_taiga-back_1:/taiga-back/media/ini
 cd taiga-docker || exit 1
 
 # Load the default user + default project from the `initial_test_data` fixture
-docker-compose -f docker-compose.yml -f docker-compose-inits.yml run --rm taiga-manage loaddata /taiga-back/media/initial_test_data.json || exit 1
+docker compose -f docker-compose.yml -f docker-compose-inits.yml run --rm taiga-manage loaddata /taiga-back/media/initial_test_data.json || exit 1
