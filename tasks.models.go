@@ -18,15 +18,15 @@ func genericToTasks(anyTaskObjectSlice interface{}) []Task {
 type Task struct {
 	TaigaBaseObject
 	ID                int
-	AssignedTo        int         `json:"assigned_to,omitempty"`
-	BlockedNote       string      `json:"blocked_note,omitempty"`
-	Description       string      `json:"description,omitempty"`
-	ExternalReference interface{} `json:"external_reference,omitempty"`
-	IsBlocked         bool        `json:"is_blocked,omitempty"`
-	IsClosed          bool        `json:"is_closed,omitempty"`
-	IsIocaine         bool        `json:"is_iocaine,omitempty"`
-	Milestone         int         `json:"milestone,omitempty"`
-	Project           int         `json:"project,omitempty"`
+	AssignedTo        int      `json:"assigned_to,omitempty"`
+	BlockedNote       string   `json:"blocked_note,omitempty"`
+	Description       string   `json:"description,omitempty"`
+	ExternalReference []string `json:"external_reference,omitempty"`
+	IsBlocked         bool     `json:"is_blocked,omitempty"`
+	IsClosed          bool     `json:"is_closed,omitempty"`
+	IsIocaine         bool     `json:"is_iocaine,omitempty"`
+	Milestone         int      `json:"milestone,omitempty"`
+	Project           int      `json:"project,omitempty"`
 	Ref               int
 	Status            int      `json:"status,omitempty"`
 	Subject           string   `json:"subject,omitempty"`
@@ -76,7 +76,7 @@ type TaskDetailLIST []struct {
 	DueDate             string                    `json:"due_date,omitempty"`
 	DueDateReason       string                    `json:"due_date_reason,omitempty"`
 	DueDateStatus       string                    `json:"due_date_status,omitempty"`
-	ExternalReference   interface{}               `json:"external_reference,omitempty"`
+	ExternalReference   []string                  `json:"external_reference,omitempty"`
 	FinishedDate        time.Time                 `json:"finished_date,omitempty"`
 	ID                  int                       `json:"id,omitempty"`
 	IsBlocked           bool                      `json:"is_blocked,omitempty"`
@@ -130,7 +130,7 @@ type TaskDetailGET struct {
 	DueDate              string                    `json:"due_date,omitempty"`
 	DueDateReason        string                    `json:"due_date_reason,omitempty"`
 	DueDateStatus        string                    `json:"due_date_status,omitempty"`
-	ExternalReference    interface{}               `json:"external_reference,omitempty"`
+	ExternalReference    []string                  `json:"external_reference,omitempty"`
 	FinishedDate         time.Time                 `json:"finished_date,omitempty"`
 	GeneratedUserStories interface{}               `json:"generated_user_stories,omitempty"`
 	ID                   int                       `json:"id,omitempty"`
@@ -185,7 +185,7 @@ type TaskDetail struct {
 	DueDate              string                    `json:"due_date,omitempty"`
 	DueDateReason        string                    `json:"due_date_reason,omitempty"`
 	DueDateStatus        string                    `json:"due_date_status,omitempty"`
-	ExternalReference    interface{}               `json:"external_reference,omitempty"`
+	ExternalReference    []string                  `json:"external_reference,omitempty"`
 	FinishedDate         time.Time                 `json:"finished_date,omitempty"`
 	GeneratedUserStories interface{}               `json:"generated_user_stories,omitempty"`
 	ID                   int                       `json:"id,omitempty"`

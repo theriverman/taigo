@@ -91,7 +91,7 @@ type UserStoryDetailLIST []struct {
 	DueDateStatus       string                    `json:"due_date_status"`
 	EpicOrder           int                       `json:"epic_order,omitempty"`
 	Epics               []EpicMinimal             `json:"epics,omitempty"`
-	ExternalReference   interface{}               `json:"external_reference,omitempty"`
+	ExternalReference   []string                  `json:"external_reference,omitempty"`
 	FinishDate          time.Time                 `json:"finish_date,omitempty"`
 	GeneratedFromIssue  int                       `json:"generated_from_issue,omitempty"`
 	GeneratedFromTask   int                       `json:"generated_from_task,omitempty"`
@@ -158,7 +158,7 @@ type UserStoryDetail struct {
 	DueDateStatus       string                    `json:"due_date_status,omitempty"`
 	EpicOrder           int                       `json:"epic_order,omitempty"`
 	Epics               []EpicMinimal             `json:"epics,omitempty"`
-	ExternalReference   interface{}               `json:"external_reference,omitempty"`
+	ExternalReference   []string                  `json:"external_reference,omitempty"`
 	FinishDate          string                    `json:"finish_date,omitempty"`
 	GeneratedFromIssue  int                       `json:"generated_from_issue,omitempty"`
 	GeneratedFromTask   int                       `json:"generated_from_task,omitempty"`

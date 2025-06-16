@@ -91,7 +91,7 @@ type IssueDetailLIST []struct {
 	DueDate             string                    `json:"due_date"`
 	DueDateReason       string                    `json:"due_date_reason"`
 	DueDateStatus       string                    `json:"due_date_status"`
-	ExternalReference   []int                     `json:"external_reference"`
+	ExternalReference   []string                  `json:"external_reference"`
 	ID                  int                       `json:"id"`
 	IsBlocked           bool                      `json:"is_blocked"`
 	IsClosed            bool                      `json:"is_closed"`
@@ -140,7 +140,7 @@ type IssueDetailGET struct {
 	DueDate              string                    `json:"due_date"`
 	DueDateReason        string                    `json:"due_date_reason"`
 	DueDateStatus        string                    `json:"due_date_status"`
-	ExternalReference    []int                     `json:"external_reference"`
+	ExternalReference    []string                  `json:"external_reference"`
 	FinishedDate         time.Time                 `json:"finished_date"`
 	GeneratedUserStories []int                     `json:"generated_user_stories"`
 	ID                   int                       `json:"id"`
@@ -191,7 +191,7 @@ type IssueDetail struct {
 	DueDate              string                    `json:"due_date"`
 	DueDateReason        string                    `json:"due_date_reason"`
 	DueDateStatus        string                    `json:"due_date_status"`
-	ExternalReference    []int                     `json:"external_reference"`
+	ExternalReference    []string                  `json:"external_reference"`
 	FinishedDate         time.Time                 `json:"finished_date"`
 	GeneratedUserStories []int                     `json:"generated_user_stories"`
 	ID                   int                       `json:"id"`
