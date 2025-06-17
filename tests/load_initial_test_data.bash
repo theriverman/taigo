@@ -1,4 +1,6 @@
-# Wait for automatic migrations to apply after executing `docker-compose up -d`
+#!/usr/bin/env bash
+
+# Wait for automatic migrations to apply after executing `docker compose up -d`
 
 while :
 do
@@ -12,11 +14,15 @@ done
 
 echo "Taiga is up!"
 
-# Dump the running compose services
-docker compose ps
+# Get taiga-back container's name
+tgback=$(docker ps --filter "name=taiga-back" --filter "status=running" --format '{{.Names}}')
+if [[ -z "$tgback" ]]; then
+  echo "❌ could not find a running taiga-back container" >&2
+  exit 1
+fi
 
 # Copy initial_test_data.json into /taiga-back/media through the `taiga-docker-stable-taiga-back-1` container
-docker cp initial_test_data.json taiga-docker-stable-taiga-back-1:/taiga-back/media/initial_test_data.json  || exit 1
+docker cp initial_test_data.json "$tgback":/taiga-back/media/initial_test_data.json  || exit 1
 
 # Move into the taiga-docker submodule's folder
 cd taiga-docker || exit 1
