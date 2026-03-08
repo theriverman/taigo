@@ -5,7 +5,7 @@ import (
 )
 
 func TestWiki(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	// TODO: Tests to be written

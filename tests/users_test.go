@@ -3,11 +3,11 @@ package main
 import (
 	"testing"
 
-	taiga "github.com/theriverman/taigo"
+	taiga "github.com/theriverman/taigo/v2"
 )
 
 func TestUsers(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	// List Users

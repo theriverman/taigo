@@ -3,11 +3,11 @@ package main
 import (
 	"testing"
 
-	"github.com/theriverman/taigo"
+	"github.com/theriverman/taigo/v2"
 )
 
 func TestProjects(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	// List Projects

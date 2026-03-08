@@ -2,15 +2,16 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"reflect"
 	"testing"
 	"time"
 
-	taiga "github.com/theriverman/taigo"
+	taiga "github.com/theriverman/taigo/v2"
 )
 
 func TestAuth(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	// Test Public Registry
@@ -36,7 +37,7 @@ func TestAuth(t *testing.T) {
 }
 
 func TestAuthService_RefreshAuthToken(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	type fields struct {
@@ -82,6 +83,10 @@ func TestAuthService_RefreshAuthToken(t *testing.T) {
 }
 
 func TestTokenRefreshRoutine(t *testing.T) {
+	if os.Getenv("TAIGO_RUN_INTEGRATION_TESTS") != "1" {
+		t.Skip("set TAIGO_RUN_INTEGRATION_TESTS=1 to run integration tests against a live Taiga instance")
+	}
+
 	// we need a custom client here to set `AutoRefreshTickerDuration` to 5 seconds
 	// otherwise the the test would fail b/c the default ticker duration is 12hrs
 	customWaitTime := 5 * time.Second

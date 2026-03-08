@@ -3,10 +3,12 @@ package main
 import (
 	"math/rand"
 	"net/http"
+	"os"
+	"testing"
 	"time"
 	"unsafe"
 
-	taiga "github.com/theriverman/taigo"
+	taiga "github.com/theriverman/taigo/v2"
 )
 
 const testHostURL string = "http://localhost:9000"
@@ -26,7 +28,12 @@ const (
 // Client is the foundation for making requests against Taiga
 var Client *taiga.Client = nil
 
-func setupClient() {
+func setupClient(t *testing.T) {
+	t.Helper()
+	if os.Getenv("TAIGO_RUN_INTEGRATION_TESTS") != "1" {
+		t.Skip("set TAIGO_RUN_INTEGRATION_TESTS=1 to run integration tests against a live Taiga instance")
+	}
+
 	if Client != nil {
 		return // client already set; skipping
 	}
@@ -39,7 +46,7 @@ func setupClient() {
 	// Initialise client (authenticates to Taiga)
 	err := client.Initialise()
 	if err != nil {
-		panic(err)
+		t.Skipf("skipping integration tests: could not initialise client: %v", err)
 	}
 	err = client.AuthByCredentials(&taiga.Credentials{
 		Type:     "normal",
@@ -47,7 +54,7 @@ func setupClient() {
 		Password: testPassword,
 	})
 	if err != nil {
-		panic(err)
+		t.Skipf("skipping integration tests: Taiga backend unavailable at %s: %v", testHostURL, err)
 	}
 	Client = &client
 }

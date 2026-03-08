@@ -5,7 +5,7 @@ import (
 )
 
 func TestClient(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	var makeurltests = []struct {
