@@ -18,7 +18,7 @@ import (
     "fmt"
     "net/http"
 
-    taiga "github.com/theriverman/taigo"
+    taiga "github.com/theriverman/taigo/v2"
 )
 
 func main() {
