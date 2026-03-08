@@ -68,33 +68,49 @@ func (s *UserService) GetStats(userID int) (*UserStatsDetail, error) {
 }
 
 // GetWatchedContent => https://taigaio.github.io/taiga-doc/dist/api.html#users-watched
-//
-// TODO: Implement query param filtering
-func (s *UserService) GetWatchedContent(userID int) (*UserWatched, error) {
+func (s *UserService) GetWatchedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]UserWatched, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "watched")
-	var uw UserWatched
-	_, err := s.client.Request.Get(url, &uw)
-	if err != nil {
-		return nil, err
+	if queryParams != nil {
+		paramValues, _ := query.Values(queryParams)
+		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
 	}
-	return &uw, nil
+	var watched []UserWatched
+	_, err := s.client.Request.Get(url, &watched)
+	if err != nil {
+		return []UserWatched{}, err
+	}
+	return watched, nil
 }
 
 // GetLikedContent => https://taigaio.github.io/taiga-doc/dist/api.html#users-liked
-//
-// TODO: Implement query param filtering
-func (s *UserService) GetLikedContent(userID int) (*UserLiked, error) {
+func (s *UserService) GetLikedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]UserLiked, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "liked")
-	var ul UserLiked
-	_, err := s.client.Request.Get(url, &ul)
-	if err != nil {
-		return nil, err
+	if queryParams != nil {
+		paramValues, _ := query.Values(queryParams)
+		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
 	}
-	return &ul, nil
+	var liked []UserLiked
+	_, err := s.client.Request.Get(url, &liked)
+	if err != nil {
+		return []UserLiked{}, err
+	}
+	return liked, nil
 }
 
 // https://taigaio.github.io/taiga-doc/dist/api.html#users-voted
-// func GetVotedContent(s *UserService) (User, error) {}
+func (s *UserService) GetVotedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]Voted, error) {
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "voted")
+	if queryParams != nil {
+		paramValues, _ := query.Values(queryParams)
+		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
+	}
+	var voted []Voted
+	_, err := s.client.Request.Get(url, &voted)
+	if err != nil {
+		return []Voted{}, err
+	}
+	return voted, nil
+}
 
 // Edit sends a PATCH request to edit a user
 // https://taigaio.github.io/taiga-doc/dist/api.html#users-edit
@@ -106,6 +122,11 @@ func (s *UserService) Edit(user *User) (*User, error) {
 		return nil, err
 	}
 	return &u, nil
+}
+
+// Update is an alias for Edit.
+func (s *UserService) Update(user *User) (*User, error) {
+	return s.Edit(user)
 }
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#users-delete

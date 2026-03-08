@@ -1,3 +1,7 @@
 go 1.19
 
-use ./cli
+use (
+	./
+	./cli
+	./contribute
+)

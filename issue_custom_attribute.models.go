@@ -11,6 +11,6 @@ type IssueCustomAttribute struct {
 	ModifiedDate time.Time   `json:"modified_date"`
 	Name         string      `json:"name"`
 	Order        int         `json:"order"`
-	ProjectID    int         `json:"project_id"`
+	Project      int         `json:"project"`
 	Type         string      `json:"type"`
 }

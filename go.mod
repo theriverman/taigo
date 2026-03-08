@@ -1,4 +1,4 @@
-module github.com/theriverman/taigo
+module github.com/theriverman/taigo/v2
 
 go 1.14
 

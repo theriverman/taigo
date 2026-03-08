@@ -84,6 +84,9 @@ func (s *UserStoryService) Get(userStoryID int) (*UserStory, error) {
 func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserStory, error) {
 	var us UserStoryDetailGET
 	var url string
+	if project == nil {
+		return nil, errors.New("project must not be nil")
+	}
 
 	switch {
 	case project.ID != 0:

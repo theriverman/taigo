@@ -255,11 +255,11 @@ type EpicWatcherDetail struct {
 
 // EpicsQueryParams holds fields to be used as URL query parameters to filter the queried objects
 type EpicsQueryParams struct {
-	IncludeAttachments bool   `url:"include_attachments,omitempty"`
+	IncludeAttachments *bool  `url:"include_attachments,omitempty"`
 	Project            int    `url:"project,omitempty"`
 	ProjectSlug        string `url:"project__slug,omitempty"`
 	AssignedTo         int    `url:"assigned_to,omitempty"`
-	StatusIsClosed     bool   `url:"status__is_closed,omitempty"`
+	StatusIsClosed     *bool  `url:"status__is_closed,omitempty"`
 }
 
 // EpicMinimal represent a small subset of a full Epic object

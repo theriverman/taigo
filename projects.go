@@ -13,9 +13,9 @@ import (
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#projects
 type ProjectService struct {
-	client           *Client
+	client *Client
 	// defaultProjectID int
-	Endpoint         string
+	Endpoint string
 	// Mapped services for simple access
 	areMappedServicesConfigured bool
 	Auth                        *AuthService
@@ -29,6 +29,18 @@ type ProjectService struct {
 	User                        *UserService
 	Webhook                     *WebhookService
 	Wiki                        *WikiService
+	Point                       *PointService
+	Priority                    *PriorityService
+	Severity                    *SeverityService
+	IssueType                   *IssueTypeService
+	EpicStatus                  *EpicStatusService
+	IssueStatus                 *IssueStatusService
+	TaskStatus                  *TaskStatusService
+	UserStoryStatus             *UserStoryStatusService
+	EpicCustomAttribute         *EpicCustomAttributeService
+	IssueCustomAttribute        *IssueCustomAttributeService
+	TaskCustomAttribute         *TaskCustomAttributeService
+	UserStoryCustomAttribute    *UserStoryCustomAttributeService
 }
 
 // ConfigureMappedServices maps all services to the *ProjectService with a selected project preconfigured
@@ -44,6 +56,18 @@ func (s *ProjectService) ConfigureMappedServices(ProjectID int) {
 	s.User = &UserService{s.client, ProjectID, "users"}
 	s.Webhook = &WebhookService{s.client, ProjectID, "webhooks", "webhooklogs"}
 	s.Wiki = &WikiService{s.client, ProjectID, "wiki"}
+	s.Point = &PointService{s.client, ProjectID, "points"}
+	s.Priority = &PriorityService{s.client, ProjectID, "priorities"}
+	s.Severity = &SeverityService{s.client, ProjectID, "severities"}
+	s.IssueType = &IssueTypeService{s.client, ProjectID, "issue-types"}
+	s.EpicStatus = &EpicStatusService{s.client, ProjectID, "epic-statuses"}
+	s.IssueStatus = &IssueStatusService{s.client, ProjectID, "issue-statuses"}
+	s.TaskStatus = &TaskStatusService{s.client, ProjectID, "task-statuses"}
+	s.UserStoryStatus = &UserStoryStatusService{s.client, ProjectID, "userstory-statuses"}
+	s.EpicCustomAttribute = &EpicCustomAttributeService{s.client, ProjectID, "epic-custom-attributes"}
+	s.IssueCustomAttribute = &IssueCustomAttributeService{s.client, ProjectID, "issue-custom-attributes"}
+	s.TaskCustomAttribute = &TaskCustomAttributeService{s.client, ProjectID, "task-custom-attributes"}
+	s.UserStoryCustomAttribute = &UserStoryCustomAttributeService{s.client, ProjectID, "userstory-custom-attributes"}
 
 	s.areMappedServicesConfigured = true
 }
@@ -148,6 +172,11 @@ func (s *ProjectService) Edit(project *Project) (*Project, error) {
 		return nil, err
 	}
 	return p.AsProject()
+}
+
+// Update is an alias for Edit.
+func (s *ProjectService) Update(project *Project) (*Project, error) {
+	return s.Edit(project)
 }
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#projects-delete

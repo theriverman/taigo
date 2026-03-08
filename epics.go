@@ -77,8 +77,10 @@ func (s *EpicService) Get(epicID int) (*Epic, error) {
 //
 // The passed epicRef should be an int taken from the Epic's URL
 // The passed *Project struct should have at least one of the following fields set:
-//		ID 	 (int)
-//		Slug (string)
+//
+//	ID 	 (int)
+//	Slug (string)
+//
 // If none of the above fields are set, an error is returned.
 // If both fields are set, *Project.ID will be preferred.
 //
@@ -86,6 +88,9 @@ func (s *EpicService) Get(epicID int) (*Epic, error) {
 func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 	var e EpicDetailGET
 	var url string
+	if project == nil {
+		return nil, errors.New("project must not be nil")
+	}
 
 	switch {
 	case project.ID > 0:
@@ -124,6 +129,11 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 		return nil, err
 	}
 	return e.AsEpic()
+}
+
+// Update is an alias for Edit.
+func (s *EpicService) Update(epic *Epic) (*Epic, error) {
+	return s.Edit(epic)
 }
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#epics-delete
@@ -172,7 +182,6 @@ func (s *EpicService) CreateRelatedUserStory(EpicID int, UserStoryID int) (*Epic
 }
 
 // CreateAttachment creates a new Epic attachment => https://taigaio.github.io/taiga-doc/dist/api.html#epics-create-attachment
-//
 func (s *EpicService) CreateAttachment(attachment *Attachment, epic *Epic) (*Attachment, error) {
 	url := s.client.MakeURL(s.Endpoint, "attachments")
 	return newfileUploadRequest(s.client, url, attachment, epic)

@@ -88,6 +88,11 @@ func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
 	return &m, nil
 }
 
+// Update is an alias for Edit.
+func (s *MilestoneService) Update(milestone *Milestone) (*Milestone, error) {
+	return s.Edit(milestone)
+}
+
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-delete
 func (s *MilestoneService) Delete(milestoneID int) (*http.Response, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(milestoneID))

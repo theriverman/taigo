@@ -330,17 +330,17 @@ type IssueFiltersDataDetail struct {
 type UserStoryQueryParams struct {
 	Project            int    `url:"project,omitempty"`
 	Milestone          int    `url:"milestone,omitempty"`
-	MilestoneIsNull    bool   `url:"milestone__isnull,omitempty"`
+	MilestoneIsNull    *bool  `url:"milestone__isnull,omitempty"`
 	Status             int    `url:"status,omitempty"`
-	StatusIsArchived   bool   `url:"status__is_archived,omitempty"`
+	StatusIsArchived   *bool  `url:"status__is_archived,omitempty"`
 	Tags               string `url:"tags,omitempty"` // comma-separated strings w/o whitespace
 	Watchers           int    `url:"watchers,omitempty"`
 	AssignedTo         int    `url:"assigned_to,omitempty"`
 	Epic               int    `url:"epic,omitempty"`
 	Role               int    `url:"role,omitempty"`
-	StatusIsClosed     bool   `url:"status__is_closed,omitempty"`
-	IncludeAttachments bool   `url:"include_attachments,omitempty"`
-	IncludeTasks       bool   `url:"include_tasks,omitempty"`
+	StatusIsClosed     *bool  `url:"status__is_closed,omitempty"`
+	IncludeAttachments *bool  `url:"include_attachments,omitempty"`
+	IncludeTasks       *bool  `url:"include_tasks,omitempty"`
 	ExcludeStatus      int    `url:"exclude_status,omitempty"`
 	ExcludeTags        string `url:"exclude_tags,omitempty"` // comma-separated strings w/o whitespace
 	ExcludeAssignedTo  int    `url:"exclude_assigned_to,omitempty"`

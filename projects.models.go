@@ -27,12 +27,13 @@ type ProjectPoints struct {
 
 // ProjectTagsColors is a [string/string] key/value pair to represent project-wide Tag/Colour combinations
 // JSON Representation example:
-// {
-// 	"tags_colors": {
-// 		"high": "#D35163",
-// 		"normal": "#78D351"
-//  },
-// }
+//
+//	{
+//		"tags_colors": {
+//			"high": "#D35163",
+//			"normal": "#78D351"
+//	 },
+//	}
 type ProjectTagsColors map[string]string
 
 // IsValueNil returns true if ProjectPoints.Value is nil
@@ -458,54 +459,54 @@ type ProjectStatsDetail struct {
 type ProjectsQueryParameters struct {
 	Member             int    `url:"member,omitempty"`
 	Members            []int  `url:"members,omitempty"`
-	IsLookingForPeople bool   `url:"is_looking_for_people,omitempty"`
-	IsFeatured         bool   `url:"is_featured,omitempty"`
-	IsBacklogActivated bool   `url:"is_backlog_activated,omitempty"`
-	IsKanbanActivated  bool   `url:"is_kanban_activated,omitempty"`
-	orderBy            string `url:"order_by,omitempty"` // Can be set via struct methods
+	IsLookingForPeople *bool  `url:"is_looking_for_people,omitempty"`
+	IsFeatured         *bool  `url:"is_featured,omitempty"`
+	IsBacklogActivated *bool  `url:"is_backlog_activated,omitempty"`
+	IsKanbanActivated  *bool  `url:"is_kanban_activated,omitempty"`
+	OrderBy            string `url:"order_by,omitempty"` // Can be set via struct methods
 }
 
 // MembershipsUserOrder => Order by the project order specified by the user
 func (queryParams *ProjectsQueryParameters) MembershipsUserOrder() {
-	queryParams.orderBy = "memberships__user_order"
+	queryParams.OrderBy = "memberships__user_order"
 }
 
 // TotalFans => Order by total fans for the project
 func (queryParams *ProjectsQueryParameters) TotalFans() {
-	queryParams.orderBy = "total_fans"
+	queryParams.OrderBy = "total_fans"
 }
 
 // TotalFansLastWeek => Order by number of new fans in the last week
 func (queryParams *ProjectsQueryParameters) TotalFansLastWeek() {
-	queryParams.orderBy = "total_fans_last_week"
+	queryParams.OrderBy = "total_fans_last_week"
 }
 
 // TotalFansLastMonth => Order by number of new fans in the last month
 func (queryParams *ProjectsQueryParameters) TotalFansLastMonth() {
-	queryParams.orderBy = "total_fans_last_month"
+	queryParams.OrderBy = "total_fans_last_month"
 }
 
 // TotalFansLastYear => Order by number of new fans in the last year
 func (queryParams *ProjectsQueryParameters) TotalFansLastYear() {
-	queryParams.orderBy = "total_fans_last_year"
+	queryParams.OrderBy = "total_fans_last_year"
 }
 
 // TotalActivity => Order by number of history entries for the project
 func (queryParams *ProjectsQueryParameters) TotalActivity() {
-	queryParams.orderBy = "total_activity"
+	queryParams.OrderBy = "total_activity"
 }
 
 // TotalActivityLastWeek => Order by number of history entries generated in the last week
 func (queryParams *ProjectsQueryParameters) TotalActivityLastWeek() {
-	queryParams.orderBy = "total_activity_last_week"
+	queryParams.OrderBy = "total_activity_last_week"
 }
 
 // TotalActivityLastMonth => Order by number of history entries generated in the last month
 func (queryParams *ProjectsQueryParameters) TotalActivityLastMonth() {
-	queryParams.orderBy = "total_activity_last_month"
+	queryParams.OrderBy = "total_activity_last_month"
 }
 
 // TotalActivityLastYear => Order by number of history entries generated in the last year
 func (queryParams *ProjectsQueryParameters) TotalActivityLastYear() {
-	queryParams.orderBy = "total_activity_last_year"
+	queryParams.OrderBy = "total_activity_last_year"
 }

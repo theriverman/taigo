@@ -9,18 +9,24 @@ import (
 
 // AgilePoints is a [string/int] key/value pair to represent agile points in a UserStory, Milestone, etc...
 // JSON Representation example:
-// {
-// 	"points": {
-// 		"1": 12,
-// 		"2": 2,
-// 		"3": 5,
-// 		"4": 5
-// 	}
-// }
+//
+//	{
+//		"points": {
+//			"1": 12,
+//			"2": 2,
+//			"3": 5,
+//			"4": 5
+//		}
+//	}
 type AgilePoints map[string]float64
 
 // Points represent the Agile Points configured for the project and set for respective Taiga object
 type Points = AgilePoints
+
+// ProjectIDQueryParams is a reusable query param helper for endpoints filtered by project ID.
+type ProjectIDQueryParams struct {
+	Project int `url:"project,omitempty"`
+}
 
 // Tags represent the tags slice of respective Taiga object
 type Tags [][]string

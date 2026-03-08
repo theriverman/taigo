@@ -21,6 +21,23 @@ type WikiPage struct {
 	Version          int              `json:"version"`
 }
 
+// WikiQueryParams holds fields to be used as URL query parameters to filter wiki pages.
+type WikiQueryParams struct {
+	Project int    `url:"project,omitempty"`
+	Slug    string `url:"slug,omitempty"`
+}
+
+// WikiRenderPayload is the request payload for wiki markdown rendering.
+type WikiRenderPayload struct {
+	Content   string `json:"content"`
+	ProjectID int    `json:"project_id"`
+}
+
+// WikiRenderResponse is returned by POST /wiki/render.
+type WikiRenderResponse struct {
+	Data string `json:"data"`
+}
+
 // GetID returns the ID
 func (w *WikiPage) GetID() int {
 	return w.ID

@@ -56,6 +56,20 @@ type Client struct {
 	User      *UserService
 	Webhook   *WebhookService
 	Wiki      *WikiService
+	Point     *PointService
+	Priority  *PriorityService
+	Severity  *SeverityService
+	IssueType *IssueTypeService
+
+	EpicStatus      *EpicStatusService
+	IssueStatus     *IssueStatusService
+	TaskStatus      *TaskStatusService
+	UserStoryStatus *UserStoryStatusService
+
+	EpicCustomAttribute      *EpicCustomAttributeService
+	IssueCustomAttribute     *IssueCustomAttributeService
+	TaskCustomAttribute      *TaskCustomAttributeService
+	UserStoryCustomAttribute *UserStoryCustomAttributeService
 
 	// Token Refresh Helpers
 	TokenRefreshTicker *time.Ticker
@@ -117,13 +131,25 @@ func (c *Client) Initialise() error {
 	c.User = &UserService{c, 0, "users"}
 	c.Webhook = &WebhookService{c, 0, "webhooks", "webhooklogs"}
 	c.Wiki = &WikiService{c, 0, "wiki"}
+	c.Point = &PointService{c, 0, "points"}
+	c.Priority = &PriorityService{c, 0, "priorities"}
+	c.Severity = &SeverityService{c, 0, "severities"}
+	c.IssueType = &IssueTypeService{c, 0, "issue-types"}
+	c.EpicStatus = &EpicStatusService{c, 0, "epic-statuses"}
+	c.IssueStatus = &IssueStatusService{c, 0, "issue-statuses"}
+	c.TaskStatus = &TaskStatusService{c, 0, "task-statuses"}
+	c.UserStoryStatus = &UserStoryStatusService{c, 0, "userstory-statuses"}
+	c.EpicCustomAttribute = &EpicCustomAttributeService{c, 0, "epic-custom-attributes"}
+	c.IssueCustomAttribute = &IssueCustomAttributeService{c, 0, "issue-custom-attributes"}
+	c.TaskCustomAttribute = &TaskCustomAttributeService{c, 0, "task-custom-attributes"}
+	c.UserStoryCustomAttribute = &UserStoryCustomAttributeService{c, 0, "userstory-custom-attributes"}
 
 	c.isInitialised = true
 
 	// Token Refresh Routine
 	if c.AutoRefreshDisabled {
 		if c.Verbose {
-			log.Println("automatic token refresh subroutine will not be started because AutoRefreshDisabled = false")
+			log.Println("automatic token refresh subroutine will not be started because AutoRefreshDisabled = true")
 		}
 		return nil
 	}
@@ -138,7 +164,8 @@ func (c *Client) Initialise() error {
 	if c.Verbose {
 		log.Printf("AutoRefreshTickerDuration: %s\n", c.AutoRefreshTickerDuration)
 	}
-	c.tokenRefreshDone = make(chan bool)
+	// Buffered channel avoids blocking on repeated disable calls.
+	c.tokenRefreshDone = make(chan bool, 1)
 	if c.TokenRefreshTicker == nil {
 		c.TokenRefreshTicker = time.NewTicker(c.AutoRefreshTickerDuration)
 	}
@@ -150,8 +177,15 @@ func (c *Client) Initialise() error {
 }
 
 func (c *Client) DisableAutomaticTokenRefresh() {
-	c.TokenRefreshTicker.Stop()
-	c.tokenRefreshDone <- true
+	if c.TokenRefreshTicker != nil {
+		c.TokenRefreshTicker.Stop()
+	}
+	if c.tokenRefreshDone != nil {
+		select {
+		case c.tokenRefreshDone <- true:
+		default:
+		}
+	}
 	if c.Verbose {
 		log.Println("automatic token refresh has been disabled")
 	}
@@ -196,15 +230,24 @@ func (c *Client) AuthByToken(tokenType, token, refreshToken string) error {
 
 // DisablePagination controls the value of header `x-disable-pagination`.
 func (c *Client) DisablePagination(b bool) {
-	m := map[string]string{
-		"x-disable-pagination": cases.Title(language.BritishEnglish).String(strconv.FormatBool(b)),
+	if c.Headers == nil {
+		c.Headers = &http.Header{}
 	}
-	c.LoadExternalHeaders(m)
+	const headerName = "x-disable-pagination"
+	if b {
+		c.Headers.Set(headerName, cases.Title(language.BritishEnglish).String(strconv.FormatBool(true)))
+	} else {
+		// Taiga checks only header presence; remove the header to enable pagination.
+		c.Headers.Del(headerName)
+	}
 	c.paginationDisabled = b
 }
 
 // GetPagination returns the Pagination struct created from the last response
 func (c *Client) GetPagination() Pagination {
+	if c.pagination == nil {
+		return Pagination{}
+	}
 	return *c.pagination
 }
 
@@ -215,18 +258,20 @@ func (c *Client) GetAuthorizationHeader() string {
 
 // LoadExternalHeaders loads a map of header key/value pairs permemently into `Client.Headers`
 func (c *Client) LoadExternalHeaders(headers map[string]string) {
+	if c.Headers == nil {
+		c.Headers = &http.Header{}
+	}
 	for k, v := range headers {
-		c.Headers.Add(k, v)
+		c.Headers.Set(k, v)
 	}
 }
 
 func (c *Client) setContentTypeToJSON() {
-	c.Headers.Add("Content-Type", "application/json")
+	c.Headers.Set("Content-Type", "application/json")
 }
 
 func (c *Client) setToken() {
-	c.Headers.Del("Authorization") // avoid header duplication
-	c.Headers.Add("Authorization", c.TokenType+" "+c.Token)
+	c.Headers.Set("Authorization", c.TokenType+" "+c.Token)
 }
 
 // loadHeaders takes an http.Request and maps locally stored Header values to its .Header
@@ -253,7 +298,7 @@ func defaultTokenRefreshRoutine(c *Client, ticker *time.Ticker) {
 				}
 				if refreshData, err := c.Auth.RefreshAuthToken(true); err != nil {
 					log.Println(err)
-					return
+					continue
 				} else {
 					c.Token = refreshData.AuthToken
 					c.RefreshToken = refreshData.Refresh

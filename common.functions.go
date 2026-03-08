@@ -2,6 +2,7 @@ package taigo
 
 import (
 	"encoding/json"
+	"reflect"
 	"strconv"
 
 	"github.com/google/go-querystring/query"
@@ -59,15 +60,22 @@ func convertStructViaJSON(sourcePtr interface{}, targetPtr interface{}) error {
 func isEmpty(structField interface{}) bool {
 	if structField == nil {
 		return true
-	} else if structField == "" {
-		return true
-	} else if structField == false {
-		return true
 	}
-	return false
+	v := reflect.ValueOf(structField)
+	switch v.Kind() {
+	case reflect.Interface, reflect.Ptr, reflect.Map, reflect.Slice, reflect.Func:
+		return v.IsNil()
+	default:
+		return v.IsZero()
+	}
 }
 
 // projectIDQueryParam returns gives project ID formatted as a generic QueryParam
 func projectIDQueryParam(ProjectID int) string {
 	return "?project=" + strconv.Itoa(ProjectID)
+}
+
+// BoolPtr returns a pointer to the given bool.
+func BoolPtr(v bool) *bool {
+	return &v
 }

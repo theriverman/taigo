@@ -17,6 +17,51 @@ type WebhookService struct {
 	EndpointLogs     string
 }
 
+// List returns all webhooks for the current query scope.
+func (s *WebhookService) List(queryParams *WebhookQueryParameters) ([]Webhook, error) {
+	return s.ListWebhooks(queryParams)
+}
+
+// Create creates a webhook.
+func (s *WebhookService) Create(webhook *Webhook) (*Webhook, error) {
+	return s.CreateWebhook(webhook)
+}
+
+// Get returns a webhook by ID.
+func (s *WebhookService) Get(webhookID int) (*Webhook, error) {
+	return s.GetWebhook(&Webhook{ID: webhookID})
+}
+
+// Edit edits a webhook.
+func (s *WebhookService) Edit(webhook *Webhook) (*Webhook, error) {
+	return s.EditWebhook(webhook)
+}
+
+// Delete deletes a webhook by ID.
+func (s *WebhookService) Delete(webhookID int) error {
+	return s.DeleteWebhook(&Webhook{ID: webhookID})
+}
+
+// Test triggers the webhook test endpoint for a webhook ID.
+func (s *WebhookService) Test(webhookID int) (*WebhookLog, error) {
+	return s.TestWebhook(&Webhook{ID: webhookID})
+}
+
+// Logs returns webhook logs.
+func (s *WebhookService) Logs(queryParameters *WebhookQueryParameters) (*[]WebhookLog, error) {
+	return s.ListWebhookLogs(queryParameters)
+}
+
+// Log returns a webhook log by ID.
+func (s *WebhookService) Log(webhookLogID int) (*WebhookLog, error) {
+	return s.GetWebhookLog(webhookLogID)
+}
+
+// Resend resends a webhook request from a log ID.
+func (s *WebhookService) Resend(webhookLogID int) (*WebhookLog, error) {
+	return s.ResendWebhookRequest(&WebhookLog{ID: webhookLogID})
+}
+
 // ListWebhooks returns all Webhooks
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-list
 func (s *WebhookService) ListWebhooks(queryParams *WebhookQueryParameters) ([]Webhook, error) {
@@ -74,6 +119,11 @@ func (s *WebhookService) EditWebhook(webhook *Webhook) (*Webhook, error) {
 	return &responseWebhook, nil
 }
 
+// Update is an alias for EditWebhook.
+func (s *WebhookService) Update(webhook *Webhook) (*Webhook, error) {
+	return s.EditWebhook(webhook)
+}
+
 // DeleteWebhook sends a DELETE request to delete a Webhook
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-delete
 func (s *WebhookService) DeleteWebhook(webhook *Webhook) error {
@@ -88,9 +138,9 @@ func (s *WebhookService) DeleteWebhook(webhook *Webhook) error {
 // TestWebhook sends an empty POST request to test a webhook
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-test
 func (s *WebhookService) TestWebhook(webhook *Webhook) (*WebhookLog, error) {
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhook.ID))
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhook.ID), "test")
 	var whLog WebhookLog
-	_, err := s.client.Request.Post(url, &webhook, &whLog)
+	_, err := s.client.Request.Post(url, nil, &whLog)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +152,10 @@ func (s *WebhookService) TestWebhook(webhook *Webhook) (*WebhookLog, error) {
 func (s *WebhookService) ListWebhookLogs(queryParameters *WebhookQueryParameters) (*[]WebhookLog, error) {
 	url := s.client.MakeURL(s.EndpointLogs)
 	if queryParameters != nil {
-		queryParameters.ProjectID = 0 // dropping projectID because not required here
-		paramValues, _ := query.Values(queryParameters)
+		// webhooklogs endpoint supports filtering by `webhook`, not by `project`.
+		qp := *queryParameters
+		qp.ProjectID = 0
+		paramValues, _ := query.Values(qp)
 		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
 	}
 	var whLogs []WebhookLog
@@ -117,8 +169,8 @@ func (s *WebhookService) ListWebhookLogs(queryParameters *WebhookQueryParameters
 
 // GetWebhookLog returns a WebhookLog by ID
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooklogs-get
-func (s *WebhookService) GetWebhookLog(webhook *Webhook) (*WebhookLog, error) {
-	url := s.client.MakeURL(s.EndpointLogs, strconv.Itoa(webhook.ID))
+func (s *WebhookService) GetWebhookLog(webhookLogID int) (*WebhookLog, error) {
+	url := s.client.MakeURL(s.EndpointLogs, strconv.Itoa(webhookLogID))
 	var whLog WebhookLog
 	_, err := s.client.Request.Get(url, &whLog)
 	if err != nil {
@@ -132,7 +184,7 @@ func (s *WebhookService) GetWebhookLog(webhook *Webhook) (*WebhookLog, error) {
 func (s *WebhookService) ResendWebhookRequest(webhookLog *WebhookLog) (*WebhookLog, error) {
 	url := s.client.MakeURL(s.EndpointLogs, strconv.Itoa(webhookLog.ID), "resend")
 	var whLog WebhookLog
-	_, err := s.client.Request.Post(url, &webhookLog, &whLog)
+	_, err := s.client.Request.Post(url, nil, &whLog)
 	if err != nil {
 		return nil, err
 	}

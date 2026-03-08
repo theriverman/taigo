@@ -2,6 +2,7 @@ package taigo
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +20,16 @@ var httpSuccessCodes = [...]int{
 	http.StatusCreated,
 	http.StatusAccepted,
 	http.StatusNoContent,
+}
+
+// APIError represents a non-2xx response from Taiga.
+type APIError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("taiga API error (status=%d): %s", e.StatusCode, e.Body)
 }
 
 // RequestService is a handle to HTTP request operations
@@ -43,12 +54,22 @@ func SuccessfulHTTPRequest(Response *http.Response) bool {
 //   - URL must be an absolute (full) URL to the desired endpoint
 //   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) Get(URL string, ResponseBody interface{}) (*http.Response, error) {
-	return newRawRequest("GET", s.client, ResponseBody, URL, nil)
+	return s.GetCtx(context.Background(), URL, ResponseBody)
+}
+
+// GetCtx composes a new HTTP GET request with context.
+func (s *RequestService) GetCtx(ctx context.Context, URL string, ResponseBody interface{}) (*http.Response, error) {
+	return newRawRequestWithContext(ctx, "GET", s.client, ResponseBody, URL, nil)
 }
 
 // Head a handler for composing a new HTTP HEAD request
-func (s *RequestService) Head() {
-	panic("HEAD requests are not implemented")
+func (s *RequestService) Head(URL string, ResponseBody interface{}) (*http.Response, error) {
+	return s.HeadCtx(context.Background(), URL, ResponseBody)
+}
+
+// HeadCtx composes a new HTTP HEAD request with context.
+func (s *RequestService) HeadCtx(ctx context.Context, URL string, ResponseBody interface{}) (*http.Response, error) {
+	return newRawRequestWithContext(ctx, "HEAD", s.client, ResponseBody, URL, nil)
 }
 
 // Post a handler for composing a new HTTP POST request
@@ -57,7 +78,12 @@ func (s *RequestService) Head() {
 //   - Payload must be a pointer to a complete struct which will be sent to Taiga
 //   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) Post(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
-	return newRawRequest("POST", s.client, ResponseBody, URL, Payload)
+	return s.PostCtx(context.Background(), URL, Payload, ResponseBody)
+}
+
+// PostCtx composes a new HTTP POST request with context.
+func (s *RequestService) PostCtx(ctx context.Context, URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+	return newRawRequestWithContext(ctx, "POST", s.client, ResponseBody, URL, Payload)
 }
 
 // Put a handler for composing a new HTTP PUT request
@@ -66,7 +92,12 @@ func (s *RequestService) Post(URL string, Payload interface{}, ResponseBody inte
 //   - Payload must be a pointer to a complete struct which will be sent to Taiga
 //   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) Put(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
-	return newRawRequest("PUT", s.client, ResponseBody, URL, Payload)
+	return s.PutCtx(context.Background(), URL, Payload, ResponseBody)
+}
+
+// PutCtx composes a new HTTP PUT request with context.
+func (s *RequestService) PutCtx(ctx context.Context, URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+	return newRawRequestWithContext(ctx, "PUT", s.client, ResponseBody, URL, Payload)
 }
 
 // Patch a handler for composing a new HTTP PATCH request
@@ -75,29 +106,54 @@ func (s *RequestService) Put(URL string, Payload interface{}, ResponseBody inter
 //   - Payload must be a pointer to a complete struct which will be sent to Taiga
 //   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
 func (s *RequestService) Patch(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
-	return newRawRequest("PATCH", s.client, ResponseBody, URL, Payload)
+	return s.PatchCtx(context.Background(), URL, Payload, ResponseBody)
+}
+
+// PatchCtx composes a new HTTP PATCH request with context.
+func (s *RequestService) PatchCtx(ctx context.Context, URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+	return newRawRequestWithContext(ctx, "PATCH", s.client, ResponseBody, URL, Payload)
 }
 
 // Delete a handler for composing a new HTTP DELETE request
 //
 //   - URL must be an absolute (full) URL to the desired endpoint
 func (s *RequestService) Delete(URL string) (*http.Response, error) {
-	return newRawRequest("DELETE", s.client, nil, URL, nil)
+	return s.DeleteCtx(context.Background(), URL)
+}
+
+// DeleteCtx composes a new HTTP DELETE request with context.
+func (s *RequestService) DeleteCtx(ctx context.Context, URL string) (*http.Response, error) {
+	return newRawRequestWithContext(ctx, "DELETE", s.client, nil, URL, nil)
 }
 
 // Connect a handler for composing a new HTTP CONNECT request
-func (s *RequestService) Connect() {
-	panic("CONNECT requests are not implemented")
+func (s *RequestService) Connect(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+	return s.ConnectCtx(context.Background(), URL, Payload, ResponseBody)
+}
+
+// ConnectCtx composes a new HTTP CONNECT request with context.
+func (s *RequestService) ConnectCtx(ctx context.Context, URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+	return newRawRequestWithContext(ctx, "CONNECT", s.client, ResponseBody, URL, Payload)
 }
 
 // Options a handler for composing a new HTTP OPTIONS request
-func (s *RequestService) Options() {
-	panic("OPTIONS requests are not implemented")
+func (s *RequestService) Options(URL string, ResponseBody interface{}) (*http.Response, error) {
+	return s.OptionsCtx(context.Background(), URL, ResponseBody)
+}
+
+// OptionsCtx composes a new HTTP OPTIONS request with context.
+func (s *RequestService) OptionsCtx(ctx context.Context, URL string, ResponseBody interface{}) (*http.Response, error) {
+	return newRawRequestWithContext(ctx, "OPTIONS", s.client, ResponseBody, URL, nil)
 }
 
 // Trace a handler for composing a new HTTP TRACE request
-func (s *RequestService) Trace() {
-	panic("TRACE requests are not implemented")
+func (s *RequestService) Trace(URL string, ResponseBody interface{}) (*http.Response, error) {
+	return s.TraceCtx(context.Background(), URL, ResponseBody)
+}
+
+// TraceCtx composes a new HTTP TRACE request with context.
+func (s *RequestService) TraceCtx(ctx context.Context, URL string, ResponseBody interface{}) (*http.Response, error) {
+	return newRawRequestWithContext(ctx, "TRACE", s.client, ResponseBody, URL, nil)
 }
 
 // NOTE: responseBody must always be a pointer otherwise we lose the response data!
@@ -121,13 +177,23 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	if err != nil {
 		return nil, fmt.Errorf("could not write file to buffer")
 	}
-	io.Copy(part, f)
+	if _, err := io.Copy(part, f); err != nil {
+		return nil, fmt.Errorf("could not copy file data to request body: %w", err)
+	}
 
 	// Add object_id & project to the form-data
-	writer.WriteField("object_id", strconv.Itoa(attachment.ObjectID))
-	writer.WriteField("project", strconv.Itoa(attachment.Project))
-	writer.WriteField("from_comment", "False")
-	writer.Close()
+	if err := writer.WriteField("object_id", strconv.Itoa(attachment.ObjectID)); err != nil {
+		return nil, fmt.Errorf("could not set object_id field: %w", err)
+	}
+	if err := writer.WriteField("project", strconv.Itoa(attachment.Project)); err != nil {
+		return nil, fmt.Errorf("could not set project field: %w", err)
+	}
+	if err := writer.WriteField("from_comment", "False"); err != nil {
+		return nil, fmt.Errorf("could not set from_comment field: %w", err)
+	}
+	if err := writer.Close(); err != nil {
+		return nil, fmt.Errorf("could not finalize multipart body: %w", err)
+	}
 
 	// Create POST Request
 	request, err := http.NewRequest("POST", url, body)
@@ -159,17 +225,24 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 		return &responseBody, nil
 	}
 
-	return nil, fmt.Errorf("%s", rawResponseBody)
+	return nil, &APIError{
+		StatusCode: rawResponse.StatusCode,
+		Body:       string(rawResponseBody),
+	}
 }
 
 func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL string, Payload interface{}) (*http.Response, error) {
+	return newRawRequestWithContext(context.Background(), RequestType, c, ResponseBody, URL, Payload)
+}
+
+func newRawRequestWithContext(ctx context.Context, RequestType string, c *Client, ResponseBody interface{}, URL string, Payload interface{}) (*http.Response, error) {
 	// New RAW request
 	var request *http.Request
 	var err error
 
 	switch Payload {
 	case nil:
-		request, err = http.NewRequest(RequestType, URL, nil)
+		request, err = http.NewRequestWithContext(ctx, RequestType, URL, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -178,7 +251,7 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 		if err != nil {
 			return nil, err
 		}
-		request, err = http.NewRequest(RequestType, URL, bytes.NewBuffer(body))
+		request, err = http.NewRequestWithContext(ctx, RequestType, URL, bytes.NewBuffer(body))
 		if err != nil {
 			return nil, err
 		}
@@ -199,19 +272,24 @@ func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL 
 		if resp.StatusCode == http.StatusNoContent { //  There's no body returned for 204 responses
 			return resp, nil
 		}
-		// We expect content so convert response JSON string to struct
-		decoder := json.NewDecoder(resp.Body)
-		err = decoder.Decode(&ResponseBody)
-		if err != nil {
-			return nil, err
+		if ResponseBody != nil {
+			// We expect content so convert response JSON string to struct
+			decoder := json.NewDecoder(resp.Body)
+			err = decoder.Decode(ResponseBody)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return resp, nil
 	}
 
 	rawResponseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
-	return nil, fmt.Errorf("%s", rawResponseBody)
+	return resp, &APIError{
+		StatusCode: resp.StatusCode,
+		Body:       string(rawResponseBody),
+	}
 }

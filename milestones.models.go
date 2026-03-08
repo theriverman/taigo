@@ -38,8 +38,8 @@ type Milestone struct {
 
 // MilestonesQueryParams holds fields to be used as URL query parameters to filter the queried objects
 type MilestonesQueryParams struct {
-	Project int  `url:"project,omitempty"`
-	Closed  bool `url:"closed,omitempty"`
+	Project int   `url:"project,omitempty"`
+	Closed  *bool `url:"closed,omitempty"`
 }
 
 // MilestoneTotalInfo holds the two extra headers returned by Taiga when filtering for milestones

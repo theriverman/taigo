@@ -3,6 +3,7 @@ package taigo
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/google/go-querystring/query"
@@ -44,12 +45,66 @@ func (s *IssueService) CreateAttachment(attachment *Attachment, issue *Issue) (*
 	return newfileUploadRequest(s.client, url, attachment, issue)
 }
 
+// GetAttachment retrives an Issue attachment by its ID => https://taigaio.github.io/taiga-doc/dist/api.html#issues-get-attachment
+func (s *IssueService) GetAttachment(attachmentID int) (*Attachment, error) {
+	a, err := getAttachmentForEndpoint(s.client, attachmentID, s.Endpoint)
+	if err != nil {
+		return nil, err
+	}
+	return a, nil
+}
+
+// ListAttachments returns a list of Issue attachments => https://taigaio.github.io/taiga-doc/dist/api.html#issues-list-attachments
+func (s *IssueService) ListAttachments(issue interface{}) ([]Attachment, error) {
+	i := Issue{}
+	err := convertStructViaJSON(issue, &i)
+	if err != nil {
+		return nil, err
+	}
+
+	queryParams := attachmentsQueryParams{
+		endpointURI: s.Endpoint,
+		ObjectID:    i.ID,
+		Project:     i.Project,
+	}
+
+	attachments, err := listAttachmentsForEndpoint(s.client, &queryParams)
+	if err != nil {
+		return nil, err
+	}
+	return attachments, nil
+}
+
 // Get -> https://taigaio.github.io/taiga-doc/dist/api.html#issues-get
 //
 // Available Meta: *IssueDetailGET
 func (s *IssueService) Get(issueID int) (*Issue, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueID))
 	var issue IssueDetailGET
+	_, err := s.client.Request.Get(url, &issue)
+	if err != nil {
+		return nil, err
+	}
+	return issue.AsIssue()
+}
+
+// GetByRef returns an Issue by Ref -> https://taigaio.github.io/taiga-doc/dist/api.html#issues-get-by-ref
+func (s *IssueService) GetByRef(issueRef int, project *Project) (*Issue, error) {
+	var issue IssueDetailGET
+	var url string
+	if project == nil {
+		return nil, errors.New("project must not be nil")
+	}
+
+	switch {
+	case project.ID != 0:
+		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, issueRef, project.ID))
+	case len(project.Slug) > 0:
+		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, issueRef, project.Slug))
+	default:
+		return nil, errors.New("no ID or Ref defined in passed project struct")
+	}
+
 	_, err := s.client.Request.Get(url, &issue)
 	if err != nil {
 		return nil, err
@@ -81,6 +136,11 @@ func (s *IssueService) Edit(issue *Issue) (*Issue, error) {
 	return responseIssue.AsIssue()
 }
 
+// Update is an alias for Edit.
+func (s *IssueService) Update(issue *Issue) (*Issue, error) {
+	return s.Edit(issue)
+}
+
 // Create creates a new Issue | https://taigaio.github.io/taiga-doc/dist/api.html#issues-create
 //
 // Available Meta: *IssueDetail
@@ -100,4 +160,10 @@ func (s *IssueService) Create(issue *Issue) (*Issue, error) {
 	}
 
 	return issueDetail.AsIssue()
+}
+
+// Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#issues-delete
+func (s *IssueService) Delete(issueID int) (*http.Response, error) {
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueID))
+	return s.client.Request.Delete(url)
 }

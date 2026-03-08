@@ -7,6 +7,12 @@ type UsersQueryParams struct {
 	Project int `url:"project,omitempty"`
 }
 
+// UsersHighlightedQueryParams holds optional query parameters for watched/liked/voted content endpoints.
+type UsersHighlightedQueryParams struct {
+	Type string `url:"type,omitempty"`
+	Q    string `url:"q,omitempty"`
+}
+
 // User represents User detail | https://taigaio.github.io/taiga-doc/dist/api.html#object-user-detail
 type User struct {
 	authToken                     string    // internal; non-standard
@@ -54,14 +60,14 @@ type Liked struct {
 	IsWatcher           bool                `json:"is_watcher,omitempty"`
 	LogoSmallURL        string              `json:"logo_small_url,omitempty"`
 	Name                string              `json:"name,omitempty"`
-	Project             string              `json:"project,omitempty"`
+	Project             int                 `json:"project,omitempty"`
 	ProjectBlockedCode  string              `json:"project_blocked_code,omitempty"`
 	ProjectIsPrivate    bool                `json:"project_is_private,omitempty"`
 	ProjectName         string              `json:"project_name,omitempty"`
 	ProjectSlug         string              `json:"project_slug,omitempty"`
 	Ref                 int                 `json:"ref,omitempty"`
 	Slug                string              `json:"slug,omitempty"`
-	Status              int                 `json:"status,omitempty"`
+	Status              string              `json:"status,omitempty"`
 	StatusColor         string              `json:"status_color,omitempty"`
 	Subject             string              `json:"subject,omitempty"`
 	TagsColors          []TagsColors        `json:"tags_colors,omitempty"`
@@ -199,7 +205,7 @@ type UserLiked struct {
 	ProjectSlug         string              `json:"project_slug"`
 	Ref                 int                 `json:"ref"`
 	Slug                string              `json:"slug"`
-	Status              int                 `json:"status"`
+	Status              string              `json:"status"`
 	StatusColor         string              `json:"status_color"`
 	Subject             string              `json:"subject"`
 	TagsColors          []TagsColors        `json:"tags_colors,omitempty"`

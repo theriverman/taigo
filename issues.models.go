@@ -231,15 +231,15 @@ func (issueD *IssueDetail) AsIssue() (*Issue, error) {
 type IssueQueryParams struct {
 	Project            int    `url:"project,omitempty"`
 	Milestone          int    `url:"milestone,omitempty"`
-	MilestoneIsNull    bool   `url:"milestone__isnull,omitempty"`
+	MilestoneIsNull    *bool  `url:"milestone__isnull,omitempty"`
 	Status             int    `url:"status,omitempty"`
-	StatusIsArchived   bool   `url:"status__is_archived,omitempty"`
+	StatusIsArchived   *bool  `url:"status__is_archived,omitempty"`
 	Tags               string `url:"tags,omitempty"` // comma-separated strings w/o whitespace
 	Watchers           int    `url:"watchers,omitempty"`
 	AssignedTo         int    `url:"assigned_to,omitempty"`
 	Epic               int    `url:"epic,omitempty"`
 	Role               int    `url:"role,omitempty"`
-	StatusIsClosed     bool   `url:"status__is_closed,omitempty"`
+	StatusIsClosed     *bool  `url:"status__is_closed,omitempty"`
 	Type               int    `url:"type,omitempty"`
 	Severity           int    `url:"severity,omitempty"`
 	Priority           int    `url:"priority,omitempty"`
@@ -253,5 +253,5 @@ type IssueQueryParams struct {
 	ExcludePriority    int    `url:"exclude_priority,omitempty"`
 	ExcludeOwner       int    `url:"exclude_owner,omitempty"`
 	ExcludeType        int    `url:"exclude_type,omitempty"`
-	IncludeAttachments bool   `url:"include_attachments,omitempty"`
+	IncludeAttachments *bool  `url:"include_attachments,omitempty"`
 }

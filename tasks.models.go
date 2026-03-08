@@ -1,6 +1,9 @@
 package taigo
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 func genericToTask(anyTaskObject interface{}) *Task {
 	object := Task{}
@@ -245,22 +248,27 @@ type TaskVoterDetail struct {
 //
 // To set `OrderBy`, use the methods attached to this struct
 type TasksQueryParams struct {
-	Project            int      `url:"project,omitempty"`
-	Status             int      `url:"status,omitempty"`
-	Tags               []string `url:"tags,omitempty"`
-	UserStory          int      `url:"user_story,omitempty"`
-	Role               int      `url:"role,omitempty"`
-	Owner              int      `url:"owner,omitempty"`
-	Milestone          int      `url:"milestone,omitempty"`
-	Watchers           int      `url:"watchers,omitempty"`
-	AssignedTo         int      `url:"assigned_to,omitempty"`
-	StatusIsClosed     bool     `url:"status__is_closed,omitempty"`
-	ExcludeStatus      int      `url:"exclude_status,omitempty"`
-	ExcludeTags        string   `url:"exclude_tags,omitempty"` // comma-separated strings w/o whitespace
-	ExcludeRole        int      `url:"exclude_role,omitempty"`
-	ExcludeOwner       int      `url:"exclude_owner,omitempty"`
-	ExcludeAssignedTo  int      `url:"exclude_assigned_to,omitempty"`
-	IncludeAttachments bool     `url:"include_attachments,omitempty"`
+	Project            int    `url:"project,omitempty"`
+	Status             int    `url:"status,omitempty"`
+	Tags               string `url:"tags,omitempty"` // comma-separated strings w/o whitespace
+	UserStory          int    `url:"user_story,omitempty"`
+	Role               int    `url:"role,omitempty"`
+	Owner              int    `url:"owner,omitempty"`
+	Milestone          int    `url:"milestone,omitempty"`
+	Watchers           int    `url:"watchers,omitempty"`
+	AssignedTo         int    `url:"assigned_to,omitempty"`
+	StatusIsClosed     *bool  `url:"status__is_closed,omitempty"`
+	ExcludeStatus      int    `url:"exclude_status,omitempty"`
+	ExcludeTags        string `url:"exclude_tags,omitempty"` // comma-separated strings w/o whitespace
+	ExcludeRole        int    `url:"exclude_role,omitempty"`
+	ExcludeOwner       int    `url:"exclude_owner,omitempty"`
+	ExcludeAssignedTo  int    `url:"exclude_assigned_to,omitempty"`
+	IncludeAttachments *bool  `url:"include_attachments,omitempty"`
+}
+
+// SetTags sets the `tags` query parameter as a comma-separated list.
+func (q *TasksQueryParams) SetTags(tags ...string) {
+	q.Tags = strings.Join(tags, ",")
 }
 
 /*
