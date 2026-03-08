@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	taiga "github.com/theriverman/taigo"
+	taiga "github.com/theriverman/taigo/v2"
 )
 
 const TaigoCfgFolder string = "TaigoCLI"
@@ -33,7 +33,7 @@ func init() {
 	// check/create TaigoCli directory existence
 	TaigoCliHomeDir := filepath.Join(userHomeDir, TaigoCfgFolder)
 	TaigoCliCfgPath := filepath.Join(TaigoCliHomeDir, UserCfgFilename)
-	if err = os.MkdirAll(TaigoCliHomeDir, 0644); err != nil {
+	if err = os.MkdirAll(TaigoCliHomeDir, 0700); err != nil {
 		log.Fatal(err)
 	}
 	// get/create config file
