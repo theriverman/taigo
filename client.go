@@ -70,6 +70,24 @@ type Client struct {
 	IssueCustomAttribute     *IssueCustomAttributeService
 	TaskCustomAttribute      *TaskCustomAttributeService
 	UserStoryCustomAttribute *UserStoryCustomAttributeService
+	Application              *ApplicationService
+	ApplicationToken         *ApplicationTokenService
+	Search                   *SearchService
+	UserStorage              *UserStorageService
+	ProjectTemplate          *ProjectTemplateService
+	ProjectTemplateDetail    *ProjectTemplateDetailService
+	MembershipInvitation     *MembershipInvitationService
+	WikiLink                 *WikiLinkService
+	History                  *HistoryService
+	NotifyPolicy             *NotifyPolicyService
+	Contact                  *ContactService
+	Feedback                 *FeedbackService
+	ExportImport             *ExportImportService
+	Timeline                 *TimelineService
+	Locale                   *LocaleService
+	Importer                 *ImporterService
+	ContribPlugin            *ContribPluginService
+	ObjectsSummary           *ObjectsSummaryService
 
 	// Token Refresh Helpers
 	TokenRefreshTicker *time.Ticker
@@ -143,6 +161,24 @@ func (c *Client) Initialise() error {
 	c.IssueCustomAttribute = &IssueCustomAttributeService{c, 0, "issue-custom-attributes"}
 	c.TaskCustomAttribute = &TaskCustomAttributeService{c, 0, "task-custom-attributes"}
 	c.UserStoryCustomAttribute = &UserStoryCustomAttributeService{c, 0, "userstory-custom-attributes"}
+	c.Application = &ApplicationService{c, 0, "applications"}
+	c.ApplicationToken = &ApplicationTokenService{c, 0, "application-tokens"}
+	c.Search = &SearchService{c, 0, "search"}
+	c.UserStorage = &UserStorageService{c, 0, "user-storage"}
+	c.ProjectTemplate = &ProjectTemplateService{c, 0, "project-templates"}
+	c.ProjectTemplateDetail = &ProjectTemplateDetailService{c, 0, "project-templates"}
+	c.MembershipInvitation = &MembershipInvitationService{c, 0, "memberships", "invitations"}
+	c.WikiLink = &WikiLinkService{c, 0, "wiki-links"}
+	c.History = &HistoryService{c, 0, "history"}
+	c.NotifyPolicy = &NotifyPolicyService{c, 0, "notify-policies"}
+	c.Contact = &ContactService{c, 0, "contact"}
+	c.Feedback = &FeedbackService{c, 0, "feedback"}
+	c.ExportImport = &ExportImportService{c, 0, "exporter", "importer"}
+	c.Timeline = &TimelineService{c, 0, "timeline"}
+	c.Locale = &LocaleService{c, 0, "locales"}
+	c.Importer = &ImporterService{c, 0, "importers"}
+	c.ContribPlugin = &ContribPluginService{c, 0, "contrib-plugins"}
+	c.ObjectsSummary = &ObjectsSummaryService{c, 0, "objects-summary"}
 
 	c.isInitialised = true
 

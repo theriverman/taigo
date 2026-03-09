@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	taiga "github.com/theriverman/taigo"
+	taiga "github.com/theriverman/taigo/v2"
 )
 
 var sandboxEpicID2 int // do not change manually
@@ -215,15 +215,15 @@ func main() {
 	// EpicCustomAttributeDetail -> https://taigaio.github.io/taiga-doc/dist/api.html#object-epic-custom-attribute-detail
 	// Converted via https://mholt.github.io/json-to-go/
 	type EpicCustomAttributeDetail struct {
-		CreatedDate  time.Time   `json:"created_date"`
-		Description  string      `json:"description"`
-		Extra        interface{} `json:"extra"`
-		ID           int         `json:"id"`
-		ModifiedDate time.Time   `json:"modified_date"`
-		Name         string      `json:"name"`
-		Order        int         `json:"order"`
-		Project      int         `json:"project"`
-		Type         string      `json:"type"`
+		CreatedDate  time.Time `json:"created_date"`
+		Description  string    `json:"description"`
+		Extra        any       `json:"extra"`
+		ID           int       `json:"id"`
+		ModifiedDate time.Time `json:"modified_date"`
+		Name         string    `json:"name"`
+		Order        int       `json:"order"`
+		Project      int       `json:"project"`
+		Type         string    `json:"type"`
 	}
 	epicCustomAttributes := []EpicCustomAttributeDetail{} // this will hold the returned data. passed as a pointer below
 

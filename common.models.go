@@ -149,7 +149,7 @@ type ProjectExtraInfo struct {
 }
 
 // TgObjectCAVD is the default type for object custom attribute values
-type TgObjectCAVD map[string]interface{}
+type TgObjectCAVD map[string]any
 
 // TgObjCAVDBase is the bare minimum for all tgCustomAttributeValue structs
 type TgObjCAVDBase struct {

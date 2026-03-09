@@ -18,4 +18,5 @@ type ResolverQueryParams struct {
 	Milestone string `url:"milestone,omitempty"`
 	WikiPage  string `url:"wikipage,omitempty"`
 	US        int    `url:"us,omitempty"` // UserStory
+	Ref       string `url:"ref,omitempty"`
 }

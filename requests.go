@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -53,22 +52,22 @@ func SuccessfulHTTPRequest(Response *http.Response) bool {
 //
 //   - URL must be an absolute (full) URL to the desired endpoint
 //   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
-func (s *RequestService) Get(URL string, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) Get(URL string, ResponseBody any) (*http.Response, error) {
 	return s.GetCtx(context.Background(), URL, ResponseBody)
 }
 
 // GetCtx composes a new HTTP GET request with context.
-func (s *RequestService) GetCtx(ctx context.Context, URL string, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) GetCtx(ctx context.Context, URL string, ResponseBody any) (*http.Response, error) {
 	return newRawRequestWithContext(ctx, "GET", s.client, ResponseBody, URL, nil)
 }
 
 // Head a handler for composing a new HTTP HEAD request
-func (s *RequestService) Head(URL string, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) Head(URL string, ResponseBody any) (*http.Response, error) {
 	return s.HeadCtx(context.Background(), URL, ResponseBody)
 }
 
 // HeadCtx composes a new HTTP HEAD request with context.
-func (s *RequestService) HeadCtx(ctx context.Context, URL string, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) HeadCtx(ctx context.Context, URL string, ResponseBody any) (*http.Response, error) {
 	return newRawRequestWithContext(ctx, "HEAD", s.client, ResponseBody, URL, nil)
 }
 
@@ -77,12 +76,12 @@ func (s *RequestService) HeadCtx(ctx context.Context, URL string, ResponseBody i
 //   - URL must be an absolute (full) URL to the desired endpoint
 //   - Payload must be a pointer to a complete struct which will be sent to Taiga
 //   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
-func (s *RequestService) Post(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) Post(URL string, Payload any, ResponseBody any) (*http.Response, error) {
 	return s.PostCtx(context.Background(), URL, Payload, ResponseBody)
 }
 
 // PostCtx composes a new HTTP POST request with context.
-func (s *RequestService) PostCtx(ctx context.Context, URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) PostCtx(ctx context.Context, URL string, Payload any, ResponseBody any) (*http.Response, error) {
 	return newRawRequestWithContext(ctx, "POST", s.client, ResponseBody, URL, Payload)
 }
 
@@ -91,12 +90,12 @@ func (s *RequestService) PostCtx(ctx context.Context, URL string, Payload interf
 //   - URL must be an absolute (full) URL to the desired endpoint
 //   - Payload must be a pointer to a complete struct which will be sent to Taiga
 //   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
-func (s *RequestService) Put(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) Put(URL string, Payload any, ResponseBody any) (*http.Response, error) {
 	return s.PutCtx(context.Background(), URL, Payload, ResponseBody)
 }
 
 // PutCtx composes a new HTTP PUT request with context.
-func (s *RequestService) PutCtx(ctx context.Context, URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) PutCtx(ctx context.Context, URL string, Payload any, ResponseBody any) (*http.Response, error) {
 	return newRawRequestWithContext(ctx, "PUT", s.client, ResponseBody, URL, Payload)
 }
 
@@ -105,12 +104,12 @@ func (s *RequestService) PutCtx(ctx context.Context, URL string, Payload interfa
 //   - URL must be an absolute (full) URL to the desired endpoint
 //   - Payload must be a pointer to a complete struct which will be sent to Taiga
 //   - ResponseBody must be a pointer to a struct representing the fields returned by Taiga
-func (s *RequestService) Patch(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) Patch(URL string, Payload any, ResponseBody any) (*http.Response, error) {
 	return s.PatchCtx(context.Background(), URL, Payload, ResponseBody)
 }
 
 // PatchCtx composes a new HTTP PATCH request with context.
-func (s *RequestService) PatchCtx(ctx context.Context, URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) PatchCtx(ctx context.Context, URL string, Payload any, ResponseBody any) (*http.Response, error) {
 	return newRawRequestWithContext(ctx, "PATCH", s.client, ResponseBody, URL, Payload)
 }
 
@@ -127,32 +126,32 @@ func (s *RequestService) DeleteCtx(ctx context.Context, URL string) (*http.Respo
 }
 
 // Connect a handler for composing a new HTTP CONNECT request
-func (s *RequestService) Connect(URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) Connect(URL string, Payload any, ResponseBody any) (*http.Response, error) {
 	return s.ConnectCtx(context.Background(), URL, Payload, ResponseBody)
 }
 
 // ConnectCtx composes a new HTTP CONNECT request with context.
-func (s *RequestService) ConnectCtx(ctx context.Context, URL string, Payload interface{}, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) ConnectCtx(ctx context.Context, URL string, Payload any, ResponseBody any) (*http.Response, error) {
 	return newRawRequestWithContext(ctx, "CONNECT", s.client, ResponseBody, URL, Payload)
 }
 
 // Options a handler for composing a new HTTP OPTIONS request
-func (s *RequestService) Options(URL string, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) Options(URL string, ResponseBody any) (*http.Response, error) {
 	return s.OptionsCtx(context.Background(), URL, ResponseBody)
 }
 
 // OptionsCtx composes a new HTTP OPTIONS request with context.
-func (s *RequestService) OptionsCtx(ctx context.Context, URL string, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) OptionsCtx(ctx context.Context, URL string, ResponseBody any) (*http.Response, error) {
 	return newRawRequestWithContext(ctx, "OPTIONS", s.client, ResponseBody, URL, nil)
 }
 
 // Trace a handler for composing a new HTTP TRACE request
-func (s *RequestService) Trace(URL string, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) Trace(URL string, ResponseBody any) (*http.Response, error) {
 	return s.TraceCtx(context.Background(), URL, ResponseBody)
 }
 
 // TraceCtx composes a new HTTP TRACE request with context.
-func (s *RequestService) TraceCtx(ctx context.Context, URL string, ResponseBody interface{}) (*http.Response, error) {
+func (s *RequestService) TraceCtx(ctx context.Context, URL string, ResponseBody any) (*http.Response, error) {
 	return newRawRequestWithContext(ctx, "TRACE", s.client, ResponseBody, URL, nil)
 }
 
@@ -165,7 +164,7 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	// Open file
 	f, err := os.Open(attachment.filePath)
 	if err != nil {
-		return nil, fmt.Errorf("Could not open file at specified location: " + attachment.filePath)
+		return nil, fmt.Errorf("could not open file at specified location: %s", attachment.filePath)
 	}
 	fileName := filepath.Base(attachment.filePath)
 	defer f.Close()
@@ -214,7 +213,7 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	defer rawResponse.Body.Close()
 
 	// Evaluate response status code && return response
-	rawResponseBody, err := ioutil.ReadAll(rawResponse.Body)
+	rawResponseBody, err := io.ReadAll(rawResponse.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -231,11 +230,11 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	}
 }
 
-func newRawRequest(RequestType string, c *Client, ResponseBody interface{}, URL string, Payload interface{}) (*http.Response, error) {
+func newRawRequest(RequestType string, c *Client, ResponseBody any, URL string, Payload any) (*http.Response, error) {
 	return newRawRequestWithContext(context.Background(), RequestType, c, ResponseBody, URL, Payload)
 }
 
-func newRawRequestWithContext(ctx context.Context, RequestType string, c *Client, ResponseBody interface{}, URL string, Payload interface{}) (*http.Response, error) {
+func newRawRequestWithContext(ctx context.Context, RequestType string, c *Client, ResponseBody any, URL string, Payload any) (*http.Response, error) {
 	// New RAW request
 	var request *http.Request
 	var err error
@@ -265,27 +264,31 @@ func newRawRequestWithContext(ctx context.Context, RequestType string, c *Client
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+
+	rawResponseBody, err := io.ReadAll(resp.Body)
+	closeErr := resp.Body.Close()
+	if err != nil {
+		return resp, err
+	}
+	if closeErr != nil {
+		return resp, closeErr
+	}
+	// Restore body for callers that inspect/read resp.Body after this helper returns.
+	resp.Body = io.NopCloser(bytes.NewReader(rawResponseBody))
 
 	// Evaluate response status code
 	if SuccessfulHTTPRequest(resp) {
 		if resp.StatusCode == http.StatusNoContent { //  There's no body returned for 204 responses
 			return resp, nil
 		}
-		if ResponseBody != nil {
+		if ResponseBody != nil && len(rawResponseBody) > 0 {
 			// We expect content so convert response JSON string to struct
-			decoder := json.NewDecoder(resp.Body)
-			err = decoder.Decode(ResponseBody)
+			err = json.Unmarshal(rawResponseBody, ResponseBody)
 			if err != nil {
 				return nil, err
 			}
 		}
 		return resp, nil
-	}
-
-	rawResponseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return resp, err
 	}
 
 	return resp, &APIError{

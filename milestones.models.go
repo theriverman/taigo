@@ -6,9 +6,8 @@ import (
 	"time"
 )
 
-// TODO
 /*
-	Find a way to fetch and store custom Taiga headers:
+	Custom Taiga headers:
 	  - Taiga-Info-Total-Opened-Milestones
 	  - Taiga-Info-Total-Closed-Milestones
 */

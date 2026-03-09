@@ -4,13 +4,13 @@ import (
 	"time"
 )
 
-func genericToEpic(anyEpicObject interface{}) *Epic {
+func genericToEpic(anyEpicObject any) *Epic {
 	payloadEpic := Epic{}
 	convertStructViaJSON(&anyEpicObject, &payloadEpic)
 	return &payloadEpic
 }
 
-func genericToEpics(anyEpicObjectSlice interface{}) []Epic {
+func genericToEpics(anyEpicObjectSlice any) []Epic {
 	payloadEpicsSlice := []Epic{}
 	convertStructViaJSON(&anyEpicObjectSlice, &payloadEpicsSlice)
 	return payloadEpicsSlice

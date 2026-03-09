@@ -80,7 +80,10 @@ func (s *ResolverService) ResolveMultipleObjects(queryParameters *ResolverQueryP
 }
 
 // ResolveByRefValue => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-ref
-// TODO: Not yet implemented. Considered for later.
+func (s *ResolverService) ResolveByRefValue(ref string) (*Resolver, error) {
+	qp := ResolverQueryParams{Ref: ref}
+	return s.genericResolver(&qp)
+}
 
 // genericResolver acts as a common request execution middleware
 func (s *ResolverService) genericResolver(queryParameters *ResolverQueryParams) (*Resolver, error) {

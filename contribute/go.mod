@@ -1,7 +1,14 @@
 module github.com/theriverman/taigo/contribute
 
-go 1.15
+go 1.25
 
-require github.com/theriverman/taigo v0.0.0
+toolchain go1.25.2
 
-replace github.com/theriverman/taigo => ../
+require github.com/theriverman/taigo/v2 v2.0.0
+
+require (
+	github.com/google/go-querystring v1.0.0 // indirect
+	golang.org/x/text v0.3.8 // indirect
+)
+
+replace github.com/theriverman/taigo/v2 => ../

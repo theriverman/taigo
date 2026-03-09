@@ -16,8 +16,13 @@ import (
 
 // listAttachmentsForEndpoint is a common method to get attachments for an endpoint (userstories, tasks, etc...)
 func listAttachmentsForEndpoint(c *Client, queryParams *attachmentsQueryParams) ([]Attachment, error) {
-	paramValues, _ := query.Values(queryParams)
-	url := c.MakeURL(queryParams.endpointURI, "attachments?", paramValues.Encode())
+	url := c.MakeURL(queryParams.endpointURI, "attachments")
+	if queryParams != nil {
+		paramValues, _ := query.Values(queryParams)
+		if encoded := paramValues.Encode(); encoded != "" {
+			url += "?" + encoded
+		}
+	}
 	var attachments []Attachment
 	_, err := c.Request.Get(url, &attachments)
 	if err != nil {
@@ -43,7 +48,7 @@ func getAttachmentForEndpoint(c *Client, attachmentID int, endpointURI string) (
 // JSON is used as an intermediate language to achieve this functionality
 //
 // NOTE: Both `sourcePtr` and `targetPtr` MUST BE POINTERS!
-func convertStructViaJSON(sourcePtr interface{}, targetPtr interface{}) error {
+func convertStructViaJSON(sourcePtr any, targetPtr any) error {
 	payloadInJSON, err := json.Marshal(sourcePtr)
 	if err != nil {
 		return err
@@ -57,7 +62,7 @@ func convertStructViaJSON(sourcePtr interface{}, targetPtr interface{}) error {
 
 // isEmpty is a generic-ish function to check if a struct's field is empty/default
 // it is convenient when making sure the bare minimum values are set when creating an object
-func isEmpty(structField interface{}) bool {
+func isEmpty(structField any) bool {
 	if structField == nil {
 		return true
 	}

@@ -1,14 +1,16 @@
 module github.com/theriverman/taigo/cli
 
-replace github.com/theriverman/taigo => ../
+replace github.com/theriverman/taigo/v2 => ../
 
 replace github.com/theriverman/taigo/cli/passwordbasedencryption => ./passwordbasedencryption
 
-go 1.19
+go 1.25
+
+toolchain go1.25.2
 
 require (
 	github.com/denisbrodbeck/machineid v1.0.1
-	github.com/theriverman/taigo v1.6.1
+	github.com/theriverman/taigo/v2 v2.0.0
 	github.com/theriverman/taigo/cli/passwordbasedencryption v0.0.0-00010101000000-000000000000
 	gopkg.in/yaml.v2 v2.4.0
 )

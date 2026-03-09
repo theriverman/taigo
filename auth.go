@@ -11,8 +11,8 @@ type AuthService struct {
 
 // RefreshAuthToken => https://docs.taiga.io/api.html#auth-refresh
 //
-//   Generates a new pair of bearer and refresh token
-//   If `selfUpdate` is true, `*Client` is refreshed with the returned token values
+//	Generates a new pair of bearer and refresh token
+//	If `selfUpdate` is true, `*Client` is refreshed with the returned token values
 func (s *AuthService) RefreshAuthToken(selfUpdate bool) (RefreshResponse *RefreshToken, err error) {
 	url := s.client.MakeURL(s.Endpoint, "refresh")
 	data := RefreshToken{
@@ -54,8 +54,21 @@ func (s *AuthService) PublicRegistry(credentials *Credentials) (*UserAuthenticat
 }
 
 // PrivateRegistry => https://taigaio.github.io/taiga-doc/dist/api.html#auth-private-registry
-// TODO: TO BE IMPLEMENTED
-// func (s *AuthService) PrivateRegistry(credentials *Credentials) {}
+func (s *AuthService) PrivateRegistry(credentials *Credentials) (*UserAuthenticationDetail, error) {
+	url := s.client.MakeURL(s.Endpoint, "register")
+	u := UserAuthenticationDetail{}
+
+	credentials.Type = "private"
+	if !credentials.AcceptedTerms {
+		credentials.AcceptedTerms = true
+	}
+	_, err := s.client.Request.Post(url, &credentials, &u)
+	if err != nil {
+		return nil, err
+	}
+
+	return &u, nil
+}
 
 // login authenticates to Taiga
 func (s *AuthService) login(credentials *Credentials) (*UserAuthenticationDetail, error) {

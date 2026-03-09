@@ -41,6 +41,24 @@ type ProjectService struct {
 	IssueCustomAttribute        *IssueCustomAttributeService
 	TaskCustomAttribute         *TaskCustomAttributeService
 	UserStoryCustomAttribute    *UserStoryCustomAttributeService
+	Application                 *ApplicationService
+	ApplicationToken            *ApplicationTokenService
+	Search                      *SearchService
+	UserStorage                 *UserStorageService
+	ProjectTemplate             *ProjectTemplateService
+	ProjectTemplateDetail       *ProjectTemplateDetailService
+	MembershipInvitation        *MembershipInvitationService
+	WikiLink                    *WikiLinkService
+	History                     *HistoryService
+	NotifyPolicy                *NotifyPolicyService
+	Contact                     *ContactService
+	Feedback                    *FeedbackService
+	ExportImport                *ExportImportService
+	Timeline                    *TimelineService
+	Locale                      *LocaleService
+	Importer                    *ImporterService
+	ContribPlugin               *ContribPluginService
+	ObjectsSummary              *ObjectsSummaryService
 }
 
 // ConfigureMappedServices maps all services to the *ProjectService with a selected project preconfigured
@@ -68,6 +86,24 @@ func (s *ProjectService) ConfigureMappedServices(ProjectID int) {
 	s.IssueCustomAttribute = &IssueCustomAttributeService{s.client, ProjectID, "issue-custom-attributes"}
 	s.TaskCustomAttribute = &TaskCustomAttributeService{s.client, ProjectID, "task-custom-attributes"}
 	s.UserStoryCustomAttribute = &UserStoryCustomAttributeService{s.client, ProjectID, "userstory-custom-attributes"}
+	s.Application = &ApplicationService{s.client, ProjectID, "applications"}
+	s.ApplicationToken = &ApplicationTokenService{s.client, ProjectID, "application-tokens"}
+	s.Search = &SearchService{s.client, ProjectID, "search"}
+	s.UserStorage = &UserStorageService{s.client, ProjectID, "user-storage"}
+	s.ProjectTemplate = &ProjectTemplateService{s.client, ProjectID, "project-templates"}
+	s.ProjectTemplateDetail = &ProjectTemplateDetailService{s.client, ProjectID, "project-templates"}
+	s.MembershipInvitation = &MembershipInvitationService{s.client, ProjectID, "memberships", "invitations"}
+	s.WikiLink = &WikiLinkService{s.client, ProjectID, "wiki-links"}
+	s.History = &HistoryService{s.client, ProjectID, "history"}
+	s.NotifyPolicy = &NotifyPolicyService{s.client, ProjectID, "notify-policies"}
+	s.Contact = &ContactService{s.client, ProjectID, "contact"}
+	s.Feedback = &FeedbackService{s.client, ProjectID, "feedback"}
+	s.ExportImport = &ExportImportService{s.client, ProjectID, "exporter", "importer"}
+	s.Timeline = &TimelineService{s.client, ProjectID, "timeline"}
+	s.Locale = &LocaleService{s.client, ProjectID, "locales"}
+	s.Importer = &ImporterService{s.client, ProjectID, "importers"}
+	s.ContribPlugin = &ContribPluginService{s.client, ProjectID, "contrib-plugins"}
+	s.ObjectsSummary = &ObjectsSummaryService{s.client, ProjectID, "objects-summary"}
 
 	s.areMappedServicesConfigured = true
 }

@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-func genericToTask(anyTaskObject interface{}) *Task {
+func genericToTask(anyTaskObject any) *Task {
 	object := Task{}
 	convertStructViaJSON(&anyTaskObject, &object)
 	return &object
 }
 
-func genericToTasks(anyTaskObjectSlice interface{}) []Task {
+func genericToTasks(anyTaskObjectSlice any) []Task {
 	objects := []Task{}
 	convertStructViaJSON(&anyTaskObjectSlice, &objects)
 	return objects
@@ -20,7 +20,7 @@ func genericToTasks(anyTaskObjectSlice interface{}) []Task {
 // Task represents a subset of (TaskDetail, TaskDetailGET, TaskDetailLIST)
 type Task struct {
 	TaigaBaseObject
-	ID                int
+	ID                int      `json:"id,omitempty"`
 	AssignedTo        int      `json:"assigned_to,omitempty"`
 	BlockedNote       string   `json:"blocked_note,omitempty"`
 	Description       string   `json:"description,omitempty"`
@@ -30,15 +30,15 @@ type Task struct {
 	IsIocaine         bool     `json:"is_iocaine,omitempty"`
 	Milestone         int      `json:"milestone,omitempty"`
 	Project           int      `json:"project,omitempty"`
-	Ref               int
+	Ref               int      `json:"ref,omitempty"`
 	Status            int      `json:"status,omitempty"`
 	Subject           string   `json:"subject,omitempty"`
 	Tags              []string `json:"tags,omitempty"`
 	TaskboardOrder    int      `json:"taskboard_order,omitempty"`
 	UsOrder           int      `json:"us_order,omitempty"`
 	UserStory         int      `json:"user_story,omitempty"`
-	Version           int
-	Watchers          []int `json:"watchers,omitempty"`
+	Version           int      `json:"version,omitempty"`
+	Watchers          []int    `json:"watchers,omitempty"`
 	TaskDetail        *TaskDetail
 	TaskDetailGET     *TaskDetailGET
 	TaskDetailLIST    *TaskDetailLIST
@@ -135,7 +135,7 @@ type TaskDetailGET struct {
 	DueDateStatus        string                    `json:"due_date_status,omitempty"`
 	ExternalReference    []string                  `json:"external_reference,omitempty"`
 	FinishedDate         time.Time                 `json:"finished_date,omitempty"`
-	GeneratedUserStories interface{}               `json:"generated_user_stories,omitempty"`
+	GeneratedUserStories any                       `json:"generated_user_stories,omitempty"`
 	ID                   int                       `json:"id,omitempty"`
 	IsBlocked            bool                      `json:"is_blocked,omitempty"`
 	IsClosed             bool                      `json:"is_closed,omitempty"`
@@ -190,7 +190,7 @@ type TaskDetail struct {
 	DueDateStatus        string                    `json:"due_date_status,omitempty"`
 	ExternalReference    []string                  `json:"external_reference,omitempty"`
 	FinishedDate         time.Time                 `json:"finished_date,omitempty"`
-	GeneratedUserStories interface{}               `json:"generated_user_stories,omitempty"`
+	GeneratedUserStories any                       `json:"generated_user_stories,omitempty"`
 	ID                   int                       `json:"id,omitempty"`
 	IsBlocked            bool                      `json:"is_blocked,omitempty"`
 	IsClosed             bool                      `json:"is_closed,omitempty"`

@@ -4,13 +4,13 @@ import (
 	"time"
 )
 
-func genericToProject(anyProjectObject interface{}) *Project {
+func genericToProject(anyProjectObject any) *Project {
 	payloadProject := Project{}
 	convertStructViaJSON(&anyProjectObject, &payloadProject)
 	return &payloadProject
 }
 
-func genericToProjects(anyProjectObjectSlice interface{}) []Project {
+func genericToProjects(anyProjectObjectSlice any) []Project {
 	payloadProjectsSlice := []Project{}
 	convertStructViaJSON(&anyProjectObjectSlice, &payloadProjectsSlice)
 	return payloadProjectsSlice
@@ -126,7 +126,7 @@ type ProjectDetail struct {
 	Members                   []members                            `json:"members"`
 	Milestones                []milestone                          `json:"milestones"`
 	ModifiedDate              time.Time                            `json:"modified_date"`
-	MyHomepage                interface{}                          `json:"my_homepage"`
+	MyHomepage                any                                  `json:"my_homepage"`
 	MyPermissions             []string                             `json:"my_permissions"`
 	Name                      string                               `json:"name"`
 	NotifyLevel               int                                  `json:"notify_level"`
@@ -168,15 +168,15 @@ type ProjectDetail struct {
 
 // EpicCustomAttributeDefinition != EpicCustomAttribute
 type EpicCustomAttributeDefinition struct {
-	CreatedDate  time.Time   `json:"created_date"`
-	Description  string      `json:"description"`
-	Extra        interface{} `json:"extra"`
-	ID           int         `json:"id"`
-	ModifiedDate time.Time   `json:"modified_date"`
-	Name         string      `json:"name"`
-	Order        int         `json:"order"`
-	ProjectID    int         `json:"project_id"`
-	Type         string      `json:"type"`
+	CreatedDate  time.Time `json:"created_date"`
+	Description  string    `json:"description"`
+	Extra        any       `json:"extra"`
+	ID           int       `json:"id"`
+	ModifiedDate time.Time `json:"modified_date"`
+	Name         string    `json:"name"`
+	Order        int       `json:"order"`
+	ProjectID    int       `json:"project_id"`
+	Type         string    `json:"type"`
 }
 
 // epicStatus != EpicStatus
@@ -192,15 +192,15 @@ type epicStatus struct {
 
 // IssueCustomAttributeDefinition != IssueCustomAttribute
 type IssueCustomAttributeDefinition struct {
-	CreatedDate  time.Time   `json:"created_date"`
-	Description  string      `json:"description"`
-	Extra        interface{} `json:"extra"`
-	ID           int         `json:"id"`
-	ModifiedDate time.Time   `json:"modified_date"`
-	Name         string      `json:"name"`
-	Order        int         `json:"order"`
-	ProjectID    int         `json:"project_id"`
-	Type         string      `json:"type"`
+	CreatedDate  time.Time `json:"created_date"`
+	Description  string    `json:"description"`
+	Extra        any       `json:"extra"`
+	ID           int       `json:"id"`
+	ModifiedDate time.Time `json:"modified_date"`
+	Name         string    `json:"name"`
+	Order        int       `json:"order"`
+	ProjectID    int       `json:"project_id"`
+	Type         string    `json:"type"`
 }
 
 type issueDueDate struct {
@@ -279,15 +279,15 @@ type severity struct {
 
 // TaskCustomAttributeDefinition != TaskCustomAttribute
 type TaskCustomAttributeDefinition struct {
-	CreatedDate  time.Time   `json:"created_date"`
-	Description  string      `json:"description"`
-	Extra        interface{} `json:"extra"`
-	ID           int         `json:"id"`
-	ModifiedDate time.Time   `json:"modified_date"`
-	Name         string      `json:"name"`
-	Order        int         `json:"order"`
-	ProjectID    int         `json:"project_id"`
-	Type         string      `json:"type"`
+	CreatedDate  time.Time `json:"created_date"`
+	Description  string    `json:"description"`
+	Extra        any       `json:"extra"`
+	ID           int       `json:"id"`
+	ModifiedDate time.Time `json:"modified_date"`
+	Name         string    `json:"name"`
+	Order        int       `json:"order"`
+	ProjectID    int       `json:"project_id"`
+	Type         string    `json:"type"`
 }
 
 type taskDueDates struct {
@@ -336,15 +336,15 @@ type userStoryStatus struct {
 
 // UserStoryCustomAttributeDefinition != UserStoryCustomAttribute
 type UserStoryCustomAttributeDefinition struct {
-	CreatedDate  time.Time   `json:"created_date"`
-	Description  string      `json:"description"`
-	Extra        interface{} `json:"extra"`
-	ID           int         `json:"id"`
-	ModifiedDate time.Time   `json:"modified_date"`
-	Name         string      `json:"name"`
-	Order        int         `json:"order"`
-	ProjectID    int         `json:"project_id"`
-	Type         string      `json:"type"`
+	CreatedDate  time.Time `json:"created_date"`
+	Description  string    `json:"description"`
+	Extra        any       `json:"extra"`
+	ID           int       `json:"id"`
+	ModifiedDate time.Time `json:"modified_date"`
+	Name         string    `json:"name"`
+	Order        int       `json:"order"`
+	ProjectID    int       `json:"project_id"`
+	Type         string    `json:"type"`
 }
 
 // ProjectsList -> https://taigaio.github.io/taiga-doc/dist/api.html#object-project-list-entry

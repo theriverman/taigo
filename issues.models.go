@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-func genericToIssue(anyIssueObject interface{}) *Issue {
+func genericToIssue(anyIssueObject any) *Issue {
 	payloadIssue := Issue{}
 	convertStructViaJSON(&anyIssueObject, &payloadIssue)
 	return &payloadIssue
 }
 
-func genericToIssues(anyIssueObjectSlice interface{}) []Issue {
+func genericToIssues(anyIssueObjectSlice any) []Issue {
 	payloadIssuesSlice := []Issue{}
 	err := convertStructViaJSON(&anyIssueObjectSlice, &payloadIssuesSlice)
 	if err != nil {

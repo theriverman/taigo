@@ -132,7 +132,7 @@ func (s *TaskService) GetAttachment(attachmentID int) (*Attachment, error) {
 }
 
 // ListAttachments returns a list of Task attachments => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-list-attachments
-func (s *TaskService) ListAttachments(task interface{}) ([]Attachment, error) {
+func (s *TaskService) ListAttachments(task any) ([]Attachment, error) {
 	t := Task{}
 	err := convertStructViaJSON(task, &t)
 	if err != nil {

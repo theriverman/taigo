@@ -2,13 +2,13 @@ package taigo
 
 import "time"
 
-func genericToUserStory(anyUsObject interface{}) *UserStory {
+func genericToUserStory(anyUsObject any) *UserStory {
 	object := UserStory{}
 	convertStructViaJSON(&anyUsObject, &object)
 	return &object
 }
 
-func genericToUserStories(anyUsObjectSlice interface{}) []UserStory {
+func genericToUserStories(anyUsObjectSlice any) []UserStory {
 	objects := []UserStory{}
 	convertStructViaJSON(&anyUsObjectSlice, &objects)
 	return objects

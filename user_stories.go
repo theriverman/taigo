@@ -75,8 +75,10 @@ func (s *UserStoryService) Get(userStoryID int) (*UserStory, error) {
 //
 // The passed userStoryRef should be an int taken from the UserStory's URL
 // The passed *Project struct should have at least one of the following fields set:
-//		ID 	 (int)
-//		Slug (string)
+//
+//	ID 	 (int)
+//	Slug (string)
+//
 // If none of the above fields are set, an error is returned.
 // If both fields are set, *Project.ID will be preferred.
 //
@@ -125,6 +127,11 @@ func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
 		return nil, err
 	}
 	return responseUS.AsUserStory()
+}
+
+// Update is an alias for Edit.
+func (s *UserStoryService) Update(us *UserStory) (*UserStory, error) {
+	return s.Edit(us)
 }
 
 // Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-delete

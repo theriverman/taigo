@@ -55,7 +55,7 @@ func (s *IssueService) GetAttachment(attachmentID int) (*Attachment, error) {
 }
 
 // ListAttachments returns a list of Issue attachments => https://taigaio.github.io/taiga-doc/dist/api.html#issues-list-attachments
-func (s *IssueService) ListAttachments(issue interface{}) ([]Attachment, error) {
+func (s *IssueService) ListAttachments(issue any) ([]Attachment, error) {
 	i := Issue{}
 	err := convertStructViaJSON(issue, &i)
 	if err != nil {
