@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -35,18 +37,19 @@ func (s *smokeSuite) createSupportingUserStory() (*taiga.UserStory, error) {
 
 type smokeResource struct {
 	value   any
-	cleanup func()
+	cleanup func() error
 }
 
 type smokeCRUDCase struct {
-	name   string
-	list   func(t *testing.T, s *smokeSuite) error
-	create func(t *testing.T, s *smokeSuite) (smokeResource, error)
-	id     func(resource any) int
-	get    func(t *testing.T, s *smokeSuite, id int, created any) (any, error)
-	update func(t *testing.T, s *smokeSuite, resource any) (any, error)
-	verify func(t *testing.T, s *smokeSuite, created any, fetched any, updated any)
-	delete func(t *testing.T, s *smokeSuite, resource any) error
+	name          string
+	list          func(t *testing.T, s *smokeSuite) error
+	create        func(t *testing.T, s *smokeSuite) (smokeResource, error)
+	id            func(resource any) int
+	get           func(t *testing.T, s *smokeSuite, id int, created any) (any, error)
+	update        func(t *testing.T, s *smokeSuite, resource any) (any, error)
+	verify        func(t *testing.T, s *smokeSuite, created any, fetched any, updated any)
+	delete        func(t *testing.T, s *smokeSuite, resource any) error
+	assertDeleted func(t *testing.T, s *smokeSuite, id int) error
 }
 
 func TestSmokeCRUDMatrix(t *testing.T) {
@@ -85,7 +88,11 @@ func runSmokeCRUDCase(t *testing.T, suite *smokeSuite, tc smokeCRUDCase) {
 		t.Fatalf("create failed: %v", err)
 	}
 	if created.cleanup != nil {
-		t.Cleanup(created.cleanup)
+		t.Cleanup(func() {
+			if err := ignoreNotFoundError(created.cleanup()); err != nil {
+				t.Errorf("cleanup failed: %v", err)
+			}
+		})
 	}
 
 	resourceID := tc.id(created.value)
@@ -118,6 +125,11 @@ func runSmokeCRUDCase(t *testing.T, suite *smokeSuite, tc smokeCRUDCase) {
 			t.Fatalf("delete failed: %v", err)
 		}
 	}
+	if tc.assertDeleted != nil {
+		if err := tc.assertDeleted(t, suite, resourceID); err != nil {
+			t.Fatalf("post-delete assertion failed: %v", err)
+		}
+	}
 }
 
 func epicSmokeCase() smokeCRUDCase {
@@ -137,8 +149,9 @@ func epicSmokeCase() smokeCRUDCase {
 			}
 			return smokeResource{
 				value: epic,
-				cleanup: func() {
-					_, _ = s.client.Epic.Delete(epic.ID)
+				cleanup: func() error {
+					_, err := s.client.Epic.Delete(epic.ID)
+					return err
 				},
 			}, nil
 		},
@@ -186,6 +199,10 @@ func epicSmokeCase() smokeCRUDCase {
 			_, err := s.client.Epic.Delete(epic.ID)
 			return err
 		},
+		assertDeleted: func(t *testing.T, s *smokeSuite, id int) error {
+			_, err := s.client.Epic.Get(id)
+			return expectResourceMissing(err, "epic")
+		},
 	}
 }
 
@@ -206,8 +223,9 @@ func userStorySmokeCase() smokeCRUDCase {
 			}
 			return smokeResource{
 				value: userStory,
-				cleanup: func() {
-					_, _ = s.client.UserStory.Delete(userStory.ID)
+				cleanup: func() error {
+					_, err := s.client.UserStory.Delete(userStory.ID)
+					return err
 				},
 			}, nil
 		},
@@ -255,6 +273,10 @@ func userStorySmokeCase() smokeCRUDCase {
 			_, err := s.client.UserStory.Delete(userStory.ID)
 			return err
 		},
+		assertDeleted: func(t *testing.T, s *smokeSuite, id int) error {
+			_, err := s.client.UserStory.Get(id)
+			return expectResourceMissing(err, "user story")
+		},
 	}
 }
 
@@ -281,9 +303,13 @@ func taskSmokeCase() smokeCRUDCase {
 			}
 			return smokeResource{
 				value: task,
-				cleanup: func() {
-					_, _ = s.client.Task.Delete(task.ID)
-					_, _ = s.client.UserStory.Delete(userStory.ID)
+				cleanup: func() error {
+					_, errTask := s.client.Task.Delete(task.ID)
+					if err := ignoreNotFoundError(errTask); err != nil {
+						return err
+					}
+					_, errUS := s.client.UserStory.Delete(userStory.ID)
+					return ignoreNotFoundError(errUS)
 				},
 			}, nil
 		},
@@ -331,6 +357,10 @@ func taskSmokeCase() smokeCRUDCase {
 			_, err := s.client.Task.Delete(task.ID)
 			return err
 		},
+		assertDeleted: func(t *testing.T, s *smokeSuite, id int) error {
+			_, err := s.client.Task.Get(id)
+			return expectResourceMissing(err, "task")
+		},
 	}
 }
 
@@ -351,8 +381,9 @@ func issueSmokeCase() smokeCRUDCase {
 			}
 			return smokeResource{
 				value: issue,
-				cleanup: func() {
-					_, _ = s.client.Issue.Delete(issue.ID)
+				cleanup: func() error {
+					_, err := s.client.Issue.Delete(issue.ID)
+					return err
 				},
 			}, nil
 		},
@@ -400,6 +431,10 @@ func issueSmokeCase() smokeCRUDCase {
 			_, err := s.client.Issue.Delete(issue.ID)
 			return err
 		},
+		assertDeleted: func(t *testing.T, s *smokeSuite, id int) error {
+			_, err := s.client.Issue.Get(id)
+			return expectResourceMissing(err, "issue")
+		},
 	}
 }
 
@@ -421,8 +456,9 @@ func wikiSmokeCase() smokeCRUDCase {
 			}
 			return smokeResource{
 				value: page,
-				cleanup: func() {
-					_, _ = s.client.Wiki.Delete(page.ID)
+				cleanup: func() error {
+					_, err := s.client.Wiki.Delete(page.ID)
+					return err
 				},
 			}, nil
 		},
@@ -470,6 +506,10 @@ func wikiSmokeCase() smokeCRUDCase {
 			_, err := s.client.Wiki.Delete(page.ID)
 			return err
 		},
+		assertDeleted: func(t *testing.T, s *smokeSuite, id int) error {
+			_, err := s.client.Wiki.Get(id)
+			return expectResourceMissing(err, "wiki page")
+		},
 	}
 }
 
@@ -492,8 +532,8 @@ func webhookSmokeCase() smokeCRUDCase {
 			}
 			return smokeResource{
 				value: webhook,
-				cleanup: func() {
-					_ = s.client.Webhook.Delete(webhook.ID)
+				cleanup: func() error {
+					return s.client.Webhook.Delete(webhook.ID)
 				},
 			}, nil
 		},
@@ -536,7 +576,33 @@ func webhookSmokeCase() smokeCRUDCase {
 			webhook := mustCastResource[taiga.Webhook](t, resource)
 			return s.client.Webhook.Delete(webhook.ID)
 		},
+		assertDeleted: func(t *testing.T, s *smokeSuite, id int) error {
+			_, err := s.client.Webhook.Get(id)
+			return expectResourceMissing(err, "webhook")
+		},
 	}
+}
+
+func ignoreNotFoundError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var apiErr *taiga.APIError
+	if errors.As(err, &apiErr) && (apiErr.StatusCode == http.StatusNotFound || apiErr.StatusCode == http.StatusGone) {
+		return nil
+	}
+	return err
+}
+
+func expectResourceMissing(err error, resourceName string) error {
+	if err == nil {
+		return fmt.Errorf("%s still retrievable after delete", resourceName)
+	}
+	var apiErr *taiga.APIError
+	if errors.As(err, &apiErr) && (apiErr.StatusCode == http.StatusNotFound || apiErr.StatusCode == http.StatusGone) {
+		return nil
+	}
+	return fmt.Errorf("unexpected %s get error after delete: %w", resourceName, err)
 }
 
 func mustCastResource[T any](t *testing.T, resource any) *T {

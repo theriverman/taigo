@@ -32,8 +32,20 @@
 
 ## 4) Testing reality
 - Root has unit tests (`v2_proposals_test.go`) for transport/query/header behaviour.
+- Root has matrix-style offline suites:
+  - `contract_matrix_test.go` (method/path/query/body contracts).
+  - `query_filter_matrix_test.go` (query encoding semantics).
+  - `negative_matrix_test.go` (API error and validation guard behaviour).
 - `tests/` contains integration tests for core resources.
 - `tests/smoke_matrix_test.go` is a table-driven real-instance harness for CRUD smoke coverage.
+- `tests/workflow_matrix_test.go` covers cross-resource end-to-end lifecycle flows.
+- `tests/negative_matrix_test.go` covers live negative paths.
+- `tests/auth_role_matrix_test.go` covers auth and optional role expectations.
+- CI gates in `.github/workflows/go.yml`:
+  - PR/push: unit+contract+query+negative offline checks.
+  - PR/push: live smoke subset on Docker Taiga.
+  - Nightly/manual: full live test suite.
+  - Tag `v*`: pre-release full live suite across Taiga refs (`master`, `v2`).
 - Integration suite is opt-in and skipped by default unless:
   - `TAIGO_RUN_INTEGRATION_TESTS=1`
 - Default integration target in tests: `http://localhost:9000` (override via `TAIGO_BASE_URL` and related env vars).
@@ -50,6 +62,9 @@
 - Run integration tests explicitly:
   - `TAIGO_RUN_INTEGRATION_TESTS=1 GOWORK=off GOCACHE=/tmp/taigo-gocache go test ./tests/...`
   - `TAIGO_RUN_INTEGRATION_TESTS=1 TAIGO_PROJECT_ID=2 go test ./tests/... -run TestSmokeCRUDMatrix -v`
+  - `TAIGO_RUN_INTEGRATION_TESTS=1 TAIGO_PROJECT_ID=2 go test ./tests/... -run TestWorkflowMatrixLive -v`
+  - `TAIGO_RUN_INTEGRATION_TESTS=1 TAIGO_PROJECT_ID=2 go test ./tests/... -run TestNegativeMatrixLive -v`
+  - `TAIGO_RUN_INTEGRATION_TESTS=1 TAIGO_MEMBER_USERNAME=<u> TAIGO_MEMBER_PASSWORD=<p> TAIGO_MEMBER_WRITE_EXPECTATION=forbid go test ./tests/... -run TestRoleMatrixLive -v`
 
 ## 6) External references
 - Taiga API docs: [https://docs.taiga.io/api.html](https://docs.taiga.io/api.html)
