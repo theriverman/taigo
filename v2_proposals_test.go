@@ -238,3 +238,236 @@ func TestRequestServiceReturnsAPIErrorForNon2xx(t *testing.T) {
 		t.Fatalf("expected API error body to include backend message, got %q", apiErr.Body)
 	}
 }
+
+func TestApplicationGetTokenUsesApplicationIDPath(t *testing.T) {
+	var gotPath, gotMethod string
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		gotMethod = req.Method
+		return newJSONResponse(req, http.StatusOK, `{"token":"abc"}`), nil
+	})
+
+	token, err := client.Application.GetToken(42)
+	if err != nil {
+		t.Fatalf("get application token: %v", err)
+	}
+	if gotMethod != http.MethodGet {
+		t.Fatalf("expected GET method, got %s", gotMethod)
+	}
+	if gotPath != "/api/v1/applications/42/token" {
+		t.Fatalf("expected path /api/v1/applications/42/token, got %s", gotPath)
+	}
+	if (*token)["token"] != "abc" {
+		t.Fatalf("expected token payload to decode, got %+v", token)
+	}
+}
+
+func TestMembershipResendInvitationUsesMembershipActionAndEmptyBody(t *testing.T) {
+	var gotPath, gotMethod string
+	var gotBody []byte
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		gotMethod = req.Method
+		if req.Body != nil {
+			body, _ := io.ReadAll(req.Body)
+			gotBody = body
+		}
+		return newJSONResponse(req, http.StatusOK, `{"id":7}`), nil
+	})
+
+	_, err := client.MembershipInvitation.ResendInvitation(7)
+	if err != nil {
+		t.Fatalf("resend invitation: %v", err)
+	}
+	if gotMethod != http.MethodPost {
+		t.Fatalf("expected POST method, got %s", gotMethod)
+	}
+	if gotPath != "/api/v1/memberships/7/resend_invitation" {
+		t.Fatalf("expected memberships resend_invitation path, got %s", gotPath)
+	}
+	if len(bytes.TrimSpace(gotBody)) != 0 {
+		t.Fatalf("expected empty request body, got %q", string(gotBody))
+	}
+}
+
+func TestTimelineEndpointsUseIDsInPath(t *testing.T) {
+	requests := make([]string, 0, 3)
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		requests = append(requests, req.URL.RequestURI())
+		return newJSONResponse(req, http.StatusOK, `[]`), nil
+	})
+
+	if _, err := client.Timeline.User(3, &TimelineQueryParams{Page: 2}); err != nil {
+		t.Fatalf("timeline user: %v", err)
+	}
+	if _, err := client.Timeline.Project(9, nil); err != nil {
+		t.Fatalf("timeline project: %v", err)
+	}
+	if _, err := client.Timeline.Profile(5, nil); err != nil {
+		t.Fatalf("timeline profile: %v", err)
+	}
+
+	want := []string{
+		"/api/v1/timeline/user/3?page=2",
+		"/api/v1/timeline/project/9",
+		"/api/v1/timeline/profile/5",
+	}
+	if len(requests) != len(want) {
+		t.Fatalf("expected %d requests, got %d (%v)", len(want), len(requests), requests)
+	}
+	for i := range want {
+		if requests[i] != want[i] {
+			t.Fatalf("request %d mismatch: want %s, got %s", i, want[i], requests[i])
+		}
+	}
+}
+
+func TestTimelineProjectCanUseMappedDefaultProjectID(t *testing.T) {
+	var gotPath string
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		return newJSONResponse(req, http.StatusOK, `[]`), nil
+	})
+	client.Project.ConfigureMappedServices(55)
+
+	if _, err := client.Project.Timeline.Project(0, nil); err != nil {
+		t.Fatalf("timeline project with mapped project id: %v", err)
+	}
+	if gotPath != "/api/v1/timeline/project/55" {
+		t.Fatalf("expected mapped timeline project path, got %s", gotPath)
+	}
+}
+
+func TestImporterEndpointsUseCurrentRoutes(t *testing.T) {
+	requests := make([]string, 0, 4)
+	methods := make([]string, 0, 4)
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		requests = append(requests, req.URL.Path)
+		methods = append(methods, req.Method)
+		return newJSONResponse(req, http.StatusOK, `{"ok":true}`), nil
+	})
+
+	if _, err := client.Importer.TrelloListProjects(nil); err != nil {
+		t.Fatalf("trello list projects: %v", err)
+	}
+	if _, err := client.Importer.GithubListUsers(nil); err != nil {
+		t.Fatalf("github list users: %v", err)
+	}
+	if _, err := client.Importer.GithubImportProject(RawResource{"project": "x"}); err != nil {
+		t.Fatalf("github import project: %v", err)
+	}
+	if _, err := client.Importer.JiraImportProject(RawResource{"project": "y"}); err != nil {
+		t.Fatalf("jira import project: %v", err)
+	}
+
+	wantPaths := []string{
+		"/api/v1/importers/trello/list_projects",
+		"/api/v1/importers/github/list_users",
+		"/api/v1/importers/github/import_project",
+		"/api/v1/importers/jira/import_project",
+	}
+	wantMethods := []string{
+		http.MethodGet,
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodPost,
+	}
+	for i := range wantPaths {
+		if requests[i] != wantPaths[i] {
+			t.Fatalf("request %d path mismatch: want %s, got %s", i, wantPaths[i], requests[i])
+		}
+		if methods[i] != wantMethods[i] {
+			t.Fatalf("request %d method mismatch: want %s, got %s", i, wantMethods[i], methods[i])
+		}
+	}
+}
+
+func TestHistoryDeleteCommentUsesQueryParameter(t *testing.T) {
+	var gotPath, gotID, gotMethod string
+	var gotBody []byte
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		gotID = req.URL.Query().Get("id")
+		gotMethod = req.Method
+		if req.Body != nil {
+			body, _ := io.ReadAll(req.Body)
+			gotBody = body
+		}
+		return newJSONResponse(req, http.StatusOK, `{"deleted":true}`), nil
+	})
+
+	_, err := client.History.DeleteTaskComment(11, "6ca8f268-fcab-4be0-8927-040cf5fdd95a")
+	if err != nil {
+		t.Fatalf("delete task comment: %v", err)
+	}
+	if gotMethod != http.MethodPost {
+		t.Fatalf("expected POST method, got %s", gotMethod)
+	}
+	if gotPath != "/api/v1/history/task/11/delete_comment" {
+		t.Fatalf("unexpected delete_comment path: %s", gotPath)
+	}
+	if gotID != "6ca8f268-fcab-4be0-8927-040cf5fdd95a" {
+		t.Fatalf("expected comment id in query string, got %q", gotID)
+	}
+	if len(bytes.TrimSpace(gotBody)) != 0 {
+		t.Fatalf("expected empty delete_comment body, got %q", string(gotBody))
+	}
+}
+
+func TestRequestServiceReturnsReadableResponseBody(t *testing.T) {
+	const payload = `{"id":1,"name":"demo"}`
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		return newJSONResponse(req, http.StatusOK, payload), nil
+	})
+
+	var out RawResource
+	resp, err := client.Request.Get(client.MakeURL("projects", "1"), &out)
+	if err != nil {
+		t.Fatalf("request get: %v", err)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read response body after request helper decode: %v", err)
+	}
+	if err := resp.Body.Close(); err != nil {
+		t.Fatalf("close response body: %v", err)
+	}
+	if string(body) != payload {
+		t.Fatalf("expected response body to remain readable, got %q", string(body))
+	}
+	if out["name"] != "demo" {
+		t.Fatalf("expected decoded response payload, got %+v", out)
+	}
+}
+
+func TestTaskListAttachmentsBuildsValidQueryURL(t *testing.T) {
+	var gotPath, gotObjectID, gotProject string
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		gotObjectID = req.URL.Query().Get("object_id")
+		gotProject = req.URL.Query().Get("project")
+		return newJSONResponse(req, http.StatusOK, `[{"id":1}]`), nil
+	})
+
+	attachments, err := client.Task.ListAttachments(&Task{ID: 8, Project: 4})
+	if err != nil {
+		t.Fatalf("list task attachments: %v", err)
+	}
+	if gotPath != "/api/v1/tasks/attachments" {
+		t.Fatalf("expected attachments path without malformed query separator, got %s", gotPath)
+	}
+	if gotObjectID != "8" || gotProject != "4" {
+		t.Fatalf("unexpected attachment query params: object_id=%q project=%q", gotObjectID, gotProject)
+	}
+	if len(attachments) != 1 || attachments[0].ID != 1 {
+		t.Fatalf("unexpected attachments payload: %+v", attachments)
+	}
+}
