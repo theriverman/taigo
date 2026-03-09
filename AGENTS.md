@@ -1,27 +1,21 @@
 # Taigo Project Agent Notes
 
 ## 1) What this repo is
-- Go client library for Taiga REST API v1 (`module github.com/theriverman/taigo`).
+- Go client library for Taiga REST API v1 with **v2 module versioning** (`module github.com/theriverman/taigo/v2`).
 - Main package is a library (`package taigo`) with service-based API wrappers.
 - Two extra modules:
-  - `cli/`: standalone CLI demo/auth utility.
+  - `cli/`: standalone CLI utility.
   - `contribute/`: integration/demo runner against a real Taiga instance.
 
 ## 2) Repository layout
 - Root library:
   - `client.go`: client lifecycle, headers, auth state, service wiring, token refresh routine.
-  - `requests.go`: HTTP transport layer (`RequestService`) and multipart attachment upload.
-  - `auth.go` + `auth.models.go`: login/public registration/token refresh models.
-  - `projects.go`, `epics.go`, `user_stories.go`, `tasks.go`, `issues.go`, `milestones.go`, `users.go`, `webhooks.go`, `stats.go`, `resolver.go`, `wiki.go`: service methods.
-  - `*.models.go`: DTOs/query structs/conversion helpers for each resource.
-  - `*_custom_attributes_values.go`: generic CAVD wrappers.
-  - `30` placeholder files with only `TODO` comments (e.g. `application_tokens.go`, `contact.go`, `timelines.go`, etc.).
-- Tests:
-  - `tests/`: integration tests expecting Taiga at `http://localhost:9000`.
-  - Includes Docker setup helper scripts and seed data.
-- Tooling/docs:
-  - `README.md`, `examples/README.MD`, `CONTRIBUTION.md`, `CHANGELOG.md`.
-  - `.github/workflows/go.yml`.
+  - `requests.go`: HTTP transport (`RequestService`) and multipart attachment uploads.
+  - Core resource services: `projects.go`, `epics.go`, `user_stories.go`, `tasks.go`, `issues.go`, `milestones.go`, `users.go`, `webhooks.go`, `wiki.go`, `stats.go`, `resolver.go`.
+  - Classification and custom-attribute services: `points.go`, `priorities.go`, `severities.go`, `issue_types.go`, `*_status.go`, `*_custom_attribute.go`.
+  - Extended surface services: `applications.go`, `application_tokens.go`, `searches.go`, `user_storage.go`, `project_templates.go`, `project_templates_detail.go`, `memberships_invitations.go`, `wiki_links.go`, `history.go`, `notify_policies.go`, `contact.go`, `feedback.go`, `export_import.go`, `timelines.go`, `locales.go`, `importers.go`, `contrib_plugins.go`, `objects_summary.go`.
+  - `raw_resource.go`: generic helpers for endpoints that are still represented by raw map-based DTOs.
+  - `*.models.go`: DTO/query structs/conversion helpers.
 
 ## 3) Architecture and conventions
 - Entry point is `taigo.Client`.
@@ -30,50 +24,41 @@
   - Instantiates all services.
   - Starts optional token-refresh ticker goroutine.
 - Services:
-  - Thin wrappers over `RequestService` (`GET/POST/PATCH/DELETE`) and `MakeURL`.
+  - Thin wrappers over `RequestService` (`GET/POST/PUT/PATCH/DELETE`) and `MakeURL`.
   - Optional `defaultProjectID` for project-scoped mapped services (`Project.ConfigureMappedServices`).
-- Model pattern:
-  - Generic object types (`Epic`, `Task`, `Issue`, etc.) plus meta pointers to concrete response variants (`Detail`, `DetailGET`, `DetailLIST`).
-  - Conversion mostly via JSON round-trip helpers.
+- Models:
+  - Strongly typed models are used for core resources.
+  - Raw map DTOs (`RawResource`) are used for less stable or less modelled endpoint groups.
 
-## 4) Implemented vs missing surface (high level)
-- Implemented core resources (partial): auth, projects, epics, user stories, tasks, issues, milestones, users, webhooks, resolver, stats, wiki attachments.
-- Major gaps:
-  - Many endpoints are placeholders (`30` stub files).
-  - Several implemented resources are only partial (e.g. `WikiService` has only attachment creation, `IssueService` lacks delete/by_ref methods, `TaskService` lacks edit/delete).
+## 4) Testing reality
+- Root has unit tests (`v2_proposals_test.go`) for transport/query/header behaviour.
+- `tests/` contains integration tests for core resources.
+- `tests/smoke_matrix_test.go` is a table-driven real-instance harness for CRUD smoke coverage.
+- Integration suite is opt-in and skipped by default unless:
+  - `TAIGO_RUN_INTEGRATION_TESTS=1`
+- Default integration target in tests: `http://localhost:9000` (override via `TAIGO_BASE_URL` and related env vars).
 
-## 5) Testing reality
-- Root package has no unit tests; tests live under `tests/` and are integration-heavy.
-- Integration tests require a running Taiga stack and network access.
-- In this environment:
-  - `GOWORK=off GOCACHE=/tmp/... go test ./...` for root reaches tests but fails to connect to `localhost:9000` (sandbox network restriction).
-  - `cli/` compiles (`go test ./...` => no test files).
-  - `contribute/` does not currently compile as a module (missing `require` for replaced root module).
-
-## 6) Key technical risks to remember
-- Pagination toggle logic and header semantics are incorrect for Taiga backend behavior.
-- Some query parameter structs cannot represent valid Taiga filters due to type/tag choices.
-- Several methods have endpoint/path mismatches with Taiga (`webhooks/test`, custom attribute value models, watched/liked decoding).
-- API consistency is weak across services (method signatures vary significantly by resource).
-
-## 7) Practical commands
+## 5) Practical commands
 - List all Go files quickly:
   - `rg --files -g '*.go'`
-- Run root compile/tests without workspace interference:
+- Run root tests:
   - `GOWORK=off GOCACHE=/tmp/taigo-gocache go test ./...`
 - Run CLI module:
   - `cd cli && GOWORK=off GOCACHE=/tmp/taigo-gocache-cli go test ./...`
 - Run contribute module:
   - `cd contribute && GOWORK=off GOCACHE=/tmp/taigo-gocache-contrib go test ./...`
+- Run integration tests explicitly:
+  - `TAIGO_RUN_INTEGRATION_TESTS=1 GOWORK=off GOCACHE=/tmp/taigo-gocache go test ./tests/...`
+  - `TAIGO_RUN_INTEGRATION_TESTS=1 TAIGO_PROJECT_ID=2 go test ./tests/... -run TestSmokeCRUDMatrix -v`
 
-## 8) External reference sources for future checks
+## 6) External references
 - Taiga API docs: [https://docs.taiga.io/api.html](https://docs.taiga.io/api.html)
 - Taiga backend source: [https://github.com/taigaio/taiga-back](https://github.com/taigaio/taiga-back)
 
-## 9) Self-check checklist before future changes
-- Does endpoint path/method exactly match Taiga docs + `taiga-back` viewset route?
-- Do request/response DTO field names match serializer fields (especially custom attributes values)?
-- Are query params encoded in the same format Taiga expects (comma strings vs repeated keys, bool semantics)?
-- Are service method signatures consistent with rest of the client API?
-- Are integration tests updated/expanded for changed resource behavior?
-
+## 7) Self-check checklist before future changes
+- Does endpoint path/method match Taiga docs and backend route naming?
+- Do request/response DTO field names match serializer fields?
+- Are query params encoded exactly as Taiga expects (including comma-joined filters and pointer-bool semantics)?
+- Are method signatures consistent across resource services (`Create/Get/GetByRef/Edit|Update/Delete/List` where relevant)?
+- Are unit tests added for path/query/transport behaviour, and integration tests updated when behaviour changes?
+- Is the code written using the latest Go version's capabilities?

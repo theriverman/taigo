@@ -2,6 +2,28 @@
 
 This guide describes the breaking changes introduced in Taigo v2 and how to update existing code.
 
+## 0) Module Path Change (required)
+
+Taigo now uses semantic import versioning.
+
+Before:
+
+```go
+import taiga "github.com/theriverman/taigo"
+```
+
+After:
+
+```go
+import taiga "github.com/theriverman/taigo/v2"
+```
+
+Install/update command:
+
+```bash
+go get github.com/theriverman/taigo/v2@latest
+```
+
 ## 1) Behavioural Changes
 
 ### Pagination toggle

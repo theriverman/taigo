@@ -1,20 +1,20 @@
 # Taigo
 
 [![Go](https://github.com/theriverman/taigo/actions/workflows/go.yml/badge.svg)](https://github.com/theriverman/taigo/actions/workflows/go.yml)
-[![GoDoc](https://godoc.org/github.com/theriverman/taigo?status.svg)](https://pkg.go.dev/github.com/theriverman/taigo?tab=doc)
+[![GoDoc](https://godoc.org/github.com/theriverman/taigo/v2?status.svg)](https://pkg.go.dev/github.com/theriverman/taigo/v2?tab=doc)
 [![Go Report Card](https://goreportcard.com/badge/github.com/theriverman/taigo)](https://goreportcard.com/report/github.com/theriverman/taigo)
 
 Taigo is a Go client library for the [Taiga](https://github.com/taigaio) REST API v1.
 
 ## Status
 
-This branch contains the v2 redesign work with breaking changes and expanded endpoint coverage.
+This release line contains the v2 API with breaking changes and expanded endpoint coverage.
 See [MIGRATION.md](./MIGRATION.md) for upgrade guidance.
 
 ## Install
 
 ```bash
-go get github.com/theriverman/taigo
+go get github.com/theriverman/taigo/v2
 ```
 
 ## Quick Start
@@ -69,6 +69,11 @@ Core services available via `Client`:
 - `Point`, `Priority`, `Severity`, `IssueType`
 - `EpicStatus`, `IssueStatus`, `TaskStatus`, `UserStoryStatus`
 - `EpicCustomAttribute`, `IssueCustomAttribute`, `TaskCustomAttribute`, `UserStoryCustomAttribute`
+- `Application`, `ApplicationToken`, `Search`, `UserStorage`
+- `ProjectTemplate`, `ProjectTemplateDetail`
+- `MembershipInvitation`, `WikiLink`, `History`, `NotifyPolicy`
+- `Contact`, `Feedback`, `ExportImport`, `Timeline`, `Locale`, `Importer`
+- `ContribPlugin`, `ObjectsSummary`
 
 Project-scoped mapped services are available via:
 
@@ -109,7 +114,20 @@ Integration tests under `tests/` require a reachable Taiga instance and are opt-
 TAIGO_RUN_INTEGRATION_TESTS=1 GOWORK=off GOCACHE=/tmp/taigo-gocache go test ./tests/...
 ```
 
-Default integration target in tests is `http://localhost:9000`.
+The integration harness supports environment overrides:
+
+- `TAIGO_BASE_URL` (default: `http://localhost:9000`)
+- `TAIGO_USERNAME` (default: `admin`)
+- `TAIGO_PASSWORD` (default: `admin`)
+- `TAIGO_PROJECT_ID` (default: `2`)
+- `TAIGO_PROJECT_SLUG` (default: `taigo-test`)
+- `TAIGO_USER_ID` (default: `5`)
+
+Run only the table-driven smoke matrix harness:
+
+```bash
+TAIGO_RUN_INTEGRATION_TESTS=1 TAIGO_PROJECT_ID=2 go test ./tests/... -run TestSmokeCRUDMatrix -v
+```
 
 ## Related Modules
 

@@ -3,6 +3,47 @@ All notable changes to this project will be documented in this file.
  
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
+
+## [2.0.0] - 2026-03-08
+
+### Added
+- Added full service wiring for status/type/custom-attribute endpoints:
+  - points, priorities, severities, issue types
+  - epic/issue/task/user story statuses
+  - epic/issue/task/user story custom-attribute definition services
+- Added missing operations for partially implemented resources:
+  - tasks: edit/delete/get-by-ref improvements
+  - issues: by-ref/delete/attachments
+  - wiki: list/create/get/get-by-slug/edit/delete/render/attachments
+  - webhooks: test endpoint fix, log helpers, resend helpers
+- Added coverage for previously stubbed endpoint groups:
+  - applications/application-tokens, searches, user-storage
+  - project-templates, memberships/invitations, wiki-links
+  - history, notify-policies, contact, feedback
+  - export/import, timelines, locales, importers
+  - contrib-plugins, objects-summary
+- Added `MIGRATION.md` for v1 -> v2 upgrade guidance.
+- Added unit tests for key v2 correctness areas (`v2_proposals_test.go`).
+
+### Changed
+- **BREAKING:** module path moved to `github.com/theriverman/taigo/v2`.
+- **BREAKING:** normalised multiple method signatures and added `Update(...)` aliases where relevant.
+- Pagination header semantics now match Taiga behaviour:
+  - disabling pagination sets `x-disable-pagination`
+  - enabling pagination removes the header
+- Query semantics updated:
+  - optional booleans use pointer-bool fields
+  - task tag filter uses comma-delimited encoding helper
+  - project order_by now serialises correctly
+- Non-2xx responses now return typed `APIError`.
+- Integration tests are now opt-in via `TAIGO_RUN_INTEGRATION_TESTS=1`.
+
+### Fixed
+- Fixed webhook test route to `POST /webhooks/{id}/test`.
+- Fixed custom attribute value payload keys for issue/task/user story value DTOs.
+- Fixed watched/liked user endpoint decode shape to list responses.
+- Fixed token refresh shutdown behaviour and nil-safe disable logic.
+- Removed placeholder-only stub files by implementing concrete service surfaces.
  
 ## [1.5.0] - 2022-08-03
  
