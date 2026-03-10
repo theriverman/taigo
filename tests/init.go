@@ -14,7 +14,7 @@ import (
 
 const defaultTestHostURL string = "http://localhost:9000"
 const defaultTestUsername string = "admin"
-const defaultTestPassword string = "admin"
+const defaultTestPassword string = "123123"
 const defaultTestProjSlug string = "taigo-test"
 const defaultTestProjID int = 2
 const defaultTestUserID int = 5
