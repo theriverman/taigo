@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // IssueType -> https://docs.taiga.io/api.html#issue-types
@@ -28,13 +25,7 @@ type IssueTypeService struct {
 // List -> https://docs.taiga.io/api.html#issue-types-list
 func (s *IssueTypeService) List(queryParams *ProjectIDQueryParams) ([]IssueType, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var issueTypes []IssueType
 	_, err := s.client.Request.Get(url, &issueTypes)
 	if err != nil {
@@ -56,6 +47,9 @@ func (s *IssueTypeService) Get(issueTypeID int) (*IssueType, error) {
 
 // Create -> https://docs.taiga.io/api.html#issue-types-create
 func (s *IssueTypeService) Create(issueType *IssueType) (*IssueType, error) {
+	if err := requireNonNil("issueType", issueType); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseIssueType IssueType
 	if isEmpty(issueType.Project) || isEmpty(issueType.Name) {
@@ -70,6 +64,9 @@ func (s *IssueTypeService) Create(issueType *IssueType) (*IssueType, error) {
 
 // Edit -> https://docs.taiga.io/api.html#issue-types-edit
 func (s *IssueTypeService) Edit(issueType *IssueType) (*IssueType, error) {
+	if err := requireNonNil("issueType", issueType); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueType.ID))
 	var responseIssueType IssueType
 	if issueType.ID == 0 {

@@ -40,6 +40,9 @@ func (s *AuthService) RefreshAuthToken(selfUpdate bool) (RefreshResponse *Refres
 	accepted_terms (required): boolean
 */
 func (s *AuthService) PublicRegistry(credentials *Credentials) (*UserAuthenticationDetail, error) {
+	if err := requireNonNil("credentials", credentials); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, "register")
 	u := UserAuthenticationDetail{}
 
@@ -55,6 +58,9 @@ func (s *AuthService) PublicRegistry(credentials *Credentials) (*UserAuthenticat
 
 // PrivateRegistry => https://taigaio.github.io/taiga-doc/dist/api.html#auth-private-registry
 func (s *AuthService) PrivateRegistry(credentials *Credentials) (*UserAuthenticationDetail, error) {
+	if err := requireNonNil("credentials", credentials); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, "register")
 	u := UserAuthenticationDetail{}
 
@@ -72,6 +78,9 @@ func (s *AuthService) PrivateRegistry(credentials *Credentials) (*UserAuthentica
 
 // login authenticates to Taiga
 func (s *AuthService) login(credentials *Credentials) (*UserAuthenticationDetail, error) {
+	if err := requireNonNil("credentials", credentials); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	u := UserAuthenticationDetail{}
 

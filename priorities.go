@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // Priority -> https://docs.taiga.io/api.html#priorities
@@ -28,13 +25,7 @@ type PriorityService struct {
 // List -> https://docs.taiga.io/api.html#priorities-list
 func (s *PriorityService) List(queryParams *ProjectIDQueryParams) ([]Priority, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var priorities []Priority
 	_, err := s.client.Request.Get(url, &priorities)
 	if err != nil {
@@ -56,6 +47,9 @@ func (s *PriorityService) Get(priorityID int) (*Priority, error) {
 
 // Create -> https://docs.taiga.io/api.html#priorities-create
 func (s *PriorityService) Create(priority *Priority) (*Priority, error) {
+	if err := requireNonNil("priority", priority); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responsePriority Priority
 	if isEmpty(priority.Project) || isEmpty(priority.Name) {
@@ -70,6 +64,9 @@ func (s *PriorityService) Create(priority *Priority) (*Priority, error) {
 
 // Edit -> https://docs.taiga.io/api.html#priorities-edit
 func (s *PriorityService) Edit(priority *Priority) (*Priority, error) {
+	if err := requireNonNil("priority", priority); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(priority.ID))
 	var responsePriority Priority
 	if priority.ID == 0 {

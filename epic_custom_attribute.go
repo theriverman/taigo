@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // EpicCustomAttributeService is a handle to actions related to epic custom attributes.
@@ -19,13 +16,7 @@ type EpicCustomAttributeService struct {
 // List -> https://docs.taiga.io/api.html#epic-custom-attributes-list
 func (s *EpicCustomAttributeService) List(queryParams *ProjectIDQueryParams) ([]EpicCustomAttribute, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var attrs []EpicCustomAttribute
 	_, err := s.client.Request.Get(url, &attrs)
 	if err != nil {
@@ -47,6 +38,9 @@ func (s *EpicCustomAttributeService) Get(customAttributeID int) (*EpicCustomAttr
 
 // Create -> https://docs.taiga.io/api.html#epic-custom-attributes-create
 func (s *EpicCustomAttributeService) Create(customAttribute *EpicCustomAttribute) (*EpicCustomAttribute, error) {
+	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseAttr EpicCustomAttribute
 	if isEmpty(customAttribute.Project) || isEmpty(customAttribute.Name) || isEmpty(customAttribute.Type) {
@@ -61,6 +55,9 @@ func (s *EpicCustomAttributeService) Create(customAttribute *EpicCustomAttribute
 
 // Edit -> https://docs.taiga.io/api.html#epic-custom-attributes-edit
 func (s *EpicCustomAttributeService) Edit(customAttribute *EpicCustomAttribute) (*EpicCustomAttribute, error) {
+	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttribute.ID))
 	var responseAttr EpicCustomAttribute
 	if customAttribute.ID == 0 {

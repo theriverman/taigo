@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -114,8 +115,13 @@ func (c *Client) Initialise() error {
 		return nil
 	}
 	// Taiga.Client safety guards
-	if len(c.BaseURL) < len("http://") { // compares for a minimum of len("http://")
+	c.BaseURL = strings.TrimRight(c.BaseURL, "/")
+	parsedBaseURL, err := url.ParseRequestURI(c.BaseURL)
+	if err != nil || parsedBaseURL.Scheme == "" || parsedBaseURL.Host == "" {
 		return fmt.Errorf("BaseURL is not set or invalid")
+	}
+	if c.HTTPClient == nil {
+		c.HTTPClient = &http.Client{}
 	}
 	//Set basic token type
 	if len(c.TokenType) <= 1 {
@@ -213,6 +219,7 @@ func (c *Client) Initialise() error {
 }
 
 func (c *Client) DisableAutomaticTokenRefresh() {
+	c.AutoRefreshDisabled = true
 	if c.TokenRefreshTicker != nil {
 		c.TokenRefreshTicker.Stop()
 	}
@@ -229,6 +236,9 @@ func (c *Client) DisableAutomaticTokenRefresh() {
 
 // AuthByCredentials authenticates to Taiga using the provided basic credentials
 func (c *Client) AuthByCredentials(credentials *Credentials) error {
+	if err := requireNonNil("credentials", credentials); err != nil {
+		return err
+	}
 	if err := c.Initialise(); err != nil {
 		return err
 	}
@@ -250,6 +260,12 @@ func (c *Client) AuthByCredentials(credentials *Credentials) error {
 func (c *Client) AuthByToken(tokenType, token, refreshToken string) error {
 	if err := c.Initialise(); err != nil {
 		return err
+	}
+	if tokenType == "" {
+		tokenType = c.TokenType
+		if tokenType == "" {
+			tokenType = TokenBearer
+		}
 	}
 	c.TokenType = tokenType
 	c.Token = token

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"unsafe"
 
 	taiga "github.com/theriverman/taigo/v2"
 )
@@ -126,5 +125,5 @@ func RandStringBytesMaskImprSrcUnsafe(n int) string {
 		remain--
 	}
 
-	return *(*string)(unsafe.Pointer(&b))
+	return string(b)
 }

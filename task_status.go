@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // TaskStatusService is a handle to actions related to task statuses.
@@ -19,13 +16,7 @@ type TaskStatusService struct {
 // List -> https://docs.taiga.io/api.html#task-statuses-list
 func (s *TaskStatusService) List(queryParams *ProjectIDQueryParams) ([]TaskStatus, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var statuses []TaskStatus
 	_, err := s.client.Request.Get(url, &statuses)
 	if err != nil {
@@ -47,6 +38,9 @@ func (s *TaskStatusService) Get(statusID int) (*TaskStatus, error) {
 
 // Create -> https://docs.taiga.io/api.html#task-statuses-create
 func (s *TaskStatusService) Create(status *TaskStatus) (*TaskStatus, error) {
+	if err := requireNonNil("status", status); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseStatus TaskStatus
 	if isEmpty(status.ProjectID) || isEmpty(status.Name) {
@@ -61,6 +55,9 @@ func (s *TaskStatusService) Create(status *TaskStatus) (*TaskStatus, error) {
 
 // Edit -> https://docs.taiga.io/api.html#task-statuses-edit
 func (s *TaskStatusService) Edit(status *TaskStatus) (*TaskStatus, error) {
+	if err := requireNonNil("status", status); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(status.ID))
 	var responseStatus TaskStatus
 	if status.ID == 0 {

@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // EpicStatusService is a handle to actions related to epic statuses.
@@ -19,13 +16,7 @@ type EpicStatusService struct {
 // List -> https://docs.taiga.io/api.html#epic-statuses-list
 func (s *EpicStatusService) List(queryParams *ProjectIDQueryParams) ([]EpicStatus, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var statuses []EpicStatus
 	_, err := s.client.Request.Get(url, &statuses)
 	if err != nil {
@@ -47,6 +38,9 @@ func (s *EpicStatusService) Get(statusID int) (*EpicStatus, error) {
 
 // Create -> https://docs.taiga.io/api.html#epic-statuses-create
 func (s *EpicStatusService) Create(status *EpicStatus) (*EpicStatus, error) {
+	if err := requireNonNil("status", status); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseStatus EpicStatus
 	if isEmpty(status.Project) || isEmpty(status.Name) {
@@ -61,6 +55,9 @@ func (s *EpicStatusService) Create(status *EpicStatus) (*EpicStatus, error) {
 
 // Edit -> https://docs.taiga.io/api.html#epic-statuses-edit
 func (s *EpicStatusService) Edit(status *EpicStatus) (*EpicStatus, error) {
+	if err := requireNonNil("status", status); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(status.ID))
 	var responseStatus EpicStatus
 	if status.ID == 0 {

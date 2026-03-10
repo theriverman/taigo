@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // IssueCustomAttributeService is a handle to actions related to issue custom attributes.
@@ -19,13 +16,7 @@ type IssueCustomAttributeService struct {
 // List -> https://docs.taiga.io/api.html#issue-custom-attributes-list
 func (s *IssueCustomAttributeService) List(queryParams *ProjectIDQueryParams) ([]IssueCustomAttribute, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var attrs []IssueCustomAttribute
 	_, err := s.client.Request.Get(url, &attrs)
 	if err != nil {
@@ -47,6 +38,9 @@ func (s *IssueCustomAttributeService) Get(customAttributeID int) (*IssueCustomAt
 
 // Create -> https://docs.taiga.io/api.html#issue-custom-attributes-create
 func (s *IssueCustomAttributeService) Create(customAttribute *IssueCustomAttribute) (*IssueCustomAttribute, error) {
+	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseAttr IssueCustomAttribute
 	if isEmpty(customAttribute.Project) || isEmpty(customAttribute.Name) || isEmpty(customAttribute.Type) {
@@ -61,6 +55,9 @@ func (s *IssueCustomAttributeService) Create(customAttribute *IssueCustomAttribu
 
 // Edit -> https://docs.taiga.io/api.html#issue-custom-attributes-edit
 func (s *IssueCustomAttributeService) Edit(customAttribute *IssueCustomAttribute) (*IssueCustomAttribute, error) {
+	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttribute.ID))
 	var responseAttr IssueCustomAttribute
 	if customAttribute.ID == 0 {

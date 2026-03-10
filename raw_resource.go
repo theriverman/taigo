@@ -3,8 +3,6 @@ package taigo
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/google/go-querystring/query"
 )
 
 // RawResource is a generic JSON object container for endpoints without dedicated DTOs yet.
@@ -12,15 +10,7 @@ type RawResource map[string]any
 
 func listRawResources(c *Client, endpoint string, defaultProjectID int, queryParams any) ([]RawResource, error) {
 	url := c.MakeURL(endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		if encoded := paramValues.Encode(); encoded != "" {
-			url = fmt.Sprintf("%s?%s", url, encoded)
-		}
-	case defaultProjectID != 0:
-		url = url + projectIDQueryParam(defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, defaultProjectID)
 	var resources []RawResource
 	_, err := c.Request.Get(url, &resources)
 	if err != nil {
@@ -86,12 +76,7 @@ func getRawResourceAtPath(c *Client, endpointParts ...string) (*RawResource, err
 
 func getRawResourceAtPathWithQuery(c *Client, queryParams any, endpointParts ...string) (*RawResource, error) {
 	url := c.MakeURL(endpointParts...)
-	if queryParams != nil {
-		paramValues, _ := query.Values(queryParams)
-		if encoded := paramValues.Encode(); encoded != "" {
-			url = fmt.Sprintf("%s?%s", url, encoded)
-		}
-	}
+	url = appendQueryParams(url, queryParams)
 	var resource RawResource
 	_, err := c.Request.Get(url, &resource)
 	if err != nil {
@@ -112,12 +97,7 @@ func getRawResourceListAtPath(c *Client, endpointParts ...string) ([]RawResource
 
 func getRawResourceListAtPathWithQuery(c *Client, queryParams any, endpointParts ...string) ([]RawResource, error) {
 	url := c.MakeURL(endpointParts...)
-	if queryParams != nil {
-		paramValues, _ := query.Values(queryParams)
-		if encoded := paramValues.Encode(); encoded != "" {
-			url = fmt.Sprintf("%s?%s", url, encoded)
-		}
-	}
+	url = appendQueryParams(url, queryParams)
 	var resources []RawResource
 	_, err := c.Request.Get(url, &resources)
 	if err != nil {
@@ -138,12 +118,7 @@ func postRawResourceAtPath(c *Client, payload any, endpointParts ...string) (*Ra
 
 func postRawResourceAtPathWithQuery(c *Client, payload any, queryParams any, endpointParts ...string) (*RawResource, error) {
 	url := c.MakeURL(endpointParts...)
-	if queryParams != nil {
-		paramValues, _ := query.Values(queryParams)
-		if encoded := paramValues.Encode(); encoded != "" {
-			url = fmt.Sprintf("%s?%s", url, encoded)
-		}
-	}
+	url = appendQueryParams(url, queryParams)
 	var resource RawResource
 	_, err := c.Request.Post(url, payload, &resource)
 	if err != nil {

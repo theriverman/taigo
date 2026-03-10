@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // Point -> https://docs.taiga.io/api.html#points
@@ -28,13 +25,7 @@ type PointService struct {
 // List -> https://docs.taiga.io/api.html#points-list
 func (s *PointService) List(queryParams *ProjectIDQueryParams) ([]Point, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var points []Point
 	_, err := s.client.Request.Get(url, &points)
 	if err != nil {
@@ -56,6 +47,9 @@ func (s *PointService) Get(pointID int) (*Point, error) {
 
 // Create -> https://docs.taiga.io/api.html#points-create
 func (s *PointService) Create(point *Point) (*Point, error) {
+	if err := requireNonNil("point", point); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responsePoint Point
 	if isEmpty(point.Project) || isEmpty(point.Name) {
@@ -70,6 +64,9 @@ func (s *PointService) Create(point *Point) (*Point, error) {
 
 // Edit -> https://docs.taiga.io/api.html#points-edit
 func (s *PointService) Edit(point *Point) (*Point, error) {
+	if err := requireNonNil("point", point); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(point.ID))
 	var responsePoint Point
 	if point.ID == 0 {

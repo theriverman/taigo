@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // IssueService is a handle to actions related to Issues
@@ -21,13 +18,7 @@ type IssueService struct {
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#issues-list
 func (s *IssueService) List(queryParams *IssueQueryParams) ([]Issue, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 
 	// execute requests
 	var issues IssueDetailLIST
@@ -56,10 +47,16 @@ func (s *IssueService) GetAttachment(attachmentID int) (*Attachment, error) {
 
 // ListAttachments returns a list of Issue attachments => https://taigaio.github.io/taiga-doc/dist/api.html#issues-list-attachments
 func (s *IssueService) ListAttachments(issue any) ([]Attachment, error) {
+	if err := requireNonNil("issue", issue); err != nil {
+		return nil, err
+	}
 	i := Issue{}
 	err := convertStructViaJSON(issue, &i)
 	if err != nil {
 		return nil, err
+	}
+	if i.ID == 0 || i.Project == 0 {
+		return nil, errors.New("issue id and project are required to list attachments")
 	}
 
 	queryParams := attachmentsQueryParams{
@@ -96,14 +93,21 @@ func (s *IssueService) GetByRef(issueRef int, project *Project) (*Issue, error) 
 		return nil, errors.New("project must not be nil")
 	}
 
+	type byRefQueryParams struct {
+		Ref         int    `url:"ref"`
+		Project     int    `url:"project,omitempty"`
+		ProjectSlug string `url:"project__slug,omitempty"`
+	}
+	queryParams := &byRefQueryParams{Ref: issueRef}
 	switch {
 	case project.ID != 0:
-		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, issueRef, project.ID))
+		queryParams.Project = project.ID
 	case len(project.Slug) > 0:
-		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, issueRef, project.Slug))
+		queryParams.ProjectSlug = project.Slug
 	default:
 		return nil, errors.New("no ID or Ref defined in passed project struct")
 	}
+	url = appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
 
 	_, err := s.client.Request.Get(url, &issue)
 	if err != nil {
@@ -115,6 +119,9 @@ func (s *IssueService) GetByRef(issueRef int, project *Project) (*Issue, error) 
 // Edit sends a PATCH request to edit a Issue -> https://taigaio.github.io/taiga-doc/dist/api.html#issues-edit
 // Available Meta: IssueDetail
 func (s *IssueService) Edit(issue *Issue) (*Issue, error) {
+	if err := requireNonNil("issue", issue); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issue.ID))
 	var responseIssue IssueDetail
 
@@ -145,6 +152,9 @@ func (s *IssueService) Update(issue *Issue) (*Issue, error) {
 //
 // Available Meta: *IssueDetail
 func (s *IssueService) Create(issue *Issue) (*Issue, error) {
+	if err := requireNonNil("issue", issue); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var issueDetail IssueDetail
 

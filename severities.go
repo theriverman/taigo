@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // Severity -> https://docs.taiga.io/api.html#severities
@@ -28,13 +25,7 @@ type SeverityService struct {
 // List -> https://docs.taiga.io/api.html#severities-list
 func (s *SeverityService) List(queryParams *ProjectIDQueryParams) ([]Severity, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var severities []Severity
 	_, err := s.client.Request.Get(url, &severities)
 	if err != nil {
@@ -56,6 +47,9 @@ func (s *SeverityService) Get(severityID int) (*Severity, error) {
 
 // Create -> https://docs.taiga.io/api.html#severities-create
 func (s *SeverityService) Create(severity *Severity) (*Severity, error) {
+	if err := requireNonNil("severity", severity); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseSeverity Severity
 	if isEmpty(severity.Project) || isEmpty(severity.Name) {
@@ -70,6 +64,9 @@ func (s *SeverityService) Create(severity *Severity) (*Severity, error) {
 
 // Edit -> https://docs.taiga.io/api.html#severities-edit
 func (s *SeverityService) Edit(severity *Severity) (*Severity, error) {
+	if err := requireNonNil("severity", severity); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(severity.ID))
 	var responseSeverity Severity
 	if severity.ID == 0 {

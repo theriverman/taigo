@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // ProjectService is a handle to actions related to Projects
@@ -140,8 +137,7 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 
 	url := s.client.MakeURL(s.Endpoint)
 	if queryParameters != nil {
-		paramValues, _ := query.Values(queryParameters)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
+		url = appendQueryParams(url, queryParameters)
 	}
 	var projects ProjectsList
 
@@ -155,6 +151,9 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 // Create -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-create
 // Required fields: name, description
 func (s *ProjectService) Create(project *Project) (*Project, error) {
+	if err := requireNonNil("project", project); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var p ProjectDetail
 	// Check for required fields
@@ -183,7 +182,10 @@ func (s *ProjectService) Get(projectID int) (*Project, error) {
 
 // GetBySlug -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get-by-slug
 func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
-	url := s.client.MakeURL(s.Endpoint, "by_slug?slug="+slug)
+	queryParams := struct {
+		Slug string `url:"slug"`
+	}{Slug: slug}
+	url := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_slug"), &queryParams)
 	var p ProjectDetail
 
 	_, err := s.client.Request.Get(url, &p)
@@ -196,6 +198,9 @@ func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
 // Edit edits an Project via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#projects-edit
 // Available Meta: ProjectDetail
 func (s *ProjectService) Edit(project *Project) (*Project, error) {
+	if err := requireNonNil("project", project); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(project.ID))
 	var p ProjectDetail
 

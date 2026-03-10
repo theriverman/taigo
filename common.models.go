@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -186,8 +187,12 @@ type Pagination struct {
 // LoadFromHeaders accepts an *http.Response struct and reads the relevant
 // pagination headers returned by Taiga
 func (p *Pagination) LoadFromHeaders(c *Client, response *http.Response) {
-	paginated := response.Header.Get("X-Paginated") // Check if response is paginated
-	if paginated == "true" {
+	if response == nil {
+		p.Paginated = false
+		return
+	}
+	paginated := strings.EqualFold(response.Header.Get("X-Paginated"), "true") // Check if response is paginated
+	if paginated {
 		p.Paginated = true
 		p.PaginatedBy, _ = strconv.Atoi(response.Header.Get("X-Paginated-By"))
 		p.PaginationCount, _ = strconv.Atoi(response.Header.Get("X-Paginated-Count"))

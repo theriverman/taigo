@@ -99,7 +99,7 @@ func TestTokenRefreshRoutine(t *testing.T) {
 	// Initialise client (authenticates to Taiga)
 	err := client.Initialise()
 	if err != nil {
-		panic(err)
+		t.Fatalf("initialise client: %v", err)
 	}
 	err = client.AuthByCredentials(&taiga.Credentials{
 		Type:     "normal",
@@ -107,7 +107,7 @@ func TestTokenRefreshRoutine(t *testing.T) {
 		Password: testPassword,
 	})
 	if err != nil {
-		panic(err)
+		t.Fatalf("auth by credentials: %v", err)
 	}
 
 	testLoopLength := 5 // if you increase this, tests may fail due to timeout (usually 30s)

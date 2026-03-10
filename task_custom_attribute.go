@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // TaskCustomAttributeService is a handle to actions related to task custom attributes.
@@ -19,13 +16,7 @@ type TaskCustomAttributeService struct {
 // List -> https://docs.taiga.io/api.html#task-custom-attributes-list
 func (s *TaskCustomAttributeService) List(queryParams *ProjectIDQueryParams) ([]TaskCustomAttribute, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var attrs []TaskCustomAttribute
 	_, err := s.client.Request.Get(url, &attrs)
 	if err != nil {
@@ -47,6 +38,9 @@ func (s *TaskCustomAttributeService) Get(customAttributeID int) (*TaskCustomAttr
 
 // Create -> https://docs.taiga.io/api.html#task-custom-attributes-create
 func (s *TaskCustomAttributeService) Create(customAttribute *TaskCustomAttribute) (*TaskCustomAttribute, error) {
+	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseAttr TaskCustomAttribute
 	if isEmpty(customAttribute.Project) || isEmpty(customAttribute.Name) || isEmpty(customAttribute.Type) {
@@ -61,6 +55,9 @@ func (s *TaskCustomAttributeService) Create(customAttribute *TaskCustomAttribute
 
 // Edit -> https://docs.taiga.io/api.html#task-custom-attributes-edit
 func (s *TaskCustomAttributeService) Edit(customAttribute *TaskCustomAttribute) (*TaskCustomAttribute, error) {
+	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttribute.ID))
 	var responseAttr TaskCustomAttribute
 	if customAttribute.ID == 0 {

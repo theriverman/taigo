@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // MilestoneService is a handle to actions related to Milestones
@@ -22,13 +19,7 @@ type MilestoneService struct {
 func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone, *MilestoneTotalInfo, error) {
 	// prepare url & parameters
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	// execute requests
 	var Milestones []Milestone
 	httpResponse, err := s.client.Request.Get(url, &Milestones)
@@ -45,6 +36,9 @@ func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone
 //
 // Mandatory fields: Project, Name, EstimatedStart, EstimatedFinish
 func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
+	if err := requireNonNil("milestone", milestone); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var respMilestone Milestone
 	// Check for required fields
@@ -75,6 +69,9 @@ func (s *MilestoneService) Get(milestoneID int) (*Milestone, error) {
 // Edit edits an Milestone via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-edit
 // Available Meta: MilestoneDetail
 func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
+	if err := requireNonNil("milestone", milestone); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(milestone.ID))
 
 	var m Milestone

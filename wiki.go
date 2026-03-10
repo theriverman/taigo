@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // WikiService is a handle to actions related to Wiki pages
@@ -21,13 +18,7 @@ type WikiService struct {
 // List -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-list
 func (s *WikiService) List(queryParams *WikiQueryParams) ([]WikiPage, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var wikiPages []WikiPage
 	_, err := s.client.Request.Get(url, &wikiPages)
 	if err != nil {
@@ -38,6 +29,9 @@ func (s *WikiService) List(queryParams *WikiQueryParams) ([]WikiPage, error) {
 
 // Create -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-create
 func (s *WikiService) Create(wikiPage *WikiPage) (*WikiPage, error) {
+	if err := requireNonNil("wikiPage", wikiPage); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var page WikiPage
 
@@ -65,8 +59,8 @@ func (s *WikiService) Get(wikiPageID int) (*WikiPage, error) {
 
 // GetBySlug -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-by-slug
 func (s *WikiService) GetBySlug(slug string, projectID int) (*WikiPage, error) {
-	paramValues, _ := query.Values(WikiQueryParams{Slug: slug, Project: projectID})
-	url := fmt.Sprintf("%s?%s", s.client.MakeURL(s.Endpoint, "by_slug"), paramValues.Encode())
+	queryParams := &WikiQueryParams{Slug: slug, Project: projectID}
+	url := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_slug"), queryParams)
 	var page WikiPage
 	_, err := s.client.Request.Get(url, &page)
 	if err != nil {
@@ -77,6 +71,9 @@ func (s *WikiService) GetBySlug(slug string, projectID int) (*WikiPage, error) {
 
 // Edit sends a PATCH request to edit a Wiki page -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-edit
 func (s *WikiService) Edit(wikiPage *WikiPage) (*WikiPage, error) {
+	if err := requireNonNil("wikiPage", wikiPage); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(wikiPage.ID))
 	var responseWikiPage WikiPage
 

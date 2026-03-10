@@ -238,11 +238,17 @@ type EpicRelatedUserStoryDetail struct {
 
 // GetUserStory returns the UserStory referred in the EpicRelatedUserStoryDetail
 func (e *EpicRelatedUserStoryDetail) GetUserStory(c *Client) (*UserStory, error) {
+	if err := requireNonNil("client", c); err != nil {
+		return nil, err
+	}
 	return c.UserStory.Get(e.UserStoryID)
 }
 
 // GetEpic returns the Epic referred in the EpicRelatedUserStoryDetail
 func (e *EpicRelatedUserStoryDetail) GetEpic(c *Client) (*Epic, error) {
+	if err := requireNonNil("client", c); err != nil {
+		return nil, err
+	}
 	return c.Epic.Get(e.EpicID)
 }
 

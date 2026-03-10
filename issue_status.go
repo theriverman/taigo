@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // IssueStatusService is a handle to actions related to issue statuses.
@@ -19,13 +16,7 @@ type IssueStatusService struct {
 // List -> https://docs.taiga.io/api.html#issue-statuses-list
 func (s *IssueStatusService) List(queryParams *ProjectIDQueryParams) ([]IssueStatus, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var statuses []IssueStatus
 	_, err := s.client.Request.Get(url, &statuses)
 	if err != nil {
@@ -47,6 +38,9 @@ func (s *IssueStatusService) Get(statusID int) (*IssueStatus, error) {
 
 // Create -> https://docs.taiga.io/api.html#issue-statuses-create
 func (s *IssueStatusService) Create(status *IssueStatus) (*IssueStatus, error) {
+	if err := requireNonNil("status", status); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseStatus IssueStatus
 	if isEmpty(status.ProjectID) || isEmpty(status.Name) {
@@ -61,6 +55,9 @@ func (s *IssueStatusService) Create(status *IssueStatus) (*IssueStatus, error) {
 
 // Edit -> https://docs.taiga.io/api.html#issue-statuses-edit
 func (s *IssueStatusService) Edit(status *IssueStatus) (*IssueStatus, error) {
+	if err := requireNonNil("status", status); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(status.ID))
 	var responseStatus IssueStatus
 	if status.ID == 0 {

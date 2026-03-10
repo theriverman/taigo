@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // EpicService is a handle to actions related to Epics
@@ -23,13 +20,7 @@ type EpicService struct {
 // Available Meta: *EpicDetailLIST
 func (s *EpicService) List(queryParams *EpicsQueryParams) ([]Epic, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var epics EpicDetailLIST
 	_, err := s.client.Request.Get(url, &epics)
 	if err != nil {
@@ -43,6 +34,9 @@ func (s *EpicService) List(queryParams *EpicsQueryParams) ([]Epic, error) {
 //
 // Available Meta: *EpicDetail
 func (s *EpicService) Create(epic *Epic) (*Epic, error) {
+	if err := requireNonNil("epic", epic); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var e EpicDetail
 
@@ -92,14 +86,21 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 		return nil, errors.New("project must not be nil")
 	}
 
+	type byRefQueryParams struct {
+		Ref         int    `url:"ref"`
+		Project     int    `url:"project,omitempty"`
+		ProjectSlug string `url:"project__slug,omitempty"`
+	}
+	queryParams := &byRefQueryParams{Ref: epicRef}
 	switch {
 	case project.ID > 0:
-		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, (epicRef), project.ID))
+		queryParams.Project = project.ID
 	case len(project.Slug) > 0:
-		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, epicRef, project.Slug))
+		queryParams.ProjectSlug = project.Slug
 	default:
 		return nil, errors.New("no ID or Ref defined in passed project struct")
 	}
+	url = appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
 
 	_, err := s.client.Request.Get(url, &e)
 	if err != nil {
@@ -111,6 +112,9 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 // Edit edits an Epic via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#epics-edit
 // Available Meta: EpicDetail
 func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
+	if err := requireNonNil("epic", epic); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epic.ID))
 	var e EpicDetail
 
@@ -191,9 +195,13 @@ func (s *EpicService) CreateAttachment(attachment *Attachment, epic *Epic) (*Att
 //
 // Available Meta: *EpicDetail
 func (e *Epic) Clone(s *EpicService) (*Epic, error) {
+	if err := requireNonNil("epic", e); err != nil {
+		return nil, err
+	}
 	// Clean up data
-	e.ID = 0
-	e.Version = 0
-	e.Ref = 0
-	return s.Create(e)
+	clone := *e
+	clone.ID = 0
+	clone.Version = 0
+	clone.Ref = 0
+	return s.Create(&clone)
 }

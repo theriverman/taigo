@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // UserStoryService is a handle to actions related to UserStories
@@ -22,13 +20,7 @@ type UserStoryService struct {
 // Available Meta: *[]UserStoryDetailLIST
 func (s *UserStoryService) List(queryParams *UserStoryQueryParams) ([]UserStory, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var userstories UserStoryDetailLIST
 	_, err := s.client.Request.Get(url, &userstories)
 	if err != nil {
@@ -41,6 +33,9 @@ func (s *UserStoryService) List(queryParams *UserStoryQueryParams) ([]UserStory,
 //
 // Available Meta: *UserStoryDetail
 func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
+	if err := requireNonNil("userStory", userStory); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var us UserStoryDetail
 
@@ -90,14 +85,21 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 		return nil, errors.New("project must not be nil")
 	}
 
+	type byRefQueryParams struct {
+		Ref         int    `url:"ref"`
+		Project     int    `url:"project,omitempty"`
+		ProjectSlug string `url:"project__slug,omitempty"`
+	}
+	queryParams := &byRefQueryParams{Ref: userStoryRef}
 	switch {
 	case project.ID != 0:
-		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, userStoryRef, project.ID))
+		queryParams.Project = project.ID
 	case len(project.Slug) > 0:
-		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, userStoryRef, project.Slug))
+		queryParams.ProjectSlug = project.Slug
 	default:
 		return nil, errors.New("no ID or Ref defined in passed project struct")
 	}
+	url = appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
 
 	_, err := s.client.Request.Get(url, &us)
 	if err != nil {
@@ -109,6 +111,9 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 // Edit sends a PATCH request to edit a User Story -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-edit
 // Available Meta: UserStoryDetail
 func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
+	if err := requireNonNil("userStory", us); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(us.ID))
 	var responseUS UserStoryDetail
 
@@ -155,6 +160,12 @@ func (s *UserStoryService) CreateAttachment(attachment *Attachment, userstory *U
 // TaigaClient must be a pointer to taiga.Client
 // EpicID must be an int to desired Epic
 func (us *UserStory) RelateToEpic(client *Client, epicID int) (*EpicRelatedUserStoryDetail, error) {
+	if err := requireNonNil("client", client); err != nil {
+		return nil, err
+	}
+	if err := requireNonNil("userStory", us); err != nil {
+		return nil, err
+	}
 	if us.ID == 0 {
 		return nil, fmt.Errorf("UserStory must be created before relating it to an Epic. UserStory.ID was 0")
 	}
@@ -165,20 +176,33 @@ func (us *UserStory) RelateToEpic(client *Client, epicID int) (*EpicRelatedUserS
 //
 // Available Meta: UserStoryDetail
 func (s *UserStoryService) Clone(srcUS *UserStory) (*UserStory, error) {
-	srcUS.ID = 0
-	srcUS.Ref = 0
-	srcUS.Version = 0
-	return s.Create(srcUS)
+	if err := requireNonNil("userStory", srcUS); err != nil {
+		return nil, err
+	}
+	clone := *srcUS
+	clone.ID = 0
+	clone.Ref = 0
+	clone.Version = 0
+	return s.Create(&clone)
 }
 
 // ListRelatedTasks returns all Tasks related to this UserStory
 func (us *UserStory) ListRelatedTasks(client *Client, userStoryID int) ([]Task, error) {
+	if err := requireNonNil("client", client); err != nil {
+		return nil, err
+	}
 	return client.Task.List(&TasksQueryParams{UserStory: userStoryID})
 }
 
 // CreateRelatedTask creates a Task related to a UserStory
 // Available Meta: *TaskDetail
 func (us *UserStory) CreateRelatedTask(client *Client, task Task) (*Task, error) {
+	if err := requireNonNil("client", client); err != nil {
+		return nil, err
+	}
+	if err := requireNonNil("userStory", us); err != nil {
+		return nil, err
+	}
 	task.UserStory = us.ID
 	task.Project = us.Project
 	return client.Task.Create(&task)
@@ -187,13 +211,26 @@ func (us *UserStory) CreateRelatedTask(client *Client, task Task) (*Task, error)
 // CloneUserStory clones an existing UserStory with most fields
 // Available Meta: UserStoryDetail
 func (us *UserStory) CloneUserStory(client *Client) (*UserStory, error) {
-	us.ID = 0
-	us.Ref = 0
-	us.Version = 0
-	return client.UserStory.Create(us)
+	if err := requireNonNil("client", client); err != nil {
+		return nil, err
+	}
+	if err := requireNonNil("userStory", us); err != nil {
+		return nil, err
+	}
+	clone := *us
+	clone.ID = 0
+	clone.Ref = 0
+	clone.Version = 0
+	return client.UserStory.Create(&clone)
 }
 
 // GetRelatedTasks returns all Tasks related to this UserStory
 func (us *UserStory) GetRelatedTasks(client *Client) ([]Task, error) {
+	if err := requireNonNil("client", client); err != nil {
+		return nil, err
+	}
+	if err := requireNonNil("userStory", us); err != nil {
+		return nil, err
+	}
 	return client.Task.List(&TasksQueryParams{UserStory: us.ID})
 }

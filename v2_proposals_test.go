@@ -387,6 +387,168 @@ func TestImporterEndpointsUseCurrentRoutes(t *testing.T) {
 	}
 }
 
+func TestInitialiseSetsDefaultHTTPClientWhenUnset(t *testing.T) {
+	client := &Client{
+		BaseURL:             "http://example.com",
+		AutoRefreshDisabled: true,
+	}
+	if err := client.Initialise(); err != nil {
+		t.Fatalf("initialise client: %v", err)
+	}
+	if client.HTTPClient == nil {
+		t.Fatalf("expected HTTPClient to be initialized")
+	}
+}
+
+func TestDisableAutomaticTokenRefreshSetsStickyFlag(t *testing.T) {
+	client := &Client{}
+	client.DisableAutomaticTokenRefresh()
+	if !client.AutoRefreshDisabled {
+		t.Fatalf("expected AutoRefreshDisabled to be true after DisableAutomaticTokenRefresh")
+	}
+}
+
+func TestMappedTaskListInjectsDefaultProjectWithoutMutatingQuery(t *testing.T) {
+	var gotProject string
+	var gotStatus string
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotProject = req.URL.Query().Get("project")
+		gotStatus = req.URL.Query().Get("status")
+		return newJSONResponse(req, http.StatusOK, `[]`), nil
+	})
+	client.Project.ConfigureMappedServices(55)
+
+	q := &TasksQueryParams{Status: 3}
+	if _, err := client.Project.Task.List(q); err != nil {
+		t.Fatalf("list tasks with mapped service: %v", err)
+	}
+	if gotProject != "55" {
+		t.Fatalf("expected injected project=55, got %q", gotProject)
+	}
+	if gotStatus != "3" {
+		t.Fatalf("expected status query to be preserved, got %q", gotStatus)
+	}
+	if q.Project != 0 {
+		t.Fatalf("expected caller query to remain unchanged, got project=%d", q.Project)
+	}
+}
+
+func TestMappedTaskListRespectsExplicitProjectInQuery(t *testing.T) {
+	var gotProject string
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotProject = req.URL.Query().Get("project")
+		return newJSONResponse(req, http.StatusOK, `[]`), nil
+	})
+	client.Project.ConfigureMappedServices(55)
+
+	q := &TasksQueryParams{Project: 77}
+	if _, err := client.Project.Task.List(q); err != nil {
+		t.Fatalf("list tasks with explicit project: %v", err)
+	}
+	if gotProject != "77" {
+		t.Fatalf("expected explicit project=77 to win, got %q", gotProject)
+	}
+}
+
+func TestRequestServiceCapturesPaginationHeaders(t *testing.T) {
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		resp := newJSONResponse(req, http.StatusOK, `[]`)
+		resp.Header.Set("X-Paginated", "true")
+		resp.Header.Set("X-Paginated-By", "50")
+		resp.Header.Set("X-Paginated-Count", "150")
+		resp.Header.Set("X-Paginated-Current", "2")
+		resp.Header.Set("X-Pagination-Next", "http://taiga.test/api/v1/tasks?page=3")
+		resp.Header.Set("X-Pagination-Prev", "http://taiga.test/api/v1/tasks?page=1")
+		return resp, nil
+	})
+	client.DisablePagination(false)
+
+	var tasks []Task
+	if _, err := client.Request.Get(client.MakeURL("tasks"), &tasks); err != nil {
+		t.Fatalf("request get tasks: %v", err)
+	}
+	p := client.GetPagination()
+	if !p.Paginated {
+		t.Fatalf("expected paginated=true")
+	}
+	if p.PaginatedBy != 50 || p.PaginationCount != 150 || p.PaginationCurrent != 2 {
+		t.Fatalf("unexpected pagination values: %+v", p)
+	}
+	if p.PaginationNext == nil || p.PaginationNext.String() == "" {
+		t.Fatalf("expected PaginationNext to be populated")
+	}
+	if p.PaginationPrev == nil || p.PaginationPrev.String() == "" {
+		t.Fatalf("expected PaginationPrev to be populated")
+	}
+}
+
+func TestResolveProjectRejectsNilQueryParams(t *testing.T) {
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		return newJSONResponse(req, http.StatusOK, `{}`), nil
+	})
+
+	if _, err := client.Resolver.ResolveProject(nil); err == nil {
+		t.Fatalf("expected ResolveProject(nil) to return error")
+	}
+}
+
+func TestCloneOperationsDoNotMutateSourceObjects(t *testing.T) {
+	type capturedRequest struct {
+		path string
+		body string
+	}
+	requests := make([]capturedRequest, 0, 2)
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		payload, _ := io.ReadAll(req.Body)
+		requests = append(requests, capturedRequest{
+			path: req.URL.Path,
+			body: string(payload),
+		})
+		switch req.URL.Path {
+		case "/api/v1/epics":
+			return newJSONResponse(req, http.StatusCreated, `{"id":9001,"project":7,"subject":"clone-epic"}`), nil
+		case "/api/v1/userstories":
+			return newJSONResponse(req, http.StatusCreated, `{"id":9002,"project":7,"subject":"clone-us"}`), nil
+		default:
+			return newJSONResponse(req, http.StatusOK, `{}`), nil
+		}
+	})
+
+	epic := &Epic{ID: 101, Ref: 22, Version: 5, Project: 7, Subject: "clone-epic"}
+	if _, err := epic.Clone(client.Epic); err != nil {
+		t.Fatalf("clone epic: %v", err)
+	}
+	if epic.ID != 101 || epic.Ref != 22 || epic.Version != 5 {
+		t.Fatalf("epic was mutated by Clone: %+v", epic)
+	}
+
+	us := &UserStory{ID: 102, Ref: 33, Version: 6, Project: 7, Subject: "clone-us"}
+	if _, err := client.UserStory.Clone(us); err != nil {
+		t.Fatalf("clone user story: %v", err)
+	}
+	if us.ID != 102 || us.Ref != 33 || us.Version != 6 {
+		t.Fatalf("user story was mutated by Clone: %+v", us)
+	}
+
+	if len(requests) != 2 {
+		t.Fatalf("expected 2 create requests for clone operations, got %d", len(requests))
+	}
+	for _, req := range requests {
+		if strings.Contains(req.body, "\"id\":101") || strings.Contains(req.body, "\"id\":102") {
+			t.Fatalf("clone request unexpectedly contained original ID in payload: %s", req.body)
+		}
+		if strings.Contains(req.body, "\"ref\":22") || strings.Contains(req.body, "\"ref\":33") {
+			t.Fatalf("clone request unexpectedly contained original Ref in payload: %s", req.body)
+		}
+		if strings.Contains(req.body, "\"version\":5") || strings.Contains(req.body, "\"version\":6") {
+			t.Fatalf("clone request unexpectedly contained original Version in payload: %s", req.body)
+		}
+	}
+}
+
 func TestHistoryDeleteCommentUsesQueryParameter(t *testing.T) {
 	var gotPath, gotID, gotMethod string
 	var gotBody []byte

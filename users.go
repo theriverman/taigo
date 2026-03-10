@@ -1,10 +1,7 @@
 package taigo
 
 import (
-	"fmt"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // UserService is a handle to actions related to Users
@@ -19,13 +16,7 @@ type UserService struct {
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#users-list
 func (s *UserService) List(queryParams *UsersQueryParams) ([]User, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var users []User
 	_, err := s.client.Request.Get(url, &users)
 	if err != nil {
@@ -70,10 +61,7 @@ func (s *UserService) GetStats(userID int) (*UserStatsDetail, error) {
 // GetWatchedContent => https://taigaio.github.io/taiga-doc/dist/api.html#users-watched
 func (s *UserService) GetWatchedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]UserWatched, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "watched")
-	if queryParams != nil {
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	}
+	url = appendQueryParams(url, queryParams)
 	var watched []UserWatched
 	_, err := s.client.Request.Get(url, &watched)
 	if err != nil {
@@ -85,10 +73,7 @@ func (s *UserService) GetWatchedContent(userID int, queryParams *UsersHighlighte
 // GetLikedContent => https://taigaio.github.io/taiga-doc/dist/api.html#users-liked
 func (s *UserService) GetLikedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]UserLiked, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "liked")
-	if queryParams != nil {
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	}
+	url = appendQueryParams(url, queryParams)
 	var liked []UserLiked
 	_, err := s.client.Request.Get(url, &liked)
 	if err != nil {
@@ -100,10 +85,7 @@ func (s *UserService) GetLikedContent(userID int, queryParams *UsersHighlightedQ
 // https://taigaio.github.io/taiga-doc/dist/api.html#users-voted
 func (s *UserService) GetVotedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]Voted, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "voted")
-	if queryParams != nil {
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	}
+	url = appendQueryParams(url, queryParams)
 	var voted []Voted
 	_, err := s.client.Request.Get(url, &voted)
 	if err != nil {
@@ -115,6 +97,9 @@ func (s *UserService) GetVotedContent(userID int, queryParams *UsersHighlightedQ
 // Edit sends a PATCH request to edit a user
 // https://taigaio.github.io/taiga-doc/dist/api.html#users-edit
 func (s *UserService) Edit(user *User) (*User, error) {
+	if err := requireNonNil("user", user); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(user.ID))
 	var u User
 	_, err := s.client.Request.Patch(url, &user, &u)

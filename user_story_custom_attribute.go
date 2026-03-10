@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // UserStoryCustomAttributeService is a handle to actions related to user story custom attributes.
@@ -19,13 +16,7 @@ type UserStoryCustomAttributeService struct {
 // List -> https://docs.taiga.io/api.html#user-story-custom-attributes-list
 func (s *UserStoryCustomAttributeService) List(queryParams *ProjectIDQueryParams) ([]UserStoryCustomAttribute, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var attrs []UserStoryCustomAttribute
 	_, err := s.client.Request.Get(url, &attrs)
 	if err != nil {
@@ -47,6 +38,9 @@ func (s *UserStoryCustomAttributeService) Get(customAttributeID int) (*UserStory
 
 // Create -> https://docs.taiga.io/api.html#user-story-custom-attributes-create
 func (s *UserStoryCustomAttributeService) Create(customAttribute *UserStoryCustomAttribute) (*UserStoryCustomAttribute, error) {
+	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseAttr UserStoryCustomAttribute
 	if isEmpty(customAttribute.Project) || isEmpty(customAttribute.Name) || isEmpty(customAttribute.Type) {
@@ -61,6 +55,9 @@ func (s *UserStoryCustomAttributeService) Create(customAttribute *UserStoryCusto
 
 // Edit -> https://docs.taiga.io/api.html#user-story-custom-attributes-edit
 func (s *UserStoryCustomAttributeService) Edit(customAttribute *UserStoryCustomAttribute) (*UserStoryCustomAttribute, error) {
+	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttribute.ID))
 	var responseAttr UserStoryCustomAttribute
 	if customAttribute.ID == 0 {

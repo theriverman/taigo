@@ -2,11 +2,8 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // TaskService is a handle to actions related to Tasks
@@ -21,13 +18,7 @@ type TaskService struct {
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-list
 func (s *TaskService) List(queryParams *TasksQueryParams) ([]Task, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	switch {
-	case queryParams != nil:
-		paramValues, _ := query.Values(queryParams)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
-	case s.defaultProjectID != 0:
-		url = url + projectIDQueryParam(s.defaultProjectID)
-	}
+	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
 	var tasks TaskDetailLIST
 	_, err := s.client.Request.Get(url, &tasks)
 	if err != nil {
@@ -39,6 +30,9 @@ func (s *TaskService) List(queryParams *TasksQueryParams) ([]Task, error) {
 // Create creates a new Task | https://taigaio.github.io/taiga-doc/dist/api.html#tasks-create
 // Meta Available: *TaskDetail
 func (s *TaskService) Create(task *Task) (*Task, error) {
+	if err := requireNonNil("task", task); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var t TaskDetail
 
@@ -73,13 +67,20 @@ func (s *TaskService) GetByRef(taskRef int, project *Project) (*Task, error) {
 	if project == nil {
 		return nil, errors.New("project must not be nil")
 	}
+	type byRefQueryParams struct {
+		Ref         int    `url:"ref"`
+		Project     int    `url:"project,omitempty"`
+		ProjectSlug string `url:"project__slug,omitempty"`
+	}
+	queryParams := &byRefQueryParams{Ref: taskRef}
 	if project.ID != 0 {
-		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project=%d", s.Endpoint, taskRef, project.ID))
+		queryParams.Project = project.ID
 	} else if len(project.Slug) > 0 {
-		url = s.client.MakeURL(fmt.Sprintf("%s/by_ref?ref=%d&project__slug=%s", s.Endpoint, taskRef, project.Slug))
+		queryParams.ProjectSlug = project.Slug
 	} else {
 		return nil, errors.New("no ID or Ref defined in passed project struct")
 	}
+	url = appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
 
 	_, err := s.client.Request.Get(url, &t)
 	if err != nil {
@@ -91,6 +92,9 @@ func (s *TaskService) GetByRef(taskRef int, project *Project) (*Task, error) {
 // Edit sends a PATCH request to edit a Task -> https://taigaio.github.io/taiga-doc/dist/api.html#tasks-edit
 // Available Meta: TaskDetail
 func (s *TaskService) Edit(task *Task) (*Task, error) {
+	if err := requireNonNil("task", task); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(task.ID))
 	var responseTask TaskDetail
 
@@ -133,10 +137,16 @@ func (s *TaskService) GetAttachment(attachmentID int) (*Attachment, error) {
 
 // ListAttachments returns a list of Task attachments => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-list-attachments
 func (s *TaskService) ListAttachments(task any) ([]Attachment, error) {
+	if err := requireNonNil("task", task); err != nil {
+		return nil, err
+	}
 	t := Task{}
 	err := convertStructViaJSON(task, &t)
 	if err != nil {
 		return nil, err
+	}
+	if t.ID == 0 || t.Project == 0 {
+		return nil, errors.New("task id and project are required to list attachments")
 	}
 
 	queryParams := attachmentsQueryParams{

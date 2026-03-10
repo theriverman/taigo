@@ -31,6 +31,6 @@ export TAIGO_PASSWORD=123123
 export TAIGO_PROJECT_ID=1
 export TAIGO_MEMBER_USERNAME=admin
 export TAIGO_MEMBER_PASSWORD=123123
-export TAIGO_MEMBER_WRITE_EXPECTATION=forbid  # allow|forbid
+export TAIGO_MEMBER_WRITE_EXPECTATION=allow  # allow|forbid
 go test ./tests/... -run TestRoleMatrixLive -v
 ```

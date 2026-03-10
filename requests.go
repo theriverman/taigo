@@ -157,6 +157,15 @@ func (s *RequestService) TraceCtx(ctx context.Context, URL string, ResponseBody 
 
 // NOTE: responseBody must always be a pointer otherwise we lose the response data!
 func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObject TaigaBaseObject) (*Attachment, error) {
+	if err := requireNonNil("attachment", attachment); err != nil {
+		return nil, err
+	}
+	if err := requireNonNil("object", tgObject); err != nil {
+		return nil, err
+	}
+	if attachment.filePath == "" {
+		return nil, fmt.Errorf("attachment file path is required")
+	}
 	// Map Object details into *Attachment
 	attachment.ObjectID = tgObject.GetID()
 	attachment.Project = tgObject.GetProject()
@@ -264,6 +273,9 @@ func newRawRequestWithContext(ctx context.Context, RequestType string, c *Client
 	if err != nil {
 		return nil, err
 	}
+	pagination := &Pagination{}
+	pagination.LoadFromHeaders(c, resp)
+	c.pagination = pagination
 
 	rawResponseBody, err := io.ReadAll(resp.Body)
 	closeErr := resp.Body.Close()
