@@ -16,9 +16,12 @@ type IssueStatusService struct {
 // List -> https://docs.taiga.io/api.html#issue-statuses-list
 func (s *IssueStatusService) List(queryParams *ProjectIDQueryParams) ([]IssueStatus, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var statuses []IssueStatus
-	_, err := s.client.Request.Get(url, &statuses)
+	_, err = s.client.Request.Get(url, &statuses)
 	if err != nil {
 		return nil, err
 	}

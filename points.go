@@ -25,9 +25,12 @@ type PointService struct {
 // List -> https://docs.taiga.io/api.html#points-list
 func (s *PointService) List(queryParams *ProjectIDQueryParams) ([]Point, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var points []Point
-	_, err := s.client.Request.Get(url, &points)
+	_, err = s.client.Request.Get(url, &points)
 	if err != nil {
 		return nil, err
 	}

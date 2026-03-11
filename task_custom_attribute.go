@@ -16,9 +16,12 @@ type TaskCustomAttributeService struct {
 // List -> https://docs.taiga.io/api.html#task-custom-attributes-list
 func (s *TaskCustomAttributeService) List(queryParams *ProjectIDQueryParams) ([]TaskCustomAttribute, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var attrs []TaskCustomAttribute
-	_, err := s.client.Request.Get(url, &attrs)
+	_, err = s.client.Request.Get(url, &attrs)
 	if err != nil {
 		return nil, err
 	}

@@ -16,9 +16,12 @@ type EpicStatusService struct {
 // List -> https://docs.taiga.io/api.html#epic-statuses-list
 func (s *EpicStatusService) List(queryParams *ProjectIDQueryParams) ([]EpicStatus, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var statuses []EpicStatus
-	_, err := s.client.Request.Get(url, &statuses)
+	_, err = s.client.Request.Get(url, &statuses)
 	if err != nil {
 		return nil, err
 	}

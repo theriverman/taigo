@@ -16,9 +16,12 @@ type UserService struct {
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#users-list
 func (s *UserService) List(queryParams *UsersQueryParams) ([]User, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var users []User
-	_, err := s.client.Request.Get(url, &users)
+	_, err = s.client.Request.Get(url, &users)
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +64,13 @@ func (s *UserService) GetStats(userID int) (*UserStatsDetail, error) {
 // GetWatchedContent => https://taigaio.github.io/taiga-doc/dist/api.html#users-watched
 func (s *UserService) GetWatchedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]UserWatched, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "watched")
-	url = appendQueryParams(url, queryParams)
+	var err error
+	url, err = appendQueryParams(url, queryParams)
+	if err != nil {
+		return nil, err
+	}
 	var watched []UserWatched
-	_, err := s.client.Request.Get(url, &watched)
+	_, err = s.client.Request.Get(url, &watched)
 	if err != nil {
 		return []UserWatched{}, err
 	}
@@ -73,9 +80,13 @@ func (s *UserService) GetWatchedContent(userID int, queryParams *UsersHighlighte
 // GetLikedContent => https://taigaio.github.io/taiga-doc/dist/api.html#users-liked
 func (s *UserService) GetLikedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]UserLiked, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "liked")
-	url = appendQueryParams(url, queryParams)
+	var err error
+	url, err = appendQueryParams(url, queryParams)
+	if err != nil {
+		return nil, err
+	}
 	var liked []UserLiked
-	_, err := s.client.Request.Get(url, &liked)
+	_, err = s.client.Request.Get(url, &liked)
 	if err != nil {
 		return []UserLiked{}, err
 	}
@@ -85,9 +96,13 @@ func (s *UserService) GetLikedContent(userID int, queryParams *UsersHighlightedQ
 // https://taigaio.github.io/taiga-doc/dist/api.html#users-voted
 func (s *UserService) GetVotedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]Voted, error) {
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "voted")
-	url = appendQueryParams(url, queryParams)
+	var err error
+	url, err = appendQueryParams(url, queryParams)
+	if err != nil {
+		return nil, err
+	}
 	var voted []Voted
-	_, err := s.client.Request.Get(url, &voted)
+	_, err = s.client.Request.Get(url, &voted)
 	if err != nil {
 		return []Voted{}, err
 	}

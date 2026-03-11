@@ -15,14 +15,58 @@ type IssueService struct {
 	Endpoint         string
 }
 
+type issueCreatePayload struct {
+	AssignedTo    int      `json:"assigned_to,omitempty"`
+	BlockedNote   string   `json:"blocked_note,omitempty"`
+	Description   string   `json:"description,omitempty"`
+	IsBlocked     bool     `json:"is_blocked,omitempty"`
+	Milestone     int      `json:"milestone,omitempty"`
+	Owner         int      `json:"owner,omitempty"`
+	Priority      int      `json:"priority,omitempty"`
+	Project       int      `json:"project"`
+	Severity      int      `json:"severity,omitempty"`
+	Status        int      `json:"status,omitempty"`
+	Subject       string   `json:"subject"`
+	Tags          []string `json:"tags,omitempty"`
+	Type          int      `json:"type,omitempty"`
+	Watchers      []int    `json:"watchers,omitempty"`
+	DueDate       string   `json:"due_date,omitempty"`
+	DueDateReason string   `json:"due_date_reason,omitempty"`
+	DueDateStatus string   `json:"due_date_status,omitempty"`
+}
+
+type issueEditPayload struct {
+	AssignedTo    int      `json:"assigned_to,omitempty"`
+	BlockedNote   string   `json:"blocked_note,omitempty"`
+	Description   string   `json:"description,omitempty"`
+	IsBlocked     bool     `json:"is_blocked,omitempty"`
+	Milestone     int      `json:"milestone,omitempty"`
+	Owner         int      `json:"owner,omitempty"`
+	Priority      int      `json:"priority,omitempty"`
+	Project       int      `json:"project,omitempty"`
+	Severity      int      `json:"severity,omitempty"`
+	Status        int      `json:"status,omitempty"`
+	Subject       string   `json:"subject,omitempty"`
+	Tags          []string `json:"tags,omitempty"`
+	Type          int      `json:"type,omitempty"`
+	Version       int      `json:"version"`
+	Watchers      []int    `json:"watchers,omitempty"`
+	DueDate       string   `json:"due_date,omitempty"`
+	DueDateReason string   `json:"due_date_reason,omitempty"`
+	DueDateStatus string   `json:"due_date_status,omitempty"`
+}
+
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#issues-list
 func (s *IssueService) List(queryParams *IssueQueryParams) ([]Issue, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 
 	// execute requests
 	var issues IssueDetailLIST
-	_, err := s.client.Request.Get(url, &issues)
+	_, err = s.client.Request.Get(url, &issues)
 	if err != nil {
 		return nil, err
 	}
@@ -107,9 +151,12 @@ func (s *IssueService) GetByRef(issueRef int, project *Project) (*Issue, error) 
 	default:
 		return nil, errors.New("no ID or Ref defined in passed project struct")
 	}
-	url = appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
+	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := s.client.Request.Get(url, &issue)
+	_, err = s.client.Request.Get(url, &issue)
 	if err != nil {
 		return nil, err
 	}
@@ -128,15 +175,32 @@ func (s *IssueService) Edit(issue *Issue) (*Issue, error) {
 	if issue.ID == 0 {
 		return nil, errors.New("passed Issue does not have an ID yet. Does it exist?")
 	}
-
-	// Taiga OCC
-	remoteIssue, err := s.Get(issue.ID)
-	if err != nil {
-		return nil, err
+	if issue.Version == 0 {
+		return nil, errors.New("version is required for issue edit")
 	}
 
-	issue.Version = remoteIssue.Version
-	_, err = s.client.Request.Patch(url, &issue, &responseIssue)
+	payload := issueEditPayload{
+		AssignedTo:    issue.AssignedTo,
+		BlockedNote:   issue.BlockedNote,
+		Description:   issue.Description,
+		IsBlocked:     issue.IsBlocked,
+		Milestone:     issue.Milestone,
+		Owner:         issue.Owner,
+		Priority:      issue.Priority,
+		Project:       issue.Project,
+		Severity:      issue.Severity,
+		Status:        issue.Status,
+		Subject:       issue.Subject,
+		Tags:          tagsToNames(issue.Tags),
+		Type:          issue.Type,
+		Version:       issue.Version,
+		Watchers:      issue.Watchers,
+		DueDate:       issue.DueDate,
+		DueDateReason: issue.DueDateReason,
+		DueDateStatus: issue.DueDateStatus,
+	}
+
+	_, err := s.client.Request.Patch(url, &payload, &responseIssue)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +228,27 @@ func (s *IssueService) Create(issue *Issue) (*Issue, error) {
 		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
 
-	_, err := s.client.Request.Post(url, &issue, &issueDetail)
+	payload := issueCreatePayload{
+		AssignedTo:    issue.AssignedTo,
+		BlockedNote:   issue.BlockedNote,
+		Description:   issue.Description,
+		IsBlocked:     issue.IsBlocked,
+		Milestone:     issue.Milestone,
+		Owner:         issue.Owner,
+		Priority:      issue.Priority,
+		Project:       issue.Project,
+		Severity:      issue.Severity,
+		Status:        issue.Status,
+		Subject:       issue.Subject,
+		Tags:          tagsToNames(issue.Tags),
+		Type:          issue.Type,
+		Watchers:      issue.Watchers,
+		DueDate:       issue.DueDate,
+		DueDateReason: issue.DueDateReason,
+		DueDateStatus: issue.DueDateStatus,
+	}
+
+	_, err := s.client.Request.Post(url, &payload, &issueDetail)
 	if err != nil {
 		return nil, err
 	}

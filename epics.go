@@ -15,14 +15,50 @@ type EpicService struct {
 	Endpoint         string
 }
 
+type epicCreatePayload struct {
+	AssignedTo        int      `json:"assigned_to,omitempty"`
+	BlockedNote       string   `json:"blocked_note,omitempty"`
+	ClientRequirement bool     `json:"client_requirement,omitempty"`
+	Color             string   `json:"color,omitempty"`
+	Description       string   `json:"description,omitempty"`
+	EpicsOrder        int64    `json:"epics_order,omitempty"`
+	IsBlocked         bool     `json:"is_blocked,omitempty"`
+	Project           int      `json:"project"`
+	Status            int      `json:"status,omitempty"`
+	Subject           string   `json:"subject"`
+	Tags              []string `json:"tags,omitempty"`
+	TeamRequirement   bool     `json:"team_requirement,omitempty"`
+	Watchers          []int    `json:"watchers,omitempty"`
+}
+
+type epicEditPayload struct {
+	AssignedTo        int      `json:"assigned_to,omitempty"`
+	BlockedNote       string   `json:"blocked_note,omitempty"`
+	ClientRequirement bool     `json:"client_requirement,omitempty"`
+	Color             string   `json:"color,omitempty"`
+	Description       string   `json:"description,omitempty"`
+	EpicsOrder        int64    `json:"epics_order,omitempty"`
+	IsBlocked         bool     `json:"is_blocked,omitempty"`
+	Project           int      `json:"project,omitempty"`
+	Status            int      `json:"status,omitempty"`
+	Subject           string   `json:"subject,omitempty"`
+	Tags              []string `json:"tags,omitempty"`
+	TeamRequirement   bool     `json:"team_requirement,omitempty"`
+	Version           int      `json:"version"`
+	Watchers          []int    `json:"watchers,omitempty"`
+}
+
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#epics-list
 //
 // Available Meta: *EpicDetailLIST
 func (s *EpicService) List(queryParams *EpicsQueryParams) ([]Epic, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var epics EpicDetailLIST
-	_, err := s.client.Request.Get(url, &epics)
+	_, err = s.client.Request.Get(url, &epics)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +82,23 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 		return nil, errors.New("a mandatory field(Project, Subject) is missing. See API documentataion")
 	}
 
-	_, err := s.client.Request.Post(url, &epic, &e)
+	payload := epicCreatePayload{
+		AssignedTo:        epic.AssignedTo,
+		BlockedNote:       epic.BlockedNote,
+		ClientRequirement: epic.ClientRequirement,
+		Color:             epic.Color,
+		Description:       epic.Description,
+		EpicsOrder:        epic.EpicsOrder,
+		IsBlocked:         epic.IsBlocked,
+		Project:           epic.Project,
+		Status:            epic.Status,
+		Subject:           epic.Subject,
+		Tags:              tagsToNames(epic.Tags),
+		TeamRequirement:   epic.TeamRequirement,
+		Watchers:          epic.Watchers,
+	}
+
+	_, err := s.client.Request.Post(url, &payload, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +152,12 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 	default:
 		return nil, errors.New("no ID or Ref defined in passed project struct")
 	}
-	url = appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
+	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := s.client.Request.Get(url, &e)
+	_, err = s.client.Request.Get(url, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -121,14 +176,28 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 	if epic.ID == 0 {
 		return nil, errors.New("passed Epic does not have an ID yet. Does it exist?")
 	}
-
-	// Taiga OCC
-	remoteEpic, err := s.Get(epic.ID)
-	if err != nil {
-		return nil, err
+	if epic.Version == 0 {
+		return nil, errors.New("version is required for epic edit")
 	}
-	epic.Version = remoteEpic.Version
-	_, err = s.client.Request.Patch(url, &epic, &e)
+
+	payload := epicEditPayload{
+		AssignedTo:        epic.AssignedTo,
+		BlockedNote:       epic.BlockedNote,
+		ClientRequirement: epic.ClientRequirement,
+		Color:             epic.Color,
+		Description:       epic.Description,
+		EpicsOrder:        epic.EpicsOrder,
+		IsBlocked:         epic.IsBlocked,
+		Project:           epic.Project,
+		Status:            epic.Status,
+		Subject:           epic.Subject,
+		Tags:              tagsToNames(epic.Tags),
+		TeamRequirement:   epic.TeamRequirement,
+		Version:           epic.Version,
+		Watchers:          epic.Watchers,
+	}
+
+	_, err := s.client.Request.Patch(url, &payload, &e)
 	if err != nil {
 		return nil, err
 	}

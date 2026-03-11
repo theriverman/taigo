@@ -4,9 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"mime"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-querystring/query"
 )
@@ -237,6 +241,135 @@ func TestRequestServiceReturnsAPIErrorForNon2xx(t *testing.T) {
 	if !strings.Contains(apiErr.Body, "bad request") {
 		t.Fatalf("expected API error body to include backend message, got %q", apiErr.Body)
 	}
+}
+
+func TestRefreshAuthTokenSelfUpdateRefreshesAuthorizationHeader(t *testing.T) {
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		if req.Method != http.MethodPost {
+			t.Fatalf("expected POST, got %s", req.Method)
+		}
+		if req.URL.Path != "/api/v1/auth/refresh" {
+			t.Fatalf("unexpected path: %s", req.URL.Path)
+		}
+		return newJSONResponse(req, http.StatusOK, `{"auth_token":"new-token","refresh":"new-refresh"}`), nil
+	})
+
+	client.setAuthTokens(TokenBearer, "old-token", "old-refresh")
+	if _, err := client.Auth.RefreshAuthToken(true); err != nil {
+		t.Fatalf("refresh token failed: %v", err)
+	}
+	if got := client.GetAuthorizationHeader(); got != "Bearer new-token" {
+		t.Fatalf("expected updated authorization header, got %q", got)
+	}
+}
+
+func TestAppendQueryParamsReturnsEncodingError(t *testing.T) {
+	_, err := appendQueryParams("http://taiga.test/api/v1/users", []string{"not-a-struct"})
+	if err == nil {
+		t.Fatalf("expected query encoding error, got nil")
+	}
+}
+
+func TestIssueCreatePayloadOmitsReadOnlyDates(t *testing.T) {
+	var gotBody string
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		body, _ := io.ReadAll(req.Body)
+		gotBody = string(body)
+		return newJSONResponse(req, http.StatusOK, `{"id":1,"project":2,"subject":"issue"}`), nil
+	})
+
+	_, err := client.Issue.Create(&Issue{
+		Project:     2,
+		Subject:     "issue",
+		CreatedDate: mustParseTime(t, "2025-01-01T00:00:00Z"),
+	})
+	if err != nil {
+		t.Fatalf("issue create failed: %v", err)
+	}
+	if strings.Contains(gotBody, "created_date") || strings.Contains(gotBody, "modified_date") {
+		t.Fatalf("unexpected read-only date fields in issue create payload: %s", gotBody)
+	}
+}
+
+func TestAttachmentUploadUsesFromCommentValue(t *testing.T) {
+	tmp, err := os.CreateTemp("", "taigo-upload-*.txt")
+	if err != nil {
+		t.Fatalf("create temp file: %v", err)
+	}
+	defer os.Remove(tmp.Name())
+	if _, err := tmp.WriteString("payload"); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+	if err := tmp.Close(); err != nil {
+		t.Fatalf("close temp file: %v", err)
+	}
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		mediaType, params, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
+		if err != nil {
+			t.Fatalf("parse media type: %v", err)
+		}
+		if mediaType != "multipart/form-data" {
+			t.Fatalf("expected multipart/form-data, got %s", mediaType)
+		}
+		reader := multipart.NewReader(req.Body, params["boundary"])
+		fields := map[string]string{}
+		for {
+			part, err := reader.NextPart()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				t.Fatalf("read multipart part: %v", err)
+			}
+			value, _ := io.ReadAll(part)
+			if part.FileName() == "" {
+				fields[part.FormName()] = string(value)
+			}
+		}
+		if fields["from_comment"] != "true" {
+			t.Fatalf("expected from_comment=true, got %q", fields["from_comment"])
+		}
+		return newJSONResponse(req, http.StatusOK, `{"id":1}`), nil
+	})
+	client.setAuthTokens(TokenBearer, "token", "refresh")
+
+	attachment := &Attachment{Name: "file", FromComment: true}
+	attachment.SetFilePath(tmp.Name())
+	_, err = newfileUploadRequest(client, client.MakeURL("tasks", "attachments"), attachment, &Task{ID: 11, Project: 22})
+	if err != nil {
+		t.Fatalf("attachment upload failed: %v", err)
+	}
+}
+
+func TestAttachmentUploadReturnsDecodeErrorOnInvalidJSON(t *testing.T) {
+	tmp, err := os.CreateTemp("", "taigo-upload-*.txt")
+	if err != nil {
+		t.Fatalf("create temp file: %v", err)
+	}
+	defer os.Remove(tmp.Name())
+	if err := os.WriteFile(tmp.Name(), []byte("payload"), 0o644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		return newJSONResponse(req, http.StatusOK, `{"id":`), nil
+	})
+	attachment := &Attachment{Name: "file"}
+	attachment.SetFilePath(tmp.Name())
+	_, err = newfileUploadRequest(client, client.MakeURL("tasks", "attachments"), attachment, &Task{ID: 11, Project: 22})
+	if err == nil || !strings.Contains(err.Error(), "could not decode attachment response") {
+		t.Fatalf("expected attachment decode error, got %v", err)
+	}
+}
+
+func mustParseTime(t *testing.T, value string) time.Time {
+	t.Helper()
+	parsed, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		t.Fatalf("parse time %q: %v", value, err)
+	}
+	return parsed
 }
 
 func TestApplicationGetTokenUsesApplicationIDPath(t *testing.T) {

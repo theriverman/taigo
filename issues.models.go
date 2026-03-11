@@ -1,55 +1,52 @@
 package taigo
 
-import (
-	"log"
-	"time"
-)
+import "time"
 
-func genericToIssue(anyIssueObject any) *Issue {
+func genericToIssue(anyIssueObject any) (*Issue, error) {
 	payloadIssue := Issue{}
-	convertStructViaJSON(&anyIssueObject, &payloadIssue)
-	return &payloadIssue
+	if err := convertStructViaJSON(&anyIssueObject, &payloadIssue); err != nil {
+		return nil, err
+	}
+	return &payloadIssue, nil
 }
 
-func genericToIssues(anyIssueObjectSlice any) []Issue {
+func genericToIssues(anyIssueObjectSlice any) ([]Issue, error) {
 	payloadIssuesSlice := []Issue{}
-	err := convertStructViaJSON(&anyIssueObjectSlice, &payloadIssuesSlice)
-	if err != nil {
-		log.Println(err)
+	if err := convertStructViaJSON(&anyIssueObjectSlice, &payloadIssuesSlice); err != nil {
+		return nil, err
 	}
-	return payloadIssuesSlice
+	return payloadIssuesSlice, nil
 }
 
 // Issue represents the mandatory fields of an Issue only
 type Issue struct {
-	TaigaBaseObject
-	ID              int       `json:"id,omitempty"`
-	Ref             int       `json:"ref,omitempty"`
-	Version         int       `json:"version,omitempty"`
-	AssignedTo      int       `json:"assigned_to,omitempty"`
-	BlockedNote     string    `json:"blocked_note,omitempty"`
-	Description     string    `json:"description,omitempty"`
-	IsBlocked       bool      `json:"is_blocked,omitempty"`
-	IsClosed        bool      `json:"is_closed,omitempty"`
-	Milestone       int       `json:"milestone,omitempty"`
-	Owner           int       `json:"owner,omitempty"`
-	Priority        int       `json:"priority,omitempty"`
-	Project         int       `json:"project"`
-	Severity        int       `json:"severity,omitempty"`
-	Status          int       `json:"status,omitempty"`
-	Subject         string    `json:"subject"`
-	Tags            Tags      `json:"tags,omitempty"`
-	Type            int       `json:"type,omitempty"`
-	Watchers        []int     `json:"watchers,omitempty"`
-	CreatedDate     time.Time `json:"created_date,omitempty"`
-	ModifiedDate    time.Time `json:"modified_date,omitempty"`
-	FinishedDate    time.Time `json:"finished_date,omitempty"`
-	DueDate         string    `json:"due_date,omitempty"`
-	DueDateReason   string    `json:"due_date_reason,omitempty"`
-	DueDateStatus   string    `json:"due_date_status,omitempty"`
-	IssueDetail     *IssueDetail
-	IssueDetailGET  *IssueDetailGET
-	IssueDetailLIST *IssueDetailLIST
+	ID              int              `json:"id,omitempty"`
+	Ref             int              `json:"ref,omitempty"`
+	Version         int              `json:"version,omitempty"`
+	AssignedTo      int              `json:"assigned_to,omitempty"`
+	BlockedNote     string           `json:"blocked_note,omitempty"`
+	Description     string           `json:"description,omitempty"`
+	IsBlocked       bool             `json:"is_blocked,omitempty"`
+	IsClosed        bool             `json:"is_closed,omitempty"`
+	Milestone       int              `json:"milestone,omitempty"`
+	Owner           int              `json:"owner,omitempty"`
+	Priority        int              `json:"priority,omitempty"`
+	Project         int              `json:"project"`
+	Severity        int              `json:"severity,omitempty"`
+	Status          int              `json:"status,omitempty"`
+	Subject         string           `json:"subject"`
+	Tags            Tags             `json:"tags,omitempty"`
+	Type            int              `json:"type,omitempty"`
+	Watchers        []int            `json:"watchers,omitempty"`
+	CreatedDate     time.Time        `json:"created_date,omitempty"`
+	ModifiedDate    time.Time        `json:"modified_date,omitempty"`
+	FinishedDate    time.Time        `json:"finished_date,omitempty"`
+	DueDate         string           `json:"due_date,omitempty"`
+	DueDateReason   string           `json:"due_date_reason,omitempty"`
+	DueDateStatus   string           `json:"due_date_status,omitempty"`
+	IssueDetail     *IssueDetail     `json:"-"`
+	IssueDetailGET  *IssueDetailGET  `json:"-"`
+	IssueDetailLIST *IssueDetailLIST `json:"-"`
 }
 
 // GetID returns the ID
@@ -118,7 +115,10 @@ type IssueDetailLIST []struct {
 
 // AsIssues packs the returned IssueDetailLIST into a generic Issue struct
 func (issueL *IssueDetailLIST) AsIssues() ([]Issue, error) {
-	issues := genericToIssues(&issueL)
+	issues, err := genericToIssues(&issueL)
+	if err != nil {
+		return nil, err
+	}
 	for i := 0; i < len(issues); i++ {
 		issues[i].IssueDetailLIST = issueL
 	}
@@ -171,7 +171,10 @@ type IssueDetailGET struct {
 
 // AsIssue packs the returned IssueDetailGET into a generic Issue struct
 func (issueD *IssueDetailGET) AsIssue() (*Issue, error) {
-	issue := genericToIssue(&issueD)
+	issue, err := genericToIssue(&issueD)
+	if err != nil {
+		return nil, err
+	}
 	issue.IssueDetailGET = issueD
 	return issue, nil
 }
@@ -222,7 +225,10 @@ type IssueDetail struct {
 
 // AsIssue packs the returned IssueDetailGET into a generic Issue struct
 func (issueD *IssueDetail) AsIssue() (*Issue, error) {
-	issue := genericToIssue(&issueD)
+	issue, err := genericToIssue(&issueD)
+	if err != nil {
+		return nil, err
+	}
 	issue.IssueDetail = issueD
 	return issue, nil
 }

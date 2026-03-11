@@ -19,7 +19,11 @@ type MilestoneService struct {
 func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone, *MilestoneTotalInfo, error) {
 	// prepare url & parameters
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	var err error
+	url, err = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, nil, err
+	}
 	// execute requests
 	var Milestones []Milestone
 	httpResponse, err := s.client.Request.Get(url, &Milestones)

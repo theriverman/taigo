@@ -16,9 +16,12 @@ type UserStoryStatusService struct {
 // List -> https://docs.taiga.io/api.html#user-story-statuses-list
 func (s *UserStoryStatusService) List(queryParams *ProjectIDQueryParams) ([]UserStoryStatus, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var statuses []UserStoryStatus
-	_, err := s.client.Request.Get(url, &statuses)
+	_, err = s.client.Request.Get(url, &statuses)
 	if err != nil {
 		return nil, err
 	}

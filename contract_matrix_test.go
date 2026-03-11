@@ -336,71 +336,73 @@ func TestContractMatrixSingleRequestRoutes(t *testing.T) {
 	}
 }
 
-func TestContractTaskEditUsesGETThenPATCHWithVersion(t *testing.T) {
+func TestContractTaskEditUsesSinglePATCHWithCallerVersion(t *testing.T) {
 	step := 0
 	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
 		step++
-		switch step {
-		case 1:
-			if req.Method != http.MethodGet || req.URL.Path != "/api/v1/tasks/11" {
-				t.Fatalf("unexpected first request: %s %s", req.Method, req.URL.Path)
-			}
-			return newJSONResponse(req, http.StatusOK, `{"id":11,"version":4}`), nil
-		case 2:
-			if req.Method != http.MethodPatch || req.URL.Path != "/api/v1/tasks/11" {
-				t.Fatalf("unexpected second request: %s %s", req.Method, req.URL.Path)
-			}
-			body, _ := io.ReadAll(req.Body)
-			if !strings.Contains(string(body), `"version":4`) {
-				t.Fatalf("expected patch payload version from fresh GET, got %s", string(body))
-			}
-			return newJSONResponse(req, http.StatusOK, `{"id":11,"version":5}`), nil
-		default:
-			t.Fatalf("unexpected extra request: %s %s", req.Method, req.URL.Path)
-			return nil, nil
+		if req.Method != http.MethodPatch || req.URL.Path != "/api/v1/tasks/11" {
+			t.Fatalf("unexpected request: %s %s", req.Method, req.URL.Path)
 		}
+		body, _ := io.ReadAll(req.Body)
+		if !strings.Contains(string(body), `"version":4`) {
+			t.Fatalf("expected patch payload version from caller, got %s", string(body))
+		}
+		return newJSONResponse(req, http.StatusOK, `{"id":11,"version":5}`), nil
 	})
 
-	task := &Task{ID: 11, Subject: "updated"}
+	task := &Task{ID: 11, Version: 4, Subject: "updated"}
 	if _, err := client.Task.Edit(task); err != nil {
 		t.Fatalf("task edit failed: %v", err)
 	}
-	if step != 2 {
-		t.Fatalf("expected exactly 2 requests, got %d", step)
+	if step != 1 {
+		t.Fatalf("expected exactly 1 request, got %d", step)
 	}
 }
 
-func TestContractWikiEditUsesGETThenPATCHWithVersion(t *testing.T) {
+func TestContractTaskEditRequiresVersion(t *testing.T) {
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		t.Fatalf("unexpected request: %s %s", req.Method, req.URL.Path)
+		return nil, nil
+	})
+
+	_, err := client.Task.Edit(&Task{ID: 11, Subject: "updated"})
+	if err == nil || !strings.Contains(err.Error(), "version is required") {
+		t.Fatalf("expected version validation error, got %v", err)
+	}
+}
+
+func TestContractWikiEditUsesSinglePATCHWithCallerVersion(t *testing.T) {
 	step := 0
 	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
 		step++
-		switch step {
-		case 1:
-			if req.Method != http.MethodGet || req.URL.Path != "/api/v1/wiki/5" {
-				t.Fatalf("unexpected first request: %s %s", req.Method, req.URL.Path)
-			}
-			return newJSONResponse(req, http.StatusOK, `{"id":5,"version":3}`), nil
-		case 2:
-			if req.Method != http.MethodPatch || req.URL.Path != "/api/v1/wiki/5" {
-				t.Fatalf("unexpected second request: %s %s", req.Method, req.URL.Path)
-			}
-			body, _ := io.ReadAll(req.Body)
-			if !strings.Contains(string(body), `"version":3`) {
-				t.Fatalf("expected patch payload version from fresh GET, got %s", string(body))
-			}
-			return newJSONResponse(req, http.StatusOK, `{"id":5,"version":4}`), nil
-		default:
-			t.Fatalf("unexpected extra request: %s %s", req.Method, req.URL.Path)
-			return nil, nil
+		if req.Method != http.MethodPatch || req.URL.Path != "/api/v1/wiki/5" {
+			t.Fatalf("unexpected request: %s %s", req.Method, req.URL.Path)
 		}
+		body, _ := io.ReadAll(req.Body)
+		if !strings.Contains(string(body), `"version":3`) {
+			t.Fatalf("expected patch payload version from caller, got %s", string(body))
+		}
+		return newJSONResponse(req, http.StatusOK, `{"id":5,"version":4}`), nil
 	})
 
-	page := &WikiPage{ID: 5, Content: "# updated wiki"}
+	page := &WikiPage{ID: 5, Version: 3, Content: "# updated wiki"}
 	if _, err := client.Wiki.Edit(page); err != nil {
 		t.Fatalf("wiki edit failed: %v", err)
 	}
-	if step != 2 {
-		t.Fatalf("expected exactly 2 requests, got %d", step)
+	if step != 1 {
+		t.Fatalf("expected exactly 1 request, got %d", step)
+	}
+}
+
+func TestContractWikiEditRequiresVersion(t *testing.T) {
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		t.Fatalf("unexpected request: %s %s", req.Method, req.URL.Path)
+		return nil, nil
+	})
+
+	_, err := client.Wiki.Edit(&WikiPage{ID: 5, Content: "# updated wiki"})
+	if err == nil || !strings.Contains(err.Error(), "version is required") {
+		t.Fatalf("expected version validation error, got %v", err)
 	}
 }
 

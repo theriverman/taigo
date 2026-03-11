@@ -15,12 +15,28 @@ type WikiService struct {
 	Endpoint         string
 }
 
+type wikiCreatePayload struct {
+	Content string `json:"content"`
+	Project int    `json:"project"`
+	Slug    string `json:"slug"`
+}
+
+type wikiEditPayload struct {
+	Content string `json:"content,omitempty"`
+	Project int    `json:"project,omitempty"`
+	Slug    string `json:"slug,omitempty"`
+	Version int    `json:"version"`
+}
+
 // List -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-list
 func (s *WikiService) List(queryParams *WikiQueryParams) ([]WikiPage, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var wikiPages []WikiPage
-	_, err := s.client.Request.Get(url, &wikiPages)
+	_, err = s.client.Request.Get(url, &wikiPages)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +55,13 @@ func (s *WikiService) Create(wikiPage *WikiPage) (*WikiPage, error) {
 		return nil, errors.New("a mandatory field(project, slug, content) is missing. See API documentation")
 	}
 
-	_, err := s.client.Request.Post(url, &wikiPage, &page)
+	payload := wikiCreatePayload{
+		Content: wikiPage.Content,
+		Project: wikiPage.Project,
+		Slug:    wikiPage.Slug,
+	}
+
+	_, err := s.client.Request.Post(url, &payload, &page)
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +82,12 @@ func (s *WikiService) Get(wikiPageID int) (*WikiPage, error) {
 // GetBySlug -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-by-slug
 func (s *WikiService) GetBySlug(slug string, projectID int) (*WikiPage, error) {
 	queryParams := &WikiQueryParams{Slug: slug, Project: projectID}
-	url := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_slug"), queryParams)
+	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_slug"), queryParams)
+	if err != nil {
+		return nil, err
+	}
 	var page WikiPage
-	_, err := s.client.Request.Get(url, &page)
+	_, err = s.client.Request.Get(url, &page)
 	if err != nil {
 		return nil, err
 	}
@@ -80,14 +105,18 @@ func (s *WikiService) Edit(wikiPage *WikiPage) (*WikiPage, error) {
 	if wikiPage.ID == 0 {
 		return nil, errors.New("passed WikiPage does not have an ID yet. Does it exist?")
 	}
-
-	// Taiga OCC
-	remotePage, err := s.Get(wikiPage.ID)
-	if err != nil {
-		return nil, err
+	if wikiPage.Version == 0 {
+		return nil, errors.New("version is required for wiki page edit")
 	}
-	wikiPage.Version = remotePage.Version
-	_, err = s.client.Request.Patch(url, &wikiPage, &responseWikiPage)
+
+	payload := wikiEditPayload{
+		Content: wikiPage.Content,
+		Project: wikiPage.Project,
+		Slug:    wikiPage.Slug,
+		Version: wikiPage.Version,
+	}
+
+	_, err := s.client.Request.Patch(url, &payload, &responseWikiPage)
 	if err != nil {
 		return nil, err
 	}

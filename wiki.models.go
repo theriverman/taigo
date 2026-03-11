@@ -4,7 +4,6 @@ import "time"
 
 // WikiPage -> https://taigaio.github.io/taiga-doc/dist/api.html#object-wiki-detail
 type WikiPage struct {
-	TaigaBaseObject
 	Content          string           `json:"content,omitempty"`
 	CreatedDate      time.Time        `json:"created_date,omitempty"`
 	Editions         int              `json:"editions,omitempty"`

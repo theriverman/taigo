@@ -15,17 +15,17 @@ type AuthService struct {
 //	If `selfUpdate` is true, `*Client` is refreshed with the returned token values
 func (s *AuthService) RefreshAuthToken(selfUpdate bool) (RefreshResponse *RefreshToken, err error) {
 	url := s.client.MakeURL(s.Endpoint, "refresh")
+	authToken, refreshToken := s.client.currentTokens()
 	data := RefreshToken{
-		AuthToken: s.client.Token,
-		Refresh:   s.client.RefreshToken,
+		AuthToken: authToken,
+		Refresh:   refreshToken,
 	}
 	_, err = s.client.Request.Post(url, &data, &RefreshResponse)
 	if err != nil {
 		return nil, err
 	}
 	if selfUpdate {
-		s.client.Token = RefreshResponse.AuthToken
-		s.client.RefreshToken = RefreshResponse.Refresh
+		s.client.setAuthTokens("", RefreshResponse.AuthToken, RefreshResponse.Refresh)
 	}
 	return
 }
@@ -88,8 +88,6 @@ func (s *AuthService) login(credentials *Credentials) (*UserAuthenticationDetail
 	if err != nil {
 		return nil, err
 	}
-	s.client.Token = u.AuthToken
-	s.client.RefreshToken = u.Refresh
-	s.client.setToken()
+	s.client.setAuthTokens("", u.AuthToken, u.Refresh)
 	return &u, nil
 }

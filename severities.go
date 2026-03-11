@@ -25,9 +25,12 @@ type SeverityService struct {
 // List -> https://docs.taiga.io/api.html#severities-list
 func (s *SeverityService) List(queryParams *ProjectIDQueryParams) ([]Severity, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var severities []Severity
-	_, err := s.client.Request.Get(url, &severities)
+	_, err = s.client.Request.Get(url, &severities)
 	if err != nil {
 		return nil, err
 	}

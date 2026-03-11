@@ -156,7 +156,7 @@ func (s *RequestService) TraceCtx(ctx context.Context, URL string, ResponseBody 
 }
 
 // NOTE: responseBody must always be a pointer otherwise we lose the response data!
-func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObject TaigaBaseObject) (*Attachment, error) {
+func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObject AttachmentTarget) (*Attachment, error) {
 	if err := requireNonNil("attachment", attachment); err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	if err := writer.WriteField("project", strconv.Itoa(attachment.Project)); err != nil {
 		return nil, fmt.Errorf("could not set project field: %w", err)
 	}
-	if err := writer.WriteField("from_comment", "False"); err != nil {
+	if err := writer.WriteField("from_comment", strconv.FormatBool(attachment.FromComment)); err != nil {
 		return nil, fmt.Errorf("could not set from_comment field: %w", err)
 	}
 	if err := writer.Close(); err != nil {
@@ -229,7 +229,9 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	if SuccessfulHTTPRequest(rawResponse) {
 		var responseBody Attachment
 		// We expect content so convert response JSON string to struct
-		json.Unmarshal([]byte(rawResponseBody), &responseBody) // responseBody contains a pointer to a struct
+		if err := json.Unmarshal(rawResponseBody, &responseBody); err != nil {
+			return nil, fmt.Errorf("could not decode attachment response: %w", err)
+		}
 		return &responseBody, nil
 	}
 
@@ -274,8 +276,8 @@ func newRawRequestWithContext(ctx context.Context, RequestType string, c *Client
 		return nil, err
 	}
 	pagination := &Pagination{}
-	pagination.LoadFromHeaders(c, resp)
-	c.pagination = pagination
+	pagination.LoadFromHeaders(resp)
+	c.setPagination(pagination)
 
 	rawResponseBody, err := io.ReadAll(resp.Body)
 	closeErr := resp.Body.Close()

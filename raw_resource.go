@@ -10,9 +10,13 @@ type RawResource map[string]any
 
 func listRawResources(c *Client, endpoint string, defaultProjectID int, queryParams any) ([]RawResource, error) {
 	url := c.MakeURL(endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, defaultProjectID)
+	var err error
+	url, err = urlWithQueryOrDefaultProject(url, queryParams, defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var resources []RawResource
-	_, err := c.Request.Get(url, &resources)
+	_, err = c.Request.Get(url, &resources)
 	if err != nil {
 		return nil, err
 	}
@@ -76,9 +80,13 @@ func getRawResourceAtPath(c *Client, endpointParts ...string) (*RawResource, err
 
 func getRawResourceAtPathWithQuery(c *Client, queryParams any, endpointParts ...string) (*RawResource, error) {
 	url := c.MakeURL(endpointParts...)
-	url = appendQueryParams(url, queryParams)
+	var err error
+	url, err = appendQueryParams(url, queryParams)
+	if err != nil {
+		return nil, err
+	}
 	var resource RawResource
-	_, err := c.Request.Get(url, &resource)
+	_, err = c.Request.Get(url, &resource)
 	if err != nil {
 		return nil, err
 	}
@@ -97,9 +105,13 @@ func getRawResourceListAtPath(c *Client, endpointParts ...string) ([]RawResource
 
 func getRawResourceListAtPathWithQuery(c *Client, queryParams any, endpointParts ...string) ([]RawResource, error) {
 	url := c.MakeURL(endpointParts...)
-	url = appendQueryParams(url, queryParams)
+	var err error
+	url, err = appendQueryParams(url, queryParams)
+	if err != nil {
+		return nil, err
+	}
 	var resources []RawResource
-	_, err := c.Request.Get(url, &resources)
+	_, err = c.Request.Get(url, &resources)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +130,13 @@ func postRawResourceAtPath(c *Client, payload any, endpointParts ...string) (*Ra
 
 func postRawResourceAtPathWithQuery(c *Client, payload any, queryParams any, endpointParts ...string) (*RawResource, error) {
 	url := c.MakeURL(endpointParts...)
-	url = appendQueryParams(url, queryParams)
+	var err error
+	url, err = appendQueryParams(url, queryParams)
+	if err != nil {
+		return nil, err
+	}
 	var resource RawResource
-	_, err := c.Request.Post(url, payload, &resource)
+	_, err = c.Request.Post(url, payload, &resource)
 	if err != nil {
 		return nil, err
 	}

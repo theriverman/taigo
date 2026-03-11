@@ -5,43 +5,46 @@ import (
 	"time"
 )
 
-func genericToTask(anyTaskObject any) *Task {
+func genericToTask(anyTaskObject any) (*Task, error) {
 	object := Task{}
-	convertStructViaJSON(&anyTaskObject, &object)
-	return &object
+	if err := convertStructViaJSON(&anyTaskObject, &object); err != nil {
+		return nil, err
+	}
+	return &object, nil
 }
 
-func genericToTasks(anyTaskObjectSlice any) []Task {
+func genericToTasks(anyTaskObjectSlice any) ([]Task, error) {
 	objects := []Task{}
-	convertStructViaJSON(&anyTaskObjectSlice, &objects)
-	return objects
+	if err := convertStructViaJSON(&anyTaskObjectSlice, &objects); err != nil {
+		return nil, err
+	}
+	return objects, nil
 }
 
 // Task represents a subset of (TaskDetail, TaskDetailGET, TaskDetailLIST)
 type Task struct {
-	TaigaBaseObject
-	ID                int      `json:"id,omitempty"`
-	AssignedTo        int      `json:"assigned_to,omitempty"`
-	BlockedNote       string   `json:"blocked_note,omitempty"`
-	Description       string   `json:"description,omitempty"`
-	ExternalReference []string `json:"external_reference,omitempty"`
-	IsBlocked         bool     `json:"is_blocked,omitempty"`
-	IsClosed          bool     `json:"is_closed,omitempty"`
-	IsIocaine         bool     `json:"is_iocaine,omitempty"`
-	Milestone         int      `json:"milestone,omitempty"`
-	Project           int      `json:"project,omitempty"`
-	Ref               int      `json:"ref,omitempty"`
-	Status            int      `json:"status,omitempty"`
-	Subject           string   `json:"subject,omitempty"`
-	Tags              []string `json:"tags,omitempty"`
-	TaskboardOrder    int      `json:"taskboard_order,omitempty"`
-	UsOrder           int      `json:"us_order,omitempty"`
-	UserStory         int      `json:"user_story,omitempty"`
-	Version           int      `json:"version,omitempty"`
-	Watchers          []int    `json:"watchers,omitempty"`
-	TaskDetail        *TaskDetail
-	TaskDetailGET     *TaskDetailGET
-	TaskDetailLIST    *TaskDetailLIST
+	ID                int             `json:"id,omitempty"`
+	AssignedTo        int             `json:"assigned_to,omitempty"`
+	BlockedNote       string          `json:"blocked_note,omitempty"`
+	Description       string          `json:"description,omitempty"`
+	ExternalReference []string        `json:"external_reference,omitempty"`
+	IsBlocked         bool            `json:"is_blocked,omitempty"`
+	IsClosed          bool            `json:"is_closed,omitempty"`
+	IsIocaine         bool            `json:"is_iocaine,omitempty"`
+	Milestone         int             `json:"milestone,omitempty"`
+	Project           int             `json:"project,omitempty"`
+	Ref               int             `json:"ref,omitempty"`
+	Status            int             `json:"status,omitempty"`
+	Subject           string          `json:"subject,omitempty"`
+	Tags              Tags            `json:"tags,omitempty"`
+	TaskboardOrder    int             `json:"taskboard_order,omitempty"`
+	UsOrder           int             `json:"us_order,omitempty"`
+	UserStory         int             `json:"user_story,omitempty"`
+	Version           int             `json:"version,omitempty"`
+	Watchers          []int           `json:"watchers,omitempty"`
+	TaskDetail        *TaskDetail     `json:"-"`
+	TaskDetailGET     *TaskDetailGET  `json:"-"`
+	TaskDetailLIST    *TaskDetailLIST `json:"-"`
 }
 
 // GetID returns the ID
@@ -67,6 +70,16 @@ func (t *Task) GetSubject() string {
 // GetProject returns the project ID
 func (t *Task) GetProject() int {
 	return t.Project
+}
+
+// SetTagNames sets tags from plain tag names.
+func (t *Task) SetTagNames(names ...string) {
+	t.Tags = namesToTags(names...)
+}
+
+// TagNames returns tag names without color metadata.
+func (t *Task) TagNames() []string {
+	return tagsToNames(t.Tags)
 }
 
 // TaskDetailLIST => https://taigaio.github.io/taiga-doc/dist/api.html#object-task-detail-list
@@ -112,7 +125,10 @@ type TaskDetailLIST []struct {
 
 // AsTasks packs the returned TaskDetailLIST into a generic Task struct
 func (t *TaskDetailLIST) AsTasks() ([]Task, error) {
-	tasks := genericToTasks(&t)
+	tasks, err := genericToTasks(&t)
+	if err != nil {
+		return nil, err
+	}
 	for i := 0; i < len(tasks); i++ {
 		tasks[i].TaskDetailLIST = t
 	}
@@ -168,7 +184,10 @@ type TaskDetailGET struct {
 
 // AsTask packs the returned TaskDetailGET into a generic Task struct
 func (t *TaskDetailGET) AsTask() (*Task, error) {
-	task := genericToTask(&t)
+	task, err := genericToTask(&t)
+	if err != nil {
+		return nil, err
+	}
 	task.TaskDetailGET = t
 	return task, nil
 
@@ -230,7 +249,10 @@ type TaskDetail struct {
 
 // AsTask packs the returned TaskDetail into a generic Task struct
 func (t *TaskDetail) AsTask() (*Task, error) {
-	task := genericToTask(&t)
+	task, err := genericToTask(&t)
+	if err != nil {
+		return nil, err
+	}
 	task.TaskDetail = t
 	return task, nil
 }

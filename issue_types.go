@@ -25,9 +25,12 @@ type IssueTypeService struct {
 // List -> https://docs.taiga.io/api.html#issue-types-list
 func (s *IssueTypeService) List(queryParams *ProjectIDQueryParams) ([]IssueType, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var issueTypes []IssueType
-	_, err := s.client.Request.Get(url, &issueTypes)
+	_, err = s.client.Request.Get(url, &issueTypes)
 	if err != nil {
 		return nil, err
 	}

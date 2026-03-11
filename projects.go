@@ -58,6 +58,32 @@ type ProjectService struct {
 	ObjectsSummary              *ObjectsSummaryService
 }
 
+type projectCreatePayload struct {
+	CreationTemplate          int    `json:"creation_template,omitempty"`
+	Description               string `json:"description"`
+	IsBacklogActivated        bool   `json:"is_backlog_activated,omitempty"`
+	IsIssuesActivated         bool   `json:"is_issues_activated,omitempty"`
+	IsKanbanActivated         bool   `json:"is_kanban_activated,omitempty"`
+	IsPrivate                 bool   `json:"is_private,omitempty"`
+	IsWikiActivated           bool   `json:"is_wiki_activated,omitempty"`
+	Name                      string `json:"name"`
+	Videoconferences          string `json:"videoconferences,omitempty"`
+	VideoconferencesExtraData string `json:"videoconferences_extra_data,omitempty"`
+}
+
+type projectEditPayload struct {
+	CreationTemplate          int    `json:"creation_template,omitempty"`
+	Description               string `json:"description,omitempty"`
+	IsBacklogActivated        bool   `json:"is_backlog_activated,omitempty"`
+	IsIssuesActivated         bool   `json:"is_issues_activated,omitempty"`
+	IsKanbanActivated         bool   `json:"is_kanban_activated,omitempty"`
+	IsPrivate                 bool   `json:"is_private,omitempty"`
+	IsWikiActivated           bool   `json:"is_wiki_activated,omitempty"`
+	Name                      string `json:"name,omitempty"`
+	Videoconferences          string `json:"videoconferences,omitempty"`
+	VideoconferencesExtraData string `json:"videoconferences_extra_data,omitempty"`
+}
+
 // ConfigureMappedServices maps all services to the *ProjectService with a selected project preconfigured
 func (s *ProjectService) ConfigureMappedServices(ProjectID int) {
 	s.Auth = &AuthService{s.client, ProjectID, "auth"}
@@ -137,7 +163,11 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 
 	url := s.client.MakeURL(s.Endpoint)
 	if queryParameters != nil {
-		url = appendQueryParams(url, queryParameters)
+		var err error
+		url, err = appendQueryParams(url, queryParameters)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var projects ProjectsList
 
@@ -161,7 +191,21 @@ func (s *ProjectService) Create(project *Project) (*Project, error) {
 	if isEmpty(project.Name) || isEmpty(project.Description) {
 		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
-	_, err := s.client.Request.Post(url, &project, &p)
+
+	payload := projectCreatePayload{
+		CreationTemplate:          project.CreationTemplate,
+		Description:               project.Description,
+		IsBacklogActivated:        project.IsBacklogActivated,
+		IsIssuesActivated:         project.IsIssuesActivated,
+		IsKanbanActivated:         project.IsKanbanActivated,
+		IsPrivate:                 project.IsPrivate,
+		IsWikiActivated:           project.IsWikiActivated,
+		Name:                      project.Name,
+		Videoconferences:          project.Videoconferences,
+		VideoconferencesExtraData: project.VideoconferencesExtraData,
+	}
+
+	_, err := s.client.Request.Post(url, &payload, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -185,10 +229,13 @@ func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
 	queryParams := struct {
 		Slug string `url:"slug"`
 	}{Slug: slug}
-	url := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_slug"), &queryParams)
+	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_slug"), &queryParams)
+	if err != nil {
+		return nil, err
+	}
 	var p ProjectDetail
 
-	_, err := s.client.Request.Get(url, &p)
+	_, err = s.client.Request.Get(url, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +255,20 @@ func (s *ProjectService) Edit(project *Project) (*Project, error) {
 		return nil, errors.New("passed Project does not have an ID yet. Does it exist?")
 	}
 
-	_, err := s.client.Request.Patch(url, &project, &p)
+	payload := projectEditPayload{
+		CreationTemplate:          project.CreationTemplate,
+		Description:               project.Description,
+		IsBacklogActivated:        project.IsBacklogActivated,
+		IsIssuesActivated:         project.IsIssuesActivated,
+		IsKanbanActivated:         project.IsKanbanActivated,
+		IsPrivate:                 project.IsPrivate,
+		IsWikiActivated:           project.IsWikiActivated,
+		Name:                      project.Name,
+		Videoconferences:          project.Videoconferences,
+		VideoconferencesExtraData: project.VideoconferencesExtraData,
+	}
+
+	_, err := s.client.Request.Patch(url, &payload, &p)
 	if err != nil {
 		return nil, err
 	}

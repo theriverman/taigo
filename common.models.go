@@ -186,7 +186,7 @@ type Pagination struct {
 
 // LoadFromHeaders accepts an *http.Response struct and reads the relevant
 // pagination headers returned by Taiga
-func (p *Pagination) LoadFromHeaders(c *Client, response *http.Response) {
+func (p *Pagination) LoadFromHeaders(response *http.Response) {
 	if response == nil {
 		p.Paginated = false
 		return

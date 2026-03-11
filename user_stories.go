@@ -16,13 +16,57 @@ type UserStoryService struct {
 	Endpoint         string
 }
 
+type userStoryCreatePayload struct {
+	AssignedTo        int         `json:"assigned_to,omitempty"`
+	BacklogOrder      int64       `json:"backlog_order,omitempty"`
+	BlockedNote       string      `json:"blocked_note,omitempty"`
+	ClientRequirement bool        `json:"client_requirement,omitempty"`
+	Description       string      `json:"description,omitempty"`
+	ExternalReference []string    `json:"external_reference,omitempty"`
+	IsBlocked         bool        `json:"is_blocked,omitempty"`
+	KanbanOrder       int64       `json:"kanban_order,omitempty"`
+	Milestone         int         `json:"milestone,omitempty"`
+	Points            AgilePoints `json:"points,omitempty"`
+	Project           int         `json:"project"`
+	SprintOrder       int         `json:"sprint_order,omitempty"`
+	Status            int         `json:"status,omitempty"`
+	Subject           string      `json:"subject"`
+	Tags              []string    `json:"tags,omitempty"`
+	TeamRequirement   bool        `json:"team_requirement,omitempty"`
+	Watchers          []int       `json:"watchers,omitempty"`
+}
+
+type userStoryEditPayload struct {
+	AssignedTo        int         `json:"assigned_to,omitempty"`
+	BacklogOrder      int64       `json:"backlog_order,omitempty"`
+	BlockedNote       string      `json:"blocked_note,omitempty"`
+	ClientRequirement bool        `json:"client_requirement,omitempty"`
+	Description       string      `json:"description,omitempty"`
+	ExternalReference []string    `json:"external_reference,omitempty"`
+	IsBlocked         bool        `json:"is_blocked,omitempty"`
+	KanbanOrder       int64       `json:"kanban_order,omitempty"`
+	Milestone         int         `json:"milestone,omitempty"`
+	Points            AgilePoints `json:"points,omitempty"`
+	Project           int         `json:"project,omitempty"`
+	SprintOrder       int         `json:"sprint_order,omitempty"`
+	Status            int         `json:"status,omitempty"`
+	Subject           string      `json:"subject,omitempty"`
+	Tags              []string    `json:"tags,omitempty"`
+	TeamRequirement   bool        `json:"team_requirement,omitempty"`
+	Version           int         `json:"version"`
+	Watchers          []int       `json:"watchers,omitempty"`
+}
+
 // List returns all User Stories | https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-list
 // Available Meta: *[]UserStoryDetailLIST
 func (s *UserStoryService) List(queryParams *UserStoryQueryParams) ([]UserStory, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var userstories UserStoryDetailLIST
-	_, err := s.client.Request.Get(url, &userstories)
+	_, err = s.client.Request.Get(url, &userstories)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +89,27 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
 
-	_, err := s.client.Request.Post(url, &userStory, &us)
+	payload := userStoryCreatePayload{
+		AssignedTo:        userStory.AssignedTo,
+		BacklogOrder:      userStory.BacklogOrder,
+		BlockedNote:       userStory.BlockedNote,
+		ClientRequirement: userStory.ClientRequirement,
+		Description:       userStory.Description,
+		ExternalReference: userStory.ExternalReference,
+		IsBlocked:         userStory.IsBlocked,
+		KanbanOrder:       userStory.KanbanOrder,
+		Milestone:         userStory.Milestone,
+		Points:            userStory.Points,
+		Project:           userStory.Project,
+		SprintOrder:       userStory.SprintOrder,
+		Status:            userStory.Status,
+		Subject:           userStory.Subject,
+		Tags:              tagsToNames(userStory.Tags),
+		TeamRequirement:   userStory.TeamRequirement,
+		Watchers:          userStory.Watchers,
+	}
+
+	_, err := s.client.Request.Post(url, &payload, &us)
 	if err != nil {
 		return nil, err
 	}
@@ -99,9 +163,12 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 	default:
 		return nil, errors.New("no ID or Ref defined in passed project struct")
 	}
-	url = appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
+	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := s.client.Request.Get(url, &us)
+	_, err = s.client.Request.Get(url, &us)
 	if err != nil {
 		return nil, err
 	}
@@ -120,14 +187,32 @@ func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
 	if us.ID == 0 {
 		return nil, errors.New("passed UserStory does not have an ID yet. Does it exist?")
 	}
-
-	// Taiga OCC
-	remoteUS, err := s.Get(us.ID)
-	if err != nil {
-		return nil, err
+	if us.Version == 0 {
+		return nil, errors.New("version is required for user story edit")
 	}
-	us.Version = remoteUS.Version
-	_, err = s.client.Request.Patch(url, &us, &responseUS)
+
+	payload := userStoryEditPayload{
+		AssignedTo:        us.AssignedTo,
+		BacklogOrder:      us.BacklogOrder,
+		BlockedNote:       us.BlockedNote,
+		ClientRequirement: us.ClientRequirement,
+		Description:       us.Description,
+		ExternalReference: us.ExternalReference,
+		IsBlocked:         us.IsBlocked,
+		KanbanOrder:       us.KanbanOrder,
+		Milestone:         us.Milestone,
+		Points:            us.Points,
+		Project:           us.Project,
+		SprintOrder:       us.SprintOrder,
+		Status:            us.Status,
+		Subject:           us.Subject,
+		Tags:              tagsToNames(us.Tags),
+		TeamRequirement:   us.TeamRequirement,
+		Version:           us.Version,
+		Watchers:          us.Watchers,
+	}
+
+	_, err := s.client.Request.Patch(url, &payload, &responseUS)
 	if err != nil {
 		return nil, err
 	}

@@ -16,9 +16,12 @@ type IssueCustomAttributeService struct {
 // List -> https://docs.taiga.io/api.html#issue-custom-attributes-list
 func (s *IssueCustomAttributeService) List(queryParams *ProjectIDQueryParams) ([]IssueCustomAttribute, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var attrs []IssueCustomAttribute
-	_, err := s.client.Request.Get(url, &attrs)
+	_, err = s.client.Request.Get(url, &attrs)
 	if err != nil {
 		return nil, err
 	}

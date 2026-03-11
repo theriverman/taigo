@@ -63,10 +63,13 @@ func (s *WebhookService) Resend(webhookLogID int) (*WebhookLog, error) {
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-list
 func (s *WebhookService) ListWebhooks(queryParams *WebhookQueryParameters) ([]Webhook, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var webhooks []Webhook
 
-	_, err := s.client.Request.Get(url, &webhooks)
+	_, err = s.client.Request.Get(url, &webhooks)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +164,11 @@ func (s *WebhookService) ListWebhookLogs(queryParameters *WebhookQueryParameters
 		// webhooklogs endpoint supports filtering by `webhook`, not by `project`.
 		qp := *queryParameters
 		qp.ProjectID = 0
-		url = appendQueryParams(url, &qp)
+		var err error
+		url, err = appendQueryParams(url, &qp)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var whLogs []WebhookLog
 

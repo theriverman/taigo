@@ -106,9 +106,12 @@ func (s *ResolverService) ResolveByRefValue(ref string) (*Resolver, error) {
 
 // genericResolver acts as a common request execution middleware
 func (s *ResolverService) genericResolver(queryParameters *ResolverQueryParams) (*Resolver, error) {
-	url := appendQueryParams(s.client.MakeURL(s.Endpoint), queryParameters)
+	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint), queryParameters)
+	if err != nil {
+		return nil, err
+	}
 	var respResolver Resolver
-	_, err := s.client.Request.Get(url, &respResolver)
+	_, err = s.client.Request.Get(url, &respResolver)
 	if err != nil {
 		return nil, err
 	}

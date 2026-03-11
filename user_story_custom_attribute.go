@@ -16,9 +16,12 @@ type UserStoryCustomAttributeService struct {
 // List -> https://docs.taiga.io/api.html#user-story-custom-attributes-list
 func (s *UserStoryCustomAttributeService) List(queryParams *ProjectIDQueryParams) ([]UserStoryCustomAttribute, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var attrs []UserStoryCustomAttribute
-	_, err := s.client.Request.Get(url, &attrs)
+	_, err = s.client.Request.Get(url, &attrs)
 	if err != nil {
 		return nil, err
 	}

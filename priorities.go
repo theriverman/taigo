@@ -25,9 +25,12 @@ type PriorityService struct {
 // List -> https://docs.taiga.io/api.html#priorities-list
 func (s *PriorityService) List(queryParams *ProjectIDQueryParams) ([]Priority, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var priorities []Priority
-	_, err := s.client.Request.Get(url, &priorities)
+	_, err = s.client.Request.Get(url, &priorities)
 	if err != nil {
 		return nil, err
 	}

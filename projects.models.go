@@ -4,16 +4,20 @@ import (
 	"time"
 )
 
-func genericToProject(anyProjectObject any) *Project {
+func genericToProject(anyProjectObject any) (*Project, error) {
 	payloadProject := Project{}
-	convertStructViaJSON(&anyProjectObject, &payloadProject)
-	return &payloadProject
+	if err := convertStructViaJSON(&anyProjectObject, &payloadProject); err != nil {
+		return nil, err
+	}
+	return &payloadProject, nil
 }
 
-func genericToProjects(anyProjectObjectSlice any) []Project {
+func genericToProjects(anyProjectObjectSlice any) ([]Project, error) {
 	payloadProjectsSlice := []Project{}
-	convertStructViaJSON(&anyProjectObjectSlice, &payloadProjectsSlice)
-	return payloadProjectsSlice
+	if err := convertStructViaJSON(&anyProjectObjectSlice, &payloadProjectsSlice); err != nil {
+		return nil, err
+	}
+	return payloadProjectsSlice, nil
 }
 
 // ProjectPoints represents the registered Agile Points to a project
@@ -45,34 +49,40 @@ func (pp ProjectPoints) IsValueNil() bool {
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#projects-create
 type Project struct {
-	ID                        int     `json:"id,omitempty"`
-	Slug                      string  `json:"slug,omitempty"`
-	CreationTemplate          int     `json:"creation_template,omitempty"`
-	Description               string  `json:"description,omitempty"`
-	IsBacklogActivated        bool    `json:"is_backlog_activated,omitempty"`
-	IsIssuesActivated         bool    `json:"is_issues_activated,omitempty"`
-	IsKanbanActivated         bool    `json:"is_kanban_activated,omitempty"`
-	IsPrivate                 bool    `json:"is_private,omitempty"`
-	IsWikiActivated           bool    `json:"is_wiki_activated,omitempty"`
-	Name                      string  `json:"name,omitempty"`
-	TotalMilestones           int     `json:"total_milestones,omitempty"`
-	TotalStoryPoints          float64 `json:"total_story_points,omitempty"`
-	Videoconferences          string  `json:"videoconferences,omitempty"`
-	VideoconferencesExtraData string  `json:"videoconferences_extra_data,omitempty"`
-	ProjectsLIST              *ProjectsList
-	ProjectDETAIL             *ProjectDetail
+	ID                        int            `json:"id,omitempty"`
+	Slug                      string         `json:"slug,omitempty"`
+	CreationTemplate          int            `json:"creation_template,omitempty"`
+	Description               string         `json:"description,omitempty"`
+	IsBacklogActivated        bool           `json:"is_backlog_activated,omitempty"`
+	IsIssuesActivated         bool           `json:"is_issues_activated,omitempty"`
+	IsKanbanActivated         bool           `json:"is_kanban_activated,omitempty"`
+	IsPrivate                 bool           `json:"is_private,omitempty"`
+	IsWikiActivated           bool           `json:"is_wiki_activated,omitempty"`
+	Name                      string         `json:"name,omitempty"`
+	TotalMilestones           int            `json:"total_milestones,omitempty"`
+	TotalStoryPoints          float64        `json:"total_story_points,omitempty"`
+	Videoconferences          string         `json:"videoconferences,omitempty"`
+	VideoconferencesExtraData string         `json:"videoconferences_extra_data,omitempty"`
+	ProjectsLIST              *ProjectsList  `json:"-"`
+	ProjectDETAIL             *ProjectDetail `json:"-"`
 }
 
 // AsProject packs the returned ProjectDETAIL into a generic Project struct
 func (p *ProjectDetail) AsProject() (*Project, error) {
-	project := genericToProject(&p)
+	project, err := genericToProject(&p)
+	if err != nil {
+		return nil, err
+	}
 	project.ProjectDETAIL = p
 	return project, nil
 }
 
 // AsProjects packs the returned ProjectsLIST into a generic Project []struct
 func (p *ProjectsList) AsProjects() ([]Project, error) {
-	projects := genericToProjects(&p)
+	projects, err := genericToProjects(&p)
+	if err != nil {
+		return nil, err
+	}
 	for i := 0; i < len(projects); i++ {
 		projects[i].ProjectsLIST = p
 	}

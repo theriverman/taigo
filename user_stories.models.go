@@ -2,45 +2,48 @@ package taigo
 
 import "time"
 
-func genericToUserStory(anyUsObject any) *UserStory {
+func genericToUserStory(anyUsObject any) (*UserStory, error) {
 	object := UserStory{}
-	convertStructViaJSON(&anyUsObject, &object)
-	return &object
+	if err := convertStructViaJSON(&anyUsObject, &object); err != nil {
+		return nil, err
+	}
+	return &object, nil
 }
 
-func genericToUserStories(anyUsObjectSlice any) []UserStory {
+func genericToUserStories(anyUsObjectSlice any) ([]UserStory, error) {
 	objects := []UserStory{}
-	convertStructViaJSON(&anyUsObjectSlice, &objects)
-	return objects
+	if err := convertStructViaJSON(&anyUsObjectSlice, &objects); err != nil {
+		return nil, err
+	}
+	return objects, nil
 }
 
 // UserStory represents a subset of (UserStoryDetail, UserStoryDetailGET, UserStoryDetailLIST) structs for creating new objects
 type UserStory struct {
-	TaigaBaseObject
-	ID                  int         `json:"id,omitempty"`
-	Ref                 int         `json:"ref,omitempty"`
-	Version             int         `json:"version,omitempty"`
-	AssignedTo          int         `json:"assigned_to,omitempty"`
-	BacklogOrder        int64       `json:"backlog_order,omitempty"`
-	BlockedNote         string      `json:"blocked_note,omitempty"`
-	ClientRequirement   bool        `json:"client_requirement,omitempty"`
-	Description         string      `json:"description,omitempty"`
-	ExternalReference   []string    `json:"external_reference,omitempty"`
-	IsBlocked           bool        `json:"is_blocked,omitempty"`
-	IsClosed            bool        `json:"is_closed,omitempty"`
-	KanbanOrder         int64       `json:"kanban_order,omitempty"`
-	Milestone           int         `json:"milestone,omitempty"`
-	Points              AgilePoints `json:"points,omitempty"`
-	Project             int         `json:"project"`
-	SprintOrder         int         `json:"sprint_order,omitempty"`
-	Status              int         `json:"status,omitempty"`
-	Subject             string      `json:"subject"`
-	Tags                [][]string  `json:"tags,omitempty"`
-	TeamRequirement     bool        `json:"team_requirement,omitempty"`
-	Watchers            []int       `json:"watchers,omitempty"`
-	UserStoryDetail     *UserStoryDetail
-	UserStoryDetailGET  *UserStoryDetailGET
-	UserStoryDetailLIST *UserStoryDetailLIST
+	ID                  int                  `json:"id,omitempty"`
+	Ref                 int                  `json:"ref,omitempty"`
+	Version             int                  `json:"version,omitempty"`
+	AssignedTo          int                  `json:"assigned_to,omitempty"`
+	BacklogOrder        int64                `json:"backlog_order,omitempty"`
+	BlockedNote         string               `json:"blocked_note,omitempty"`
+	ClientRequirement   bool                 `json:"client_requirement,omitempty"`
+	Description         string               `json:"description,omitempty"`
+	ExternalReference   []string             `json:"external_reference,omitempty"`
+	IsBlocked           bool                 `json:"is_blocked,omitempty"`
+	IsClosed            bool                 `json:"is_closed,omitempty"`
+	KanbanOrder         int64                `json:"kanban_order,omitempty"`
+	Milestone           int                  `json:"milestone,omitempty"`
+	Points              AgilePoints          `json:"points,omitempty"`
+	Project             int                  `json:"project"`
+	SprintOrder         int                  `json:"sprint_order,omitempty"`
+	Status              int                  `json:"status,omitempty"`
+	Subject             string               `json:"subject"`
+	Tags                [][]string           `json:"tags,omitempty"`
+	TeamRequirement     bool                 `json:"team_requirement,omitempty"`
+	Watchers            []int                `json:"watchers,omitempty"`
+	UserStoryDetail     *UserStoryDetail     `json:"-"`
+	UserStoryDetailGET  *UserStoryDetailGET  `json:"-"`
+	UserStoryDetailLIST *UserStoryDetailLIST `json:"-"`
 }
 
 // GetID returns the ID
@@ -133,7 +136,10 @@ type UserStoryDetailLIST []struct {
 
 // AsUserStory packs the returned UserStoryDetailLIST into a generic UserStory struct
 func (u *UserStoryDetailLIST) AsUserStory() ([]UserStory, error) {
-	userstories := genericToUserStories(&u)
+	userstories, err := genericToUserStories(&u)
+	if err != nil {
+		return nil, err
+	}
 	for i := 0; i < len(userstories); i++ {
 		userstories[i].UserStoryDetailLIST = u
 	}
@@ -212,7 +218,10 @@ type UserStoryDetail struct {
 
 // AsUserStory packs the returned UserStoryDetail into a generic UserStory struct
 func (u *UserStoryDetail) AsUserStory() (*UserStory, error) {
-	userstory := genericToUserStory(&u)
+	userstory, err := genericToUserStory(&u)
+	if err != nil {
+		return nil, err
+	}
 	userstory.UserStoryDetail = u
 	return userstory, nil
 }
@@ -278,7 +287,10 @@ type UserStoryDetailGET struct {
 
 // AsUserStory packs the returned UserStoryDetailGET into a generic UserStory struct
 func (u *UserStoryDetailGET) AsUserStory() (*UserStory, error) {
-	userstory := genericToUserStory(&u)
+	userstory, err := genericToUserStory(&u)
+	if err != nil {
+		return nil, err
+	}
 	userstory.UserStoryDetailGET = u
 	return userstory, nil
 }

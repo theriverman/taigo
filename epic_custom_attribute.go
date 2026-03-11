@@ -16,9 +16,12 @@ type EpicCustomAttributeService struct {
 // List -> https://docs.taiga.io/api.html#epic-custom-attributes-list
 func (s *EpicCustomAttributeService) List(queryParams *ProjectIDQueryParams) ([]EpicCustomAttribute, error) {
 	url := s.client.MakeURL(s.Endpoint)
-	url = urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	url, err := urlWithQueryOrDefaultProject(url, queryParams, s.defaultProjectID)
+	if err != nil {
+		return nil, err
+	}
 	var attrs []EpicCustomAttribute
-	_, err := s.client.Request.Get(url, &attrs)
+	_, err = s.client.Request.Get(url, &attrs)
 	if err != nil {
 		return nil, err
 	}

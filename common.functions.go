@@ -22,12 +22,15 @@ func listAttachmentsForEndpoint(c *Client, queryParams *attachmentsQueryParams) 
 		return nil, fmt.Errorf("queryParams must not be nil")
 	}
 	url := c.MakeURL(queryParams.endpointURI, "attachments")
-	paramValues, _ := query.Values(queryParams)
+	paramValues, err := query.Values(queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("encode attachment query params: %w", err)
+	}
 	if encoded := paramValues.Encode(); encoded != "" {
 		url += "?" + encoded
 	}
 	var attachments []Attachment
-	_, err := c.Request.Get(url, &attachments)
+	_, err = c.Request.Get(url, &attachments)
 	if err != nil {
 		return nil, err
 	}
@@ -153,29 +156,63 @@ func cloneQueryParams(queryParams any) any {
 }
 
 // appendQueryParams appends encoded query parameters to baseURL.
-func appendQueryParams(baseURL string, queryParams any) string {
+func appendQueryParams(baseURL string, queryParams any) (string, error) {
 	if queryParams == nil {
-		return baseURL
+		return baseURL, nil
 	}
 	paramValues, err := query.Values(queryParams)
 	if err != nil {
-		return baseURL
+		return "", fmt.Errorf("encode query params: %w", err)
 	}
 	if encoded := paramValues.Encode(); encoded != "" {
-		return baseURL + "?" + encoded
+		return baseURL + "?" + encoded, nil
 	}
-	return baseURL
+	return baseURL, nil
 }
 
 // urlWithQueryOrDefaultProject applies query filters and falls back to default project.
-func urlWithQueryOrDefaultProject(baseURL string, queryParams any, defaultProjectID int) string {
+func urlWithQueryOrDefaultProject(baseURL string, queryParams any, defaultProjectID int) (string, error) {
 	if queryParams != nil {
 		encodedParams := cloneQueryParams(queryParams)
 		applyDefaultProjectToQuery(encodedParams, defaultProjectID)
 		return appendQueryParams(baseURL, encodedParams)
 	}
 	if defaultProjectID != 0 {
-		return baseURL + projectIDQueryParam(defaultProjectID)
+		return baseURL + projectIDQueryParam(defaultProjectID), nil
 	}
-	return baseURL
+	return baseURL, nil
+}
+
+// tagsToNames extracts tag names from Taiga's [][]string tag format.
+// Each tag entry is expected to have at least one element (the tag name).
+func tagsToNames(tags Tags) []string {
+	if len(tags) == 0 {
+		return nil
+	}
+	names := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		if len(tag) == 0 {
+			continue
+		}
+		names = append(names, tag[0])
+	}
+	return names
+}
+
+// namesToTags converts plain tag names to Taiga's [][]string tag format.
+func namesToTags(names ...string) Tags {
+	if len(names) == 0 {
+		return nil
+	}
+	tags := make(Tags, 0, len(names))
+	for _, name := range names {
+		if name == "" {
+			continue
+		}
+		tags = append(tags, []string{name})
+	}
+	if len(tags) == 0 {
+		return nil
+	}
+	return tags
 }
