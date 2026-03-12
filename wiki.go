@@ -52,18 +52,22 @@ func (s *WikiService) Create(wikiPage *WikiPage) (*WikiPage, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var page WikiPage
+	projectID, err := resolveProjectID(wikiPage.Project, s.defaultProjectID, "project")
+	if err != nil {
+		return nil, err
+	}
 
-	if isEmpty(wikiPage.Project) || isEmpty(wikiPage.Slug) || isEmpty(wikiPage.Content) {
+	if isEmpty(wikiPage.Slug) || isEmpty(wikiPage.Content) {
 		return nil, errors.New("a mandatory field(project, slug, content) is missing. See API documentation")
 	}
 
 	payload := wikiCreatePayload{
 		Content: wikiPage.Content,
-		Project: wikiPage.Project,
+		Project: projectID,
 		Slug:    wikiPage.Slug,
 	}
 
-	_, err := s.client.Request.Post(url, &payload, &page)
+	_, err = s.client.Request.Post(url, &payload, &page)
 	if err != nil {
 		return nil, err
 	}
@@ -121,13 +125,28 @@ func (s *WikiService) Edit(wikiPage *WikiPage) (*WikiPage, error) {
 		return nil, errors.New("version is required for wiki page edit")
 	}
 
-	patch := &WikiPatch{
-		Content: ptr(wikiPage.Content),
-		Project: ptr(wikiPage.Project),
-		Slug:    ptr(wikiPage.Slug),
-		Version: wikiPage.Version,
+	patchPayload := map[string]any{
+		"version": wikiPage.Version,
 	}
-	return s.Patch(wikiPage.ID, patch)
+	if wikiPage.Content != "" {
+		patchPayload["content"] = wikiPage.Content
+	}
+	if wikiPage.Project != 0 {
+		patchPayload["project"] = wikiPage.Project
+	}
+	if wikiPage.Slug != "" {
+		patchPayload["slug"] = wikiPage.Slug
+	}
+	if len(patchPayload) == 1 {
+		return nil, errors.New("no updatable wiki fields were provided; use Patch for explicit zero-value updates")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(wikiPage.ID))
+	var responseWikiPage WikiPage
+	_, err := s.client.Request.Patch(url, &patchPayload, &responseWikiPage)
+	if err != nil {
+		return nil, err
+	}
+	return &responseWikiPage, nil
 }
 
 // Patch sends an explicit PATCH payload to edit a wiki page.

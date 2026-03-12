@@ -39,6 +39,9 @@ func (s *IssueTypeService) List(queryParams *ProjectIDQueryParams) ([]IssueType,
 
 // Get -> https://docs.taiga.io/api.html#issue-types-get
 func (s *IssueTypeService) Get(issueTypeID int) (*IssueType, error) {
+	if err := requirePositiveID("issueTypeID", issueTypeID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueTypeID))
 	var issueType IssueType
 	_, err := s.client.Request.Get(url, &issueType)
@@ -55,10 +58,16 @@ func (s *IssueTypeService) Create(issueType *IssueType) (*IssueType, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseIssueType IssueType
-	if isEmpty(issueType.Project) || isEmpty(issueType.Name) {
+	projectID, err := resolveProjectID(issueType.Project, s.defaultProjectID, "project")
+	if err != nil {
+		return nil, err
+	}
+	if isEmpty(issueType.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, issueType, &responseIssueType)
+	payload := *issueType
+	payload.Project = projectID
+	_, err = s.client.Request.Post(url, &payload, &responseIssueType)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +81,14 @@ func (s *IssueTypeService) Edit(issueType *IssueType) (*IssueType, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueType.ID))
 	var responseIssueType IssueType
-	if issueType.ID == 0 {
-		return nil, errors.New("passed IssueType does not have an ID yet. Does it exist?")
+	if err := requirePositiveID("issueTypeID", issueType.ID); err != nil {
+		return nil, err
 	}
-	_, err := s.client.Request.Patch(url, issueType, &responseIssueType)
+	payload, err := sparsePatchMapFromStruct(issueType, "id")
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.client.Request.Patch(url, &payload, &responseIssueType)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +97,9 @@ func (s *IssueTypeService) Edit(issueType *IssueType) (*IssueType, error) {
 
 // Delete -> https://docs.taiga.io/api.html#issue-types-delete
 func (s *IssueTypeService) Delete(issueTypeID int) (*http.Response, error) {
+	if err := requirePositiveID("issueTypeID", issueTypeID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueTypeID))
 	return s.client.Request.Delete(url)
 }

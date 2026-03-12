@@ -214,46 +214,6 @@ func (c *Client) Initialise() error {
 	c.ObjectsSummary = &ObjectsSummaryService{c, 0, "objects-summary"}
 
 	c.isInitialised = true
-
-	// Token Refresh Routine
-	c.stateMu.RLock()
-	autoRefreshDisabled := c.AutoRefreshDisabled
-	autoRefreshTickerDuration := c.AutoRefreshTickerDuration
-	verbose := c.Verbose
-	c.stateMu.RUnlock()
-	if autoRefreshDisabled {
-		if verbose {
-			log.Println("automatic token refresh subroutine will not be started because AutoRefreshDisabled = true")
-		}
-		return nil
-	}
-	if autoRefreshTickerDuration == 0 {
-		/*
-			https://github.com/kaleidos-ventures/taiga-back/blob/0be90e6a661de51bf9e95744322060f33dafa347/taiga/auth/settings.py#L50
-			According to the base settings in Taiga, the default `REFRESH_TOKEN_LIFETIME` is `timedelta(days=1)`.
-			Let's play safe, and take only half of that, so we refresh our tokens every 12 hours.
-		*/
-		autoRefreshTickerDuration = 12 * time.Hour
-		c.stateMu.Lock()
-		c.AutoRefreshTickerDuration = autoRefreshTickerDuration
-		c.stateMu.Unlock()
-	}
-	if verbose {
-		log.Printf("AutoRefreshTickerDuration: %s\n", autoRefreshTickerDuration)
-	}
-	// Buffered channel avoids blocking on repeated disable calls.
-	c.stateMu.Lock()
-	c.tokenRefreshDone = make(chan bool, 1)
-	if c.tokenRefreshTicker == nil {
-		c.tokenRefreshTicker = time.NewTicker(autoRefreshTickerDuration)
-	}
-	if c.RefreshTokenRoutine == nil {
-		c.RefreshTokenRoutine = defaultTokenRefreshRoutine
-	}
-	ticker := c.tokenRefreshTicker
-	refreshRoutine := c.RefreshTokenRoutine
-	c.stateMu.Unlock()
-	refreshRoutine(c, ticker) // calling the Token Refresh Routine
 	return nil
 }
 
@@ -262,6 +222,8 @@ func (c *Client) DisableAutomaticTokenRefresh() {
 	c.AutoRefreshDisabled = true
 	ticker := c.tokenRefreshTicker
 	done := c.tokenRefreshDone
+	c.tokenRefreshTicker = nil
+	c.tokenRefreshDone = nil
 	verbose := c.Verbose
 	c.stateMu.Unlock()
 
@@ -296,16 +258,18 @@ func (c *Client) AuthByCredentials(credentials *Credentials) error {
 		return err
 	}
 
-	if len(credentials.Type) <= 1 {
-		return fmt.Errorf("LoginType is not set")
+	loginCredentials := *credentials
+	if len(loginCredentials.Type) <= 1 {
+		loginCredentials.Type = "normal"
 	}
 
-	user, err := c.Auth.login(credentials)
+	user, err := c.Auth.login(&loginCredentials)
 	if err != nil {
 		return err
 	}
 
 	c.Self = user.AsUser()
+	c.startTokenRefreshRoutineIfNeeded()
 	return nil
 }
 
@@ -314,6 +278,11 @@ func (c *Client) AuthByToken(tokenType, token, refreshToken string) error {
 	if err := c.Initialise(); err != nil {
 		return err
 	}
+	c.stateMu.RLock()
+	prevTokenType := c.tokenType
+	prevToken := c.token
+	prevRefreshToken := c.refreshToken
+	c.stateMu.RUnlock()
 	if tokenType == "" {
 		c.stateMu.RLock()
 		tokenType = c.tokenType
@@ -327,8 +296,10 @@ func (c *Client) AuthByToken(tokenType, token, refreshToken string) error {
 	var err error
 	c.Self, err = c.User.Me()
 	if err != nil {
+		c.setAuthTokens(prevTokenType, prevToken, prevRefreshToken)
 		return fmt.Errorf("authentication failed: %s", err)
 	}
+	c.startTokenRefreshRoutineIfNeeded()
 	return nil
 }
 
@@ -491,6 +462,38 @@ func (c *Client) setAuthTokens(tokenType, token, refreshToken string) {
 		return
 	}
 	c.headers.Set("Authorization", c.tokenType+" "+c.token)
+}
+
+func (c *Client) startTokenRefreshRoutineIfNeeded() {
+	c.stateMu.Lock()
+	if !c.isInitialised || c.AutoRefreshDisabled || c.token == "" || c.tokenRefreshTicker != nil {
+		c.stateMu.Unlock()
+		return
+	}
+	autoRefreshTickerDuration := c.AutoRefreshTickerDuration
+	if autoRefreshTickerDuration == 0 {
+		/*
+			https://github.com/kaleidos-ventures/taiga-back/blob/0be90e6a661de51bf9e95744322060f33dafa347/taiga/auth/settings.py#L50
+			According to the base settings in Taiga, the default `REFRESH_TOKEN_LIFETIME` is `timedelta(days=1)`.
+			Let's play safe, and take only half of that, so we refresh our tokens every 12 hours.
+		*/
+		autoRefreshTickerDuration = 12 * time.Hour
+		c.AutoRefreshTickerDuration = autoRefreshTickerDuration
+	}
+	c.tokenRefreshDone = make(chan bool, 1)
+	c.tokenRefreshTicker = time.NewTicker(autoRefreshTickerDuration)
+	if c.RefreshTokenRoutine == nil {
+		c.RefreshTokenRoutine = defaultTokenRefreshRoutine
+	}
+	ticker := c.tokenRefreshTicker
+	refreshRoutine := c.RefreshTokenRoutine
+	verbose := c.Verbose
+	c.stateMu.Unlock()
+
+	if verbose {
+		log.Printf("AutoRefreshTickerDuration: %s\n", autoRefreshTickerDuration)
+	}
+	refreshRoutine(c, ticker)
 }
 
 func (c *Client) ensureHeadersLocked() {

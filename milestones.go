@@ -22,7 +22,8 @@ type milestoneCreatePayload struct {
 	Project         int    `json:"project"`
 }
 
-type milestoneEditPayload struct {
+// MilestonePatch represents an explicit PATCH payload for milestones.
+type MilestonePatch struct {
 	Closed          *bool   `json:"closed,omitempty"`
 	EstimatedFinish *string `json:"estimated_finish,omitempty"`
 	EstimatedStart  *string `json:"estimated_start,omitempty"`
@@ -60,9 +61,12 @@ func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var respMilestone Milestone
+	projectID, err := resolveProjectID(milestone.Project, s.defaultProjectID, "project")
+	if err != nil {
+		return nil, err
+	}
 	// Check for required fields
-	if (isEmpty(milestone.Project) ||
-		isEmpty(milestone.Name)) ||
+	if (isEmpty(milestone.Name)) ||
 		isEmpty(milestone.EstimatedStart) ||
 		isEmpty(milestone.EstimatedFinish) {
 		return nil, errors.New("a mandatory field is missing. See API documentataion")
@@ -71,9 +75,9 @@ func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 		EstimatedFinish: milestone.EstimatedFinish,
 		EstimatedStart:  milestone.EstimatedStart,
 		Name:            milestone.Name,
-		Project:         milestone.Project,
+		Project:         projectID,
 	}
-	_, err := s.client.Request.Post(url, &payload, &respMilestone)
+	_, err = s.client.Request.Post(url, &payload, &respMilestone)
 	if err != nil {
 		return nil, err
 	}
@@ -103,17 +107,39 @@ func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
 	if err := requirePositiveID("milestoneID", milestone.ID); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(milestone.ID))
-
-	var m Milestone
-	payload := milestoneEditPayload{
-		Closed:          ptr(milestone.Closed),
-		EstimatedFinish: ptr(milestone.EstimatedFinish),
-		EstimatedStart:  ptr(milestone.EstimatedStart),
-		Name:            ptr(milestone.Name),
-		Project:         ptr(milestone.Project),
+	payload := MilestonePatch{}
+	if milestone.Closed {
+		payload.Closed = ptr(milestone.Closed)
 	}
-	_, err := s.client.Request.Patch(url, &payload, &m)
+	if milestone.EstimatedFinish != "" {
+		payload.EstimatedFinish = ptr(milestone.EstimatedFinish)
+	}
+	if milestone.EstimatedStart != "" {
+		payload.EstimatedStart = ptr(milestone.EstimatedStart)
+	}
+	if milestone.Name != "" {
+		payload.Name = ptr(milestone.Name)
+	}
+	if milestone.Project != 0 {
+		payload.Project = ptr(milestone.Project)
+	}
+	if payload.Closed == nil && payload.EstimatedFinish == nil && payload.EstimatedStart == nil && payload.Name == nil && payload.Project == nil {
+		return nil, errors.New("no updatable milestone fields were provided")
+	}
+	return s.Patch(milestone.ID, &payload)
+}
+
+// Patch sends an explicit PATCH payload to edit a milestone.
+func (s *MilestoneService) Patch(milestoneID int, patch *MilestonePatch) (*Milestone, error) {
+	if err := requirePositiveID("milestoneID", milestoneID); err != nil {
+		return nil, err
+	}
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(milestoneID))
+	var m Milestone
+	_, err := s.client.Request.Patch(url, patch, &m)
 	if err != nil {
 		return nil, err
 	}

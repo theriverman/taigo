@@ -148,18 +148,44 @@ func (s *UserService) Edit(user *User) (*User, error) {
 	if user.ID == 0 {
 		return nil, errors.New("user ID is required")
 	}
-	patch := &UserPatch{
-		Bio:          ptr(user.Bio),
-		Color:        ptr(user.Color),
-		Email:        ptr(user.Email),
-		FullName:     ptr(user.FullName),
-		Lang:         ptr(user.Lang),
-		ReadNewTerms: ptr(user.ReadNewTerms),
-		Theme:        ptr(user.Theme),
-		Timezone:     ptr(user.Timezone),
-		Username:     ptr(user.Username),
+	patchPayload := map[string]any{}
+	if user.Bio != "" {
+		patchPayload["bio"] = user.Bio
 	}
-	return s.Patch(user.ID, patch)
+	if user.Color != "" {
+		patchPayload["color"] = user.Color
+	}
+	if user.Email != "" {
+		patchPayload["email"] = user.Email
+	}
+	if user.FullName != "" {
+		patchPayload["full_name"] = user.FullName
+	}
+	if user.Lang != "" {
+		patchPayload["lang"] = user.Lang
+	}
+	if user.ReadNewTerms {
+		patchPayload["read_new_terms"] = user.ReadNewTerms
+	}
+	if user.Theme != "" {
+		patchPayload["theme"] = user.Theme
+	}
+	if user.Timezone != "" {
+		patchPayload["timezone"] = user.Timezone
+	}
+	if user.Username != "" {
+		patchPayload["username"] = user.Username
+	}
+	if len(patchPayload) == 0 {
+		return nil, errors.New("no updatable user fields were provided; use Patch for explicit zero-value updates")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(user.ID))
+	var responseUser User
+	_, err := s.client.Request.Patch(url, &patchPayload, &responseUser)
+	if err != nil {
+		return nil, err
+	}
+	return &responseUser, nil
 }
 
 // Patch sends an explicit PATCH payload to edit a user.

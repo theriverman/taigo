@@ -27,6 +27,7 @@ func (s *AuthService) RefreshAuthToken(selfUpdate bool) (RefreshResponse *Refres
 	}
 	if selfUpdate {
 		s.client.setAuthTokens("", response.AuthToken, response.Refresh)
+		s.client.startTokenRefreshRoutineIfNeeded()
 	}
 	return response, nil
 }

@@ -84,10 +84,14 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var us UserStoryDetail
+	projectID, err := resolveProjectID(userStory.Project, s.defaultProjectID, "project")
+	if err != nil {
+		return nil, err
+	}
 
 	// Check for required fields
 	// project, subject
-	if isEmpty(userStory.Project) || isEmpty(userStory.Subject) {
+	if isEmpty(userStory.Subject) {
 		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
 
@@ -102,7 +106,7 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 		KanbanOrder:       userStory.KanbanOrder,
 		Milestone:         userStory.Milestone,
 		Points:            userStory.Points,
-		Project:           userStory.Project,
+		Project:           projectID,
 		SprintOrder:       userStory.SprintOrder,
 		Status:            userStory.Status,
 		Subject:           userStory.Subject,
@@ -111,7 +115,7 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 		Watchers:          userStory.Watchers,
 	}
 
-	_, err := s.client.Request.Post(url, &payload, &us)
+	_, err = s.client.Request.Post(url, &payload, &us)
 	if err != nil {
 		return nil, err
 	}
@@ -153,9 +157,6 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 	}
 	var us UserStoryDetailGET
 	var url string
-	if project == nil {
-		return nil, errors.New("project must not be nil")
-	}
 
 	type byRefQueryParams struct {
 		Ref         int    `url:"ref"`
@@ -164,12 +165,14 @@ func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserSt
 	}
 	queryParams := &byRefQueryParams{Ref: userStoryRef}
 	switch {
-	case project.ID != 0:
+	case project != nil && project.ID != 0:
 		queryParams.Project = project.ID
-	case len(project.Slug) > 0:
+	case project != nil && len(project.Slug) > 0:
 		queryParams.ProjectSlug = project.Slug
+	case s.defaultProjectID > 0:
+		queryParams.Project = s.defaultProjectID
 	default:
-		return nil, errors.New("no ID or Ref defined in passed project struct")
+		return nil, errors.New("no project ID/slug provided and no mapped default project ID set")
 	}
 	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
 	if err != nil {
@@ -197,39 +200,76 @@ func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
 		return nil, errors.New("version is required for user story edit")
 	}
 
-	patch := &UserStoryPatch{
-		AssignedTo:        ptr(us.AssignedTo),
-		BacklogOrder:      ptr(us.BacklogOrder),
-		BlockedNote:       ptr(us.BlockedNote),
-		ClientRequirement: ptr(us.ClientRequirement),
-		Description:       ptr(us.Description),
-		IsBlocked:         ptr(us.IsBlocked),
-		KanbanOrder:       ptr(us.KanbanOrder),
-		Milestone:         ptr(us.Milestone),
-		Points:            ptr(us.Points),
-		Project:           ptr(us.Project),
-		SprintOrder:       ptr(us.SprintOrder),
-		Status:            ptr(us.Status),
-		Subject:           ptr(us.Subject),
-		TeamRequirement:   ptr(us.TeamRequirement),
-		Version:           us.Version,
+	patchPayload := map[string]any{
+		"version": us.Version,
+	}
+	if us.AssignedTo != 0 {
+		patchPayload["assigned_to"] = us.AssignedTo
+	}
+	if us.BacklogOrder != 0 {
+		patchPayload["backlog_order"] = us.BacklogOrder
+	}
+	if us.BlockedNote != "" {
+		patchPayload["blocked_note"] = us.BlockedNote
+	}
+	if us.ClientRequirement {
+		patchPayload["client_requirement"] = us.ClientRequirement
+	}
+	if us.Description != "" {
+		patchPayload["description"] = us.Description
+	}
+	if us.IsBlocked {
+		patchPayload["is_blocked"] = us.IsBlocked
+	}
+	if us.KanbanOrder != 0 {
+		patchPayload["kanban_order"] = us.KanbanOrder
+	}
+	if us.Milestone != 0 {
+		patchPayload["milestone"] = us.Milestone
+	}
+	if len(us.Points) > 0 {
+		patchPayload["points"] = us.Points
+	}
+	if us.Project != 0 {
+		patchPayload["project"] = us.Project
+	}
+	if us.SprintOrder != 0 {
+		patchPayload["sprint_order"] = us.SprintOrder
+	}
+	if us.Status != 0 {
+		patchPayload["status"] = us.Status
+	}
+	if us.Subject != "" {
+		patchPayload["subject"] = us.Subject
+	}
+	if us.TeamRequirement {
+		patchPayload["team_requirement"] = us.TeamRequirement
 	}
 	if us.ExternalReference != nil {
 		externalRef := append([]string(nil), us.ExternalReference...)
-		patch.ExternalReference = &externalRef
+		patchPayload["external_reference"] = externalRef
 	}
 	if us.Tags != nil {
 		tags := tagsToNames(us.Tags)
 		if tags == nil {
 			tags = []string{}
 		}
-		patch.Tags = &tags
+		patchPayload["tags"] = tags
 	}
 	if us.Watchers != nil {
 		watchers := append([]int(nil), us.Watchers...)
-		patch.Watchers = &watchers
+		patchPayload["watchers"] = watchers
 	}
-	return s.Patch(us.ID, patch)
+	if len(patchPayload) == 1 {
+		return nil, errors.New("no updatable user story fields were provided; use Patch for explicit zero-value updates")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(us.ID))
+	var responseUS UserStoryDetail
+	_, err := s.client.Request.Patch(url, &patchPayload, &responseUS)
+	if err != nil {
+		return nil, err
+	}
+	return responseUS.AsUserStory()
 }
 
 // Patch sends an explicit PATCH payload to edit a user story.

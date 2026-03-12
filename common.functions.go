@@ -2,6 +2,7 @@ package taigo
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	neturl "net/url"
 	"reflect"
@@ -119,6 +120,84 @@ func requirePositiveID(name string, id int) error {
 		return fmt.Errorf("%s must be greater than 0", name)
 	}
 	return nil
+}
+
+func resolveProjectID(projectID, defaultProjectID int, fieldName string) (int, error) {
+	if projectID > 0 {
+		return projectID, nil
+	}
+	if defaultProjectID > 0 {
+		return defaultProjectID, nil
+	}
+	return 0, fmt.Errorf("%s is required", fieldName)
+}
+
+// sparsePatchMapFromStruct builds a map payload containing only non-zero JSON fields.
+// This is useful for non-destructive PATCH calls based on partially populated models.
+func sparsePatchMapFromStruct(model any, excludedJSONFields ...string) (map[string]any, error) {
+	if err := requireNonNil("model", model); err != nil {
+		return nil, err
+	}
+	v := reflect.ValueOf(model)
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return nil, errors.New("model must not be nil")
+		}
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return nil, errors.New("model must be a struct or pointer to struct")
+	}
+
+	excluded := make(map[string]struct{}, len(excludedJSONFields))
+	for _, field := range excludedJSONFields {
+		excluded[field] = struct{}{}
+	}
+
+	payload := make(map[string]any)
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		sf := t.Field(i)
+		if sf.PkgPath != "" { // unexported
+			continue
+		}
+		jsonTag := sf.Tag.Get("json")
+		if jsonTag == "" {
+			continue
+		}
+		jsonField := strings.Split(jsonTag, ",")[0]
+		if jsonField == "" || jsonField == "-" {
+			continue
+		}
+		if _, skip := excluded[jsonField]; skip {
+			continue
+		}
+
+		fieldValue := v.Field(i)
+		if isZeroForSparsePatch(fieldValue) {
+			continue
+		}
+		payload[jsonField] = fieldValue.Interface()
+	}
+
+	if len(payload) == 0 {
+		return nil, errors.New("patch payload is empty; use Patch with explicit fields")
+	}
+	return payload, nil
+}
+
+func isZeroForSparsePatch(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Interface, reflect.Ptr:
+		if v.IsNil() {
+			return true
+		}
+		return isZeroForSparsePatch(v.Elem())
+	case reflect.Slice, reflect.Map:
+		return v.IsNil()
+	default:
+		return v.IsZero()
+	}
 }
 
 // applyDefaultProjectToQuery fills the `project` query parameter when omitted.

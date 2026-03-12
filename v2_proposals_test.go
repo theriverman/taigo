@@ -905,3 +905,198 @@ func TestTaskGetRejectsNonPositiveID(t *testing.T) {
 		t.Fatalf("expected validation error for taskID=0")
 	}
 }
+
+func TestAuthByTokenStartsRefreshRoutineOnlyAfterSuccessfulAuth(t *testing.T) {
+	refreshCalls := 0
+	client := &Client{
+		BaseURL: "http://taiga.test",
+		HTTPClient: &http.Client{Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			if req.URL.Path == "/api/v1/users/me" {
+				return newJSONResponse(req, http.StatusOK, `{"id":1,"username":"john"}`), nil
+			}
+			return newJSONResponse(req, http.StatusNotFound, `{}`), nil
+		})},
+		RefreshTokenRoutine: func(c *Client, ticker *time.Ticker) {
+			refreshCalls++
+			ticker.Stop()
+		},
+	}
+	if err := client.Initialise(); err != nil {
+		t.Fatalf("initialise client: %v", err)
+	}
+	if refreshCalls != 0 {
+		t.Fatalf("expected refresh routine to stay stopped before auth, got %d calls", refreshCalls)
+	}
+	if err := client.AuthByToken(TokenBearer, "token-1", "refresh-1"); err != nil {
+		t.Fatalf("auth by token failed: %v", err)
+	}
+	if refreshCalls != 1 {
+		t.Fatalf("expected refresh routine to start after successful auth, got %d calls", refreshCalls)
+	}
+	client.Close()
+}
+
+func TestAuthByTokenRestoresPreviousTokensOnFailure(t *testing.T) {
+	client := &Client{
+		BaseURL:             "http://taiga.test",
+		AutoRefreshDisabled: true,
+		HTTPClient: &http.Client{Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			if req.URL.Path == "/api/v1/users/me" {
+				return newJSONResponse(req, http.StatusUnauthorized, `{"detail":"invalid token"}`), nil
+			}
+			return newJSONResponse(req, http.StatusNotFound, `{}`), nil
+		})},
+	}
+	if err := client.Initialise(); err != nil {
+		t.Fatalf("initialise client: %v", err)
+	}
+	client.SetAuthTokens(TokenBearer, "old-token", "old-refresh")
+
+	if err := client.AuthByToken(TokenBearer, "new-token", "new-refresh"); err == nil {
+		t.Fatalf("expected auth by token to fail")
+	}
+	if got := client.GetToken(); got != "old-token" {
+		t.Fatalf("expected old token to be restored, got %q", got)
+	}
+	if got := client.GetRefreshToken(); got != "old-refresh" {
+		t.Fatalf("expected old refresh token to be restored, got %q", got)
+	}
+	if got := client.GetAuthorizationHeader(); got != "Bearer old-token" {
+		t.Fatalf("expected auth header to be restored, got %q", got)
+	}
+}
+
+func TestAuthByCredentialsDefaultsTypeToNormal(t *testing.T) {
+	var gotBody string
+	client := &Client{
+		BaseURL:             "http://taiga.test",
+		AutoRefreshDisabled: true,
+		HTTPClient: &http.Client{Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			if req.URL.Path == "/api/v1/auth" {
+				body, _ := io.ReadAll(req.Body)
+				gotBody = string(body)
+				return newJSONResponse(req, http.StatusOK, `{"auth_token":"token","refresh":"refresh","id":1,"username":"john"}`), nil
+			}
+			return newJSONResponse(req, http.StatusNotFound, `{}`), nil
+		})},
+	}
+	if err := client.AuthByCredentials(&Credentials{Username: "john", Password: "secret"}); err != nil {
+		t.Fatalf("auth by credentials failed: %v", err)
+	}
+	if !strings.Contains(gotBody, `"type":"normal"`) {
+		t.Fatalf("expected auth payload to include default type=normal, got %s", gotBody)
+	}
+}
+
+func TestMappedTaskCreateInjectsDefaultProject(t *testing.T) {
+	var gotBody string
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		body, _ := io.ReadAll(req.Body)
+		gotBody = string(body)
+		return newJSONResponse(req, http.StatusCreated, `{"id":1,"project":55,"subject":"Task title","version":1}`), nil
+	})
+	client.Project.ConfigureMappedServices(55)
+
+	_, err := client.Project.Task.Create(&Task{Subject: "Task title"})
+	if err != nil {
+		t.Fatalf("create mapped task failed: %v", err)
+	}
+	if !strings.Contains(gotBody, `"project":55`) {
+		t.Fatalf("expected mapped default project in create payload, got %s", gotBody)
+	}
+}
+
+func TestTaskEditIsNonDestructiveByDefault(t *testing.T) {
+	var gotBody string
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		body, _ := io.ReadAll(req.Body)
+		gotBody = string(body)
+		return newJSONResponse(req, http.StatusOK, `{"id":11,"subject":"renamed","version":2}`), nil
+	})
+
+	_, err := client.Task.Edit(&Task{
+		ID:      11,
+		Version: 1,
+		Subject: "renamed",
+	})
+	if err != nil {
+		t.Fatalf("task edit failed: %v", err)
+	}
+	if !strings.Contains(gotBody, `"version":1`) || !strings.Contains(gotBody, `"subject":"renamed"`) {
+		t.Fatalf("expected version and subject in payload, got %s", gotBody)
+	}
+	if strings.Contains(gotBody, `"project":0`) || strings.Contains(gotBody, `"is_blocked":false`) {
+		t.Fatalf("unexpected zero-value overwrite fields in payload: %s", gotBody)
+	}
+}
+
+func TestTaskGetByRefUsesMappedDefaultProject(t *testing.T) {
+	var gotProject string
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotProject = req.URL.Query().Get("project")
+		return newJSONResponse(req, http.StatusOK, `{"id":1,"project":99,"subject":"task","version":1}`), nil
+	})
+	client.Project.ConfigureMappedServices(99)
+
+	_, err := client.Project.Task.GetByRef(7, nil)
+	if err != nil {
+		t.Fatalf("task get by ref failed: %v", err)
+	}
+	if gotProject != "99" {
+		t.Fatalf("expected mapped project query in by_ref call, got %q", gotProject)
+	}
+}
+
+func TestAttachmentUploadIncludesExternalHeaders(t *testing.T) {
+	tmp, err := os.CreateTemp("", "taigo-upload-header-*.txt")
+	if err != nil {
+		t.Fatalf("create temp file: %v", err)
+	}
+	defer os.Remove(tmp.Name())
+	if err := os.WriteFile(tmp.Name(), []byte("payload"), 0o644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		if got := req.Header.Get("X-Trace-ID"); got != "trace-123" {
+			t.Fatalf("expected custom external header, got %q", got)
+		}
+		if got := req.Header.Get("Authorization"); got != "Bearer token" {
+			t.Fatalf("expected authorization header, got %q", got)
+		}
+		return newJSONResponse(req, http.StatusOK, `{"id":1}`), nil
+	})
+	client.LoadExternalHeaders(map[string]string{"X-Trace-ID": "trace-123"})
+	client.SetAuthTokens(TokenBearer, "token", "refresh")
+
+	attachment := &Attachment{Name: "file"}
+	attachment.SetFilePath(tmp.Name())
+	if _, err := newfileUploadRequest(client, client.MakeURL("tasks", "attachments"), attachment, &Task{ID: 1, Project: 2}); err != nil {
+		t.Fatalf("attachment upload failed: %v", err)
+	}
+}
+
+func TestAttachmentUploadRejectsInvalidTargetIDs(t *testing.T) {
+	tmp, err := os.CreateTemp("", "taigo-upload-invalid-target-*.txt")
+	if err != nil {
+		t.Fatalf("create temp file: %v", err)
+	}
+	defer os.Remove(tmp.Name())
+	if err := os.WriteFile(tmp.Name(), []byte("payload"), 0o644); err != nil {
+		t.Fatalf("write temp file: %v", err)
+	}
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		t.Fatalf("unexpected HTTP request for invalid attachment target IDs")
+		return nil, nil
+	})
+	attachment := &Attachment{Name: "file"}
+	attachment.SetFilePath(tmp.Name())
+
+	if _, err := newfileUploadRequest(client, client.MakeURL("tasks", "attachments"), attachment, &Task{ID: 0, Project: 2}); err == nil {
+		t.Fatalf("expected objectID validation error")
+	}
+	if _, err := newfileUploadRequest(client, client.MakeURL("tasks", "attachments"), attachment, &Task{ID: 1, Project: 0}); err == nil {
+		t.Fatalf("expected projectID validation error")
+	}
+}

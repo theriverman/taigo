@@ -30,6 +30,9 @@ func (s *IssueStatusService) List(queryParams *ProjectIDQueryParams) ([]IssueSta
 
 // Get -> https://docs.taiga.io/api.html#issue-statuses-get
 func (s *IssueStatusService) Get(statusID int) (*IssueStatus, error) {
+	if err := requirePositiveID("statusID", statusID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(statusID))
 	var status IssueStatus
 	_, err := s.client.Request.Get(url, &status)
@@ -46,10 +49,16 @@ func (s *IssueStatusService) Create(status *IssueStatus) (*IssueStatus, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseStatus IssueStatus
-	if isEmpty(status.ProjectID) || isEmpty(status.Name) {
+	projectID, err := resolveProjectID(status.ProjectID, s.defaultProjectID, "project_id")
+	if err != nil {
+		return nil, err
+	}
+	if isEmpty(status.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, status, &responseStatus)
+	payload := *status
+	payload.ProjectID = projectID
+	_, err = s.client.Request.Post(url, &payload, &responseStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -63,10 +72,14 @@ func (s *IssueStatusService) Edit(status *IssueStatus) (*IssueStatus, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(status.ID))
 	var responseStatus IssueStatus
-	if status.ID == 0 {
-		return nil, errors.New("passed IssueStatus does not have an ID yet. Does it exist?")
+	if err := requirePositiveID("statusID", status.ID); err != nil {
+		return nil, err
 	}
-	_, err := s.client.Request.Patch(url, status, &responseStatus)
+	payload, err := sparsePatchMapFromStruct(status, "id", "slug")
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.client.Request.Patch(url, &payload, &responseStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +88,9 @@ func (s *IssueStatusService) Edit(status *IssueStatus) (*IssueStatus, error) {
 
 // Delete -> https://docs.taiga.io/api.html#issue-statuses-delete
 func (s *IssueStatusService) Delete(statusID int) (*http.Response, error) {
+	if err := requirePositiveID("statusID", statusID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(statusID))
 	return s.client.Request.Delete(url)
 }

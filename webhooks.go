@@ -157,11 +157,21 @@ func (s *WebhookService) EditWebhook(webhook *Webhook) (*Webhook, error) {
 	if webhook.ID == 0 {
 		return nil, errors.New("webhook ID is required")
 	}
-	patch := &WebhookPatch{
-		Key:     ptr(webhook.Key),
-		Name:    ptr(webhook.Name),
-		Project: ptr(webhook.Project),
-		URL:     ptr(webhook.URL),
+	patch := &WebhookPatch{}
+	if webhook.Key != "" {
+		patch.Key = ptr(webhook.Key)
+	}
+	if webhook.Name != "" {
+		patch.Name = ptr(webhook.Name)
+	}
+	if webhook.Project != 0 {
+		patch.Project = ptr(webhook.Project)
+	}
+	if webhook.URL != "" {
+		patch.URL = ptr(webhook.URL)
+	}
+	if patch.Key == nil && patch.Name == nil && patch.Project == nil && patch.URL == nil {
+		return nil, errors.New("no updatable webhook fields were provided; use PatchWebhook for explicit zero-value updates")
 	}
 	return s.PatchWebhook(webhook.ID, patch)
 }

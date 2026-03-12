@@ -30,6 +30,9 @@ func (s *UserStoryStatusService) List(queryParams *ProjectIDQueryParams) ([]User
 
 // Get -> https://docs.taiga.io/api.html#user-story-statuses-get
 func (s *UserStoryStatusService) Get(statusID int) (*UserStoryStatus, error) {
+	if err := requirePositiveID("statusID", statusID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(statusID))
 	var status UserStoryStatus
 	_, err := s.client.Request.Get(url, &status)
@@ -46,10 +49,16 @@ func (s *UserStoryStatusService) Create(status *UserStoryStatus) (*UserStoryStat
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseStatus UserStoryStatus
-	if isEmpty(status.ProjectID) || isEmpty(status.Name) {
+	projectID, err := resolveProjectID(status.ProjectID, s.defaultProjectID, "project_id")
+	if err != nil {
+		return nil, err
+	}
+	if isEmpty(status.Name) {
 		return nil, errors.New("a mandatory field(project_id, name) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, status, &responseStatus)
+	payload := *status
+	payload.ProjectID = projectID
+	_, err = s.client.Request.Post(url, &payload, &responseStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -63,10 +72,14 @@ func (s *UserStoryStatusService) Edit(status *UserStoryStatus) (*UserStoryStatus
 	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(status.ID))
 	var responseStatus UserStoryStatus
-	if status.ID == 0 {
-		return nil, errors.New("passed UserStoryStatus does not have an ID yet. Does it exist?")
+	if err := requirePositiveID("statusID", status.ID); err != nil {
+		return nil, err
 	}
-	_, err := s.client.Request.Patch(url, status, &responseStatus)
+	payload, err := sparsePatchMapFromStruct(status, "id", "slug")
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.client.Request.Patch(url, &payload, &responseStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +88,9 @@ func (s *UserStoryStatusService) Edit(status *UserStoryStatus) (*UserStoryStatus
 
 // Delete -> https://docs.taiga.io/api.html#user-story-statuses-delete
 func (s *UserStoryStatusService) Delete(statusID int) (*http.Response, error) {
+	if err := requirePositiveID("statusID", statusID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(statusID))
 	return s.client.Request.Delete(url)
 }

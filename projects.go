@@ -261,19 +261,47 @@ func (s *ProjectService) Edit(project *Project) (*Project, error) {
 		return nil, errors.New("passed Project does not have an ID yet. Does it exist?")
 	}
 
-	patch := &ProjectPatch{
-		CreationTemplate:          ptr(project.CreationTemplate),
-		Description:               ptr(project.Description),
-		IsBacklogActivated:        ptr(project.IsBacklogActivated),
-		IsIssuesActivated:         ptr(project.IsIssuesActivated),
-		IsKanbanActivated:         ptr(project.IsKanbanActivated),
-		IsPrivate:                 ptr(project.IsPrivate),
-		IsWikiActivated:           ptr(project.IsWikiActivated),
-		Name:                      ptr(project.Name),
-		Videoconferences:          ptr(project.Videoconferences),
-		VideoconferencesExtraData: ptr(project.VideoconferencesExtraData),
+	patchPayload := map[string]any{}
+	if project.CreationTemplate != 0 {
+		patchPayload["creation_template"] = project.CreationTemplate
 	}
-	return s.Patch(project.ID, patch)
+	if project.Description != "" {
+		patchPayload["description"] = project.Description
+	}
+	if project.IsBacklogActivated {
+		patchPayload["is_backlog_activated"] = project.IsBacklogActivated
+	}
+	if project.IsIssuesActivated {
+		patchPayload["is_issues_activated"] = project.IsIssuesActivated
+	}
+	if project.IsKanbanActivated {
+		patchPayload["is_kanban_activated"] = project.IsKanbanActivated
+	}
+	if project.IsPrivate {
+		patchPayload["is_private"] = project.IsPrivate
+	}
+	if project.IsWikiActivated {
+		patchPayload["is_wiki_activated"] = project.IsWikiActivated
+	}
+	if project.Name != "" {
+		patchPayload["name"] = project.Name
+	}
+	if project.Videoconferences != "" {
+		patchPayload["videoconferences"] = project.Videoconferences
+	}
+	if project.VideoconferencesExtraData != "" {
+		patchPayload["videoconferences_extra_data"] = project.VideoconferencesExtraData
+	}
+	if len(patchPayload) == 0 {
+		return nil, errors.New("no updatable project fields were provided; use Patch for explicit zero-value updates")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(project.ID))
+	var responseProject ProjectDetail
+	_, err := s.client.Request.Patch(url, &patchPayload, &responseProject)
+	if err != nil {
+		return nil, err
+	}
+	return responseProject.AsProject()
 }
 
 // Patch sends an explicit PATCH payload to edit a project.

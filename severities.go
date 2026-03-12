@@ -39,6 +39,9 @@ func (s *SeverityService) List(queryParams *ProjectIDQueryParams) ([]Severity, e
 
 // Get -> https://docs.taiga.io/api.html#severities-get
 func (s *SeverityService) Get(severityID int) (*Severity, error) {
+	if err := requirePositiveID("severityID", severityID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(severityID))
 	var severity Severity
 	_, err := s.client.Request.Get(url, &severity)
@@ -55,10 +58,16 @@ func (s *SeverityService) Create(severity *Severity) (*Severity, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseSeverity Severity
-	if isEmpty(severity.Project) || isEmpty(severity.Name) {
+	projectID, err := resolveProjectID(severity.Project, s.defaultProjectID, "project")
+	if err != nil {
+		return nil, err
+	}
+	if isEmpty(severity.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, severity, &responseSeverity)
+	payload := *severity
+	payload.Project = projectID
+	_, err = s.client.Request.Post(url, &payload, &responseSeverity)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +81,14 @@ func (s *SeverityService) Edit(severity *Severity) (*Severity, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(severity.ID))
 	var responseSeverity Severity
-	if severity.ID == 0 {
-		return nil, errors.New("passed Severity does not have an ID yet. Does it exist?")
+	if err := requirePositiveID("severityID", severity.ID); err != nil {
+		return nil, err
 	}
-	_, err := s.client.Request.Patch(url, severity, &responseSeverity)
+	payload, err := sparsePatchMapFromStruct(severity, "id")
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.client.Request.Patch(url, &payload, &responseSeverity)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +97,9 @@ func (s *SeverityService) Edit(severity *Severity) (*Severity, error) {
 
 // Delete -> https://docs.taiga.io/api.html#severities-delete
 func (s *SeverityService) Delete(severityID int) (*http.Response, error) {
+	if err := requirePositiveID("severityID", severityID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(severityID))
 	return s.client.Request.Delete(url)
 }

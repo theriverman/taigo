@@ -83,10 +83,14 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var e EpicDetail
+	projectID, err := resolveProjectID(epic.Project, s.defaultProjectID, "project")
+	if err != nil {
+		return nil, err
+	}
 
 	// Check for required fields
 	// project, subject
-	if isEmpty(epic.Project) || isEmpty(epic.Subject) {
+	if isEmpty(epic.Subject) {
 		return nil, errors.New("a mandatory field(Project, Subject) is missing. See API documentataion")
 	}
 
@@ -98,7 +102,7 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 		Description:       epic.Description,
 		EpicsOrder:        epic.EpicsOrder,
 		IsBlocked:         epic.IsBlocked,
-		Project:           epic.Project,
+		Project:           projectID,
 		Status:            epic.Status,
 		Subject:           epic.Subject,
 		Tags:              tagsToNames(epic.Tags),
@@ -106,7 +110,7 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 		Watchers:          epic.Watchers,
 	}
 
-	_, err := s.client.Request.Post(url, &payload, &e)
+	_, err = s.client.Request.Post(url, &payload, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -148,9 +152,6 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 	}
 	var e EpicDetailGET
 	var url string
-	if project == nil {
-		return nil, errors.New("project must not be nil")
-	}
 
 	type byRefQueryParams struct {
 		Ref         int    `url:"ref"`
@@ -159,12 +160,14 @@ func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
 	}
 	queryParams := &byRefQueryParams{Ref: epicRef}
 	switch {
-	case project.ID > 0:
+	case project != nil && project.ID > 0:
 		queryParams.Project = project.ID
-	case len(project.Slug) > 0:
+	case project != nil && len(project.Slug) > 0:
 		queryParams.ProjectSlug = project.Slug
+	case s.defaultProjectID > 0:
+		queryParams.Project = s.defaultProjectID
 	default:
-		return nil, errors.New("no ID or Ref defined in passed project struct")
+		return nil, errors.New("no project ID/slug provided and no mapped default project ID set")
 	}
 	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
 	if err != nil {
@@ -192,32 +195,63 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 		return nil, errors.New("version is required for epic edit")
 	}
 
-	patch := &EpicPatch{
-		AssignedTo:        ptr(epic.AssignedTo),
-		BlockedNote:       ptr(epic.BlockedNote),
-		ClientRequirement: ptr(epic.ClientRequirement),
-		Color:             ptr(epic.Color),
-		Description:       ptr(epic.Description),
-		EpicsOrder:        ptr(epic.EpicsOrder),
-		IsBlocked:         ptr(epic.IsBlocked),
-		Project:           ptr(epic.Project),
-		Status:            ptr(epic.Status),
-		Subject:           ptr(epic.Subject),
-		TeamRequirement:   ptr(epic.TeamRequirement),
-		Version:           epic.Version,
+	patchPayload := map[string]any{
+		"version": epic.Version,
+	}
+	if epic.AssignedTo != 0 {
+		patchPayload["assigned_to"] = epic.AssignedTo
+	}
+	if epic.BlockedNote != "" {
+		patchPayload["blocked_note"] = epic.BlockedNote
+	}
+	if epic.ClientRequirement {
+		patchPayload["client_requirement"] = epic.ClientRequirement
+	}
+	if epic.Color != "" {
+		patchPayload["color"] = epic.Color
+	}
+	if epic.Description != "" {
+		patchPayload["description"] = epic.Description
+	}
+	if epic.EpicsOrder != 0 {
+		patchPayload["epics_order"] = epic.EpicsOrder
+	}
+	if epic.IsBlocked {
+		patchPayload["is_blocked"] = epic.IsBlocked
+	}
+	if epic.Project != 0 {
+		patchPayload["project"] = epic.Project
+	}
+	if epic.Status != 0 {
+		patchPayload["status"] = epic.Status
+	}
+	if epic.Subject != "" {
+		patchPayload["subject"] = epic.Subject
+	}
+	if epic.TeamRequirement {
+		patchPayload["team_requirement"] = epic.TeamRequirement
 	}
 	if epic.Tags != nil {
 		tags := tagsToNames(epic.Tags)
 		if tags == nil {
 			tags = []string{}
 		}
-		patch.Tags = &tags
+		patchPayload["tags"] = tags
 	}
 	if epic.Watchers != nil {
 		watchers := append([]int(nil), epic.Watchers...)
-		patch.Watchers = &watchers
+		patchPayload["watchers"] = watchers
 	}
-	return s.Patch(epic.ID, patch)
+	if len(patchPayload) == 1 {
+		return nil, errors.New("no updatable epic fields were provided; use Patch for explicit zero-value updates")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epic.ID))
+	var responseEpic EpicDetail
+	_, err := s.client.Request.Patch(url, &patchPayload, &responseEpic)
+	if err != nil {
+		return nil, err
+	}
+	return responseEpic.AsEpic()
 }
 
 // Patch sends an explicit PATCH payload to edit an epic.

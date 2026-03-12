@@ -39,6 +39,9 @@ func (s *PriorityService) List(queryParams *ProjectIDQueryParams) ([]Priority, e
 
 // Get -> https://docs.taiga.io/api.html#priorities-get
 func (s *PriorityService) Get(priorityID int) (*Priority, error) {
+	if err := requirePositiveID("priorityID", priorityID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(priorityID))
 	var priority Priority
 	_, err := s.client.Request.Get(url, &priority)
@@ -55,10 +58,16 @@ func (s *PriorityService) Create(priority *Priority) (*Priority, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responsePriority Priority
-	if isEmpty(priority.Project) || isEmpty(priority.Name) {
+	projectID, err := resolveProjectID(priority.Project, s.defaultProjectID, "project")
+	if err != nil {
+		return nil, err
+	}
+	if isEmpty(priority.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, priority, &responsePriority)
+	payload := *priority
+	payload.Project = projectID
+	_, err = s.client.Request.Post(url, &payload, &responsePriority)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +81,14 @@ func (s *PriorityService) Edit(priority *Priority) (*Priority, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(priority.ID))
 	var responsePriority Priority
-	if priority.ID == 0 {
-		return nil, errors.New("passed Priority does not have an ID yet. Does it exist?")
+	if err := requirePositiveID("priorityID", priority.ID); err != nil {
+		return nil, err
 	}
-	_, err := s.client.Request.Patch(url, priority, &responsePriority)
+	payload, err := sparsePatchMapFromStruct(priority, "id")
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.client.Request.Patch(url, &payload, &responsePriority)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +97,9 @@ func (s *PriorityService) Edit(priority *Priority) (*Priority, error) {
 
 // Delete -> https://docs.taiga.io/api.html#priorities-delete
 func (s *PriorityService) Delete(priorityID int) (*http.Response, error) {
+	if err := requirePositiveID("priorityID", priorityID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(priorityID))
 	return s.client.Request.Delete(url)
 }

@@ -77,10 +77,14 @@ func (s *TaskService) Create(task *Task) (*Task, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var t TaskDetail
+	projectID, err := resolveProjectID(task.Project, s.defaultProjectID, "project")
+	if err != nil {
+		return nil, err
+	}
 
 	// Check for required fields
 	// project, subject
-	if isEmpty(task.Project) || isEmpty(task.Subject) {
+	if isEmpty(task.Subject) {
 		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
 
@@ -92,7 +96,7 @@ func (s *TaskService) Create(task *Task) (*Task, error) {
 		IsBlocked:         task.IsBlocked,
 		IsIocaine:         task.IsIocaine,
 		Milestone:         task.Milestone,
-		Project:           task.Project,
+		Project:           projectID,
 		Status:            task.Status,
 		Subject:           task.Subject,
 		Tags:              tagsToNames(task.Tags),
@@ -102,7 +106,7 @@ func (s *TaskService) Create(task *Task) (*Task, error) {
 		Watchers:          task.Watchers,
 	}
 
-	_, err := s.client.Request.Post(url, &payload, &t)
+	_, err = s.client.Request.Post(url, &payload, &t)
 	if err != nil {
 		return nil, err
 	}
@@ -130,21 +134,20 @@ func (s *TaskService) GetByRef(taskRef int, project *Project) (*Task, error) {
 	}
 	var t TaskDetailGET
 	var url string
-	if project == nil {
-		return nil, errors.New("project must not be nil")
-	}
 	type byRefQueryParams struct {
 		Ref         int    `url:"ref"`
 		Project     int    `url:"project,omitempty"`
 		ProjectSlug string `url:"project__slug,omitempty"`
 	}
 	queryParams := &byRefQueryParams{Ref: taskRef}
-	if project.ID != 0 {
+	if project != nil && project.ID != 0 {
 		queryParams.Project = project.ID
-	} else if len(project.Slug) > 0 {
+	} else if project != nil && len(project.Slug) > 0 {
 		queryParams.ProjectSlug = project.Slug
+	} else if s.defaultProjectID > 0 {
+		queryParams.Project = s.defaultProjectID
 	} else {
-		return nil, errors.New("no ID or Ref defined in passed project struct")
+		return nil, errors.New("no project ID/slug provided and no mapped default project ID set")
 	}
 	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
 	if err != nil {
@@ -172,37 +175,70 @@ func (s *TaskService) Edit(task *Task) (*Task, error) {
 		return nil, errors.New("version is required for task edit")
 	}
 
-	patch := &TaskPatch{
-		AssignedTo:     ptr(task.AssignedTo),
-		BlockedNote:    ptr(task.BlockedNote),
-		Description:    ptr(task.Description),
-		IsBlocked:      ptr(task.IsBlocked),
-		IsIocaine:      ptr(task.IsIocaine),
-		Milestone:      ptr(task.Milestone),
-		Project:        ptr(task.Project),
-		Status:         ptr(task.Status),
-		Subject:        ptr(task.Subject),
-		TaskboardOrder: ptr(task.TaskboardOrder),
-		UsOrder:        ptr(task.UsOrder),
-		UserStory:      ptr(task.UserStory),
-		Version:        task.Version,
+	patchPayload := map[string]any{
+		"version": task.Version,
+	}
+	if task.AssignedTo != 0 {
+		patchPayload["assigned_to"] = task.AssignedTo
+	}
+	if task.BlockedNote != "" {
+		patchPayload["blocked_note"] = task.BlockedNote
+	}
+	if task.Description != "" {
+		patchPayload["description"] = task.Description
+	}
+	if task.IsBlocked {
+		patchPayload["is_blocked"] = task.IsBlocked
+	}
+	if task.IsIocaine {
+		patchPayload["is_iocaine"] = task.IsIocaine
+	}
+	if task.Milestone != 0 {
+		patchPayload["milestone"] = task.Milestone
+	}
+	if task.Project != 0 {
+		patchPayload["project"] = task.Project
+	}
+	if task.Status != 0 {
+		patchPayload["status"] = task.Status
+	}
+	if task.Subject != "" {
+		patchPayload["subject"] = task.Subject
+	}
+	if task.TaskboardOrder != 0 {
+		patchPayload["taskboard_order"] = task.TaskboardOrder
+	}
+	if task.UsOrder != 0 {
+		patchPayload["us_order"] = task.UsOrder
+	}
+	if task.UserStory != 0 {
+		patchPayload["user_story"] = task.UserStory
 	}
 	if task.ExternalReference != nil {
 		externalRef := append([]string(nil), task.ExternalReference...)
-		patch.ExternalReference = &externalRef
+		patchPayload["external_reference"] = externalRef
 	}
 	if task.Tags != nil {
 		tags := tagsToNames(task.Tags)
 		if tags == nil {
 			tags = []string{}
 		}
-		patch.Tags = &tags
+		patchPayload["tags"] = tags
 	}
 	if task.Watchers != nil {
 		watchers := append([]int(nil), task.Watchers...)
-		patch.Watchers = &watchers
+		patchPayload["watchers"] = watchers
 	}
-	return s.Patch(task.ID, patch)
+	if len(patchPayload) == 1 {
+		return nil, errors.New("no updatable task fields were provided; use Patch for explicit zero-value updates")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(task.ID))
+	var responseTask TaskDetail
+	_, err := s.client.Request.Patch(url, &patchPayload, &responseTask)
+	if err != nil {
+		return nil, err
+	}
+	return responseTask.AsTask()
 }
 
 // Patch sends an explicit PATCH payload to edit a task.

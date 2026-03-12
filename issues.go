@@ -141,9 +141,6 @@ func (s *IssueService) GetByRef(issueRef int, project *Project) (*Issue, error) 
 	}
 	var issue IssueDetailGET
 	var url string
-	if project == nil {
-		return nil, errors.New("project must not be nil")
-	}
 
 	type byRefQueryParams struct {
 		Ref         int    `url:"ref"`
@@ -152,12 +149,14 @@ func (s *IssueService) GetByRef(issueRef int, project *Project) (*Issue, error) 
 	}
 	queryParams := &byRefQueryParams{Ref: issueRef}
 	switch {
-	case project.ID != 0:
+	case project != nil && project.ID != 0:
 		queryParams.Project = project.ID
-	case len(project.Slug) > 0:
+	case project != nil && len(project.Slug) > 0:
 		queryParams.ProjectSlug = project.Slug
+	case s.defaultProjectID > 0:
+		queryParams.Project = s.defaultProjectID
 	default:
-		return nil, errors.New("no ID or Ref defined in passed project struct")
+		return nil, errors.New("no project ID/slug provided and no mapped default project ID set")
 	}
 	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_ref"), queryParams)
 	if err != nil {
@@ -185,36 +184,75 @@ func (s *IssueService) Edit(issue *Issue) (*Issue, error) {
 		return nil, errors.New("version is required for issue edit")
 	}
 
-	patch := &IssuePatch{
-		AssignedTo:    ptr(issue.AssignedTo),
-		BlockedNote:   ptr(issue.BlockedNote),
-		Description:   ptr(issue.Description),
-		IsBlocked:     ptr(issue.IsBlocked),
-		Milestone:     ptr(issue.Milestone),
-		Owner:         ptr(issue.Owner),
-		Priority:      ptr(issue.Priority),
-		Project:       ptr(issue.Project),
-		Severity:      ptr(issue.Severity),
-		Status:        ptr(issue.Status),
-		Subject:       ptr(issue.Subject),
-		Type:          ptr(issue.Type),
-		Version:       issue.Version,
-		DueDate:       ptr(issue.DueDate),
-		DueDateReason: ptr(issue.DueDateReason),
-		DueDateStatus: ptr(issue.DueDateStatus),
+	patchPayload := map[string]any{
+		"version": issue.Version,
+	}
+	if issue.AssignedTo != 0 {
+		patchPayload["assigned_to"] = issue.AssignedTo
+	}
+	if issue.BlockedNote != "" {
+		patchPayload["blocked_note"] = issue.BlockedNote
+	}
+	if issue.Description != "" {
+		patchPayload["description"] = issue.Description
+	}
+	if issue.IsBlocked {
+		patchPayload["is_blocked"] = issue.IsBlocked
+	}
+	if issue.Milestone != 0 {
+		patchPayload["milestone"] = issue.Milestone
+	}
+	if issue.Owner != 0 {
+		patchPayload["owner"] = issue.Owner
+	}
+	if issue.Priority != 0 {
+		patchPayload["priority"] = issue.Priority
+	}
+	if issue.Project != 0 {
+		patchPayload["project"] = issue.Project
+	}
+	if issue.Severity != 0 {
+		patchPayload["severity"] = issue.Severity
+	}
+	if issue.Status != 0 {
+		patchPayload["status"] = issue.Status
+	}
+	if issue.Subject != "" {
+		patchPayload["subject"] = issue.Subject
+	}
+	if issue.Type != 0 {
+		patchPayload["type"] = issue.Type
+	}
+	if issue.DueDate != "" {
+		patchPayload["due_date"] = issue.DueDate
+	}
+	if issue.DueDateReason != "" {
+		patchPayload["due_date_reason"] = issue.DueDateReason
+	}
+	if issue.DueDateStatus != "" {
+		patchPayload["due_date_status"] = issue.DueDateStatus
 	}
 	if issue.Tags != nil {
 		tags := tagsToNames(issue.Tags)
 		if tags == nil {
 			tags = []string{}
 		}
-		patch.Tags = &tags
+		patchPayload["tags"] = tags
 	}
 	if issue.Watchers != nil {
 		watchers := append([]int(nil), issue.Watchers...)
-		patch.Watchers = &watchers
+		patchPayload["watchers"] = watchers
 	}
-	return s.Patch(issue.ID, patch)
+	if len(patchPayload) == 1 {
+		return nil, errors.New("no updatable issue fields were provided; use Patch for explicit zero-value updates")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issue.ID))
+	var responseIssue IssueDetail
+	_, err := s.client.Request.Patch(url, &patchPayload, &responseIssue)
+	if err != nil {
+		return nil, err
+	}
+	return responseIssue.AsIssue()
 }
 
 // Patch sends an explicit PATCH payload to edit an issue.
@@ -251,10 +289,14 @@ func (s *IssueService) Create(issue *Issue) (*Issue, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var issueDetail IssueDetail
+	projectID, err := resolveProjectID(issue.Project, s.defaultProjectID, "project")
+	if err != nil {
+		return nil, err
+	}
 
 	// Check for required fields
 	// project, subject
-	if isEmpty(issue.Project) || isEmpty(issue.Subject) {
+	if isEmpty(issue.Subject) {
 		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
 
@@ -266,7 +308,7 @@ func (s *IssueService) Create(issue *Issue) (*Issue, error) {
 		Milestone:     issue.Milestone,
 		Owner:         issue.Owner,
 		Priority:      issue.Priority,
-		Project:       issue.Project,
+		Project:       projectID,
 		Severity:      issue.Severity,
 		Status:        issue.Status,
 		Subject:       issue.Subject,
@@ -278,7 +320,7 @@ func (s *IssueService) Create(issue *Issue) (*Issue, error) {
 		DueDateStatus: issue.DueDateStatus,
 	}
 
-	_, err := s.client.Request.Post(url, &payload, &issueDetail)
+	_, err = s.client.Request.Post(url, &payload, &issueDetail)
 	if err != nil {
 		return nil, err
 	}

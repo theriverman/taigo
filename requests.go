@@ -168,11 +168,17 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	}
 	objectID := tgObject.GetID()
 	projectID := tgObject.GetProject()
+	if err := requirePositiveID("objectID", objectID); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return nil, err
+	}
 
 	// Open file
 	f, err := os.Open(attachment.filePath)
 	if err != nil {
-		return nil, fmt.Errorf("could not open file at specified location: %s", attachment.filePath)
+		return nil, fmt.Errorf("could not open file at specified location %q: %w", attachment.filePath, err)
 	}
 	fileName := filepath.Base(attachment.filePath)
 	defer f.Close()
@@ -208,8 +214,8 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 		return nil, err
 	}
 
-	// Add headers (manually, not calling c.loadHeaders())
-	request.Header.Set("Authorization", c.GetAuthorizationHeader())  // Load token
+	// Add headers
+	c.loadHeaders(request)
 	request.Header.Set("Content-Type", writer.FormDataContentType()) // Set Content-Type to multipart/form-data
 
 	// Execute Request
