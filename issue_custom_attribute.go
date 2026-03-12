@@ -49,7 +49,7 @@ func (s *IssueCustomAttributeService) Create(customAttribute *IssueCustomAttribu
 	if isEmpty(customAttribute.Project) || isEmpty(customAttribute.Name) || isEmpty(customAttribute.Type) {
 		return nil, errors.New("a mandatory field(project, name, type) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, &customAttribute, &responseAttr)
+	_, err := s.client.Request.Post(url, customAttribute, &responseAttr)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (s *IssueCustomAttributeService) Edit(customAttribute *IssueCustomAttribute
 	if customAttribute.ID == 0 {
 		return nil, errors.New("passed IssueCustomAttribute does not have an ID yet. Does it exist?")
 	}
-	_, err := s.client.Request.Patch(url, &customAttribute, &responseAttr)
+	_, err := s.client.Request.Patch(url, customAttribute, &responseAttr)
 	if err != nil {
 		return nil, err
 	}

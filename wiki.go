@@ -21,11 +21,13 @@ type wikiCreatePayload struct {
 	Slug    string `json:"slug"`
 }
 
-type wikiEditPayload struct {
-	Content string `json:"content,omitempty"`
-	Project int    `json:"project,omitempty"`
-	Slug    string `json:"slug,omitempty"`
-	Version int    `json:"version"`
+// WikiPatch represents an explicit PATCH payload for wiki pages.
+// Pointer fields allow intentionally setting zero-values (false, 0, "").
+type WikiPatch struct {
+	Content *string `json:"content,omitempty"`
+	Project *int    `json:"project,omitempty"`
+	Slug    *string `json:"slug,omitempty"`
+	Version int     `json:"version"`
 }
 
 // List -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-list
@@ -70,6 +72,9 @@ func (s *WikiService) Create(wikiPage *WikiPage) (*WikiPage, error) {
 
 // Get -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-get
 func (s *WikiService) Get(wikiPageID int) (*WikiPage, error) {
+	if err := requirePositiveID("wikiPageID", wikiPageID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(wikiPageID))
 	var page WikiPage
 	_, err := s.client.Request.Get(url, &page)
@@ -81,6 +86,15 @@ func (s *WikiService) Get(wikiPageID int) (*WikiPage, error) {
 
 // GetBySlug -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-by-slug
 func (s *WikiService) GetBySlug(slug string, projectID int) (*WikiPage, error) {
+	if slug == "" {
+		return nil, errors.New("slug is required")
+	}
+	if projectID == 0 {
+		projectID = s.defaultProjectID
+	}
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return nil, err
+	}
 	queryParams := &WikiQueryParams{Slug: slug, Project: projectID}
 	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_slug"), queryParams)
 	if err != nil {
@@ -99,8 +113,6 @@ func (s *WikiService) Edit(wikiPage *WikiPage) (*WikiPage, error) {
 	if err := requireNonNil("wikiPage", wikiPage); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(wikiPage.ID))
-	var responseWikiPage WikiPage
 
 	if wikiPage.ID == 0 {
 		return nil, errors.New("passed WikiPage does not have an ID yet. Does it exist?")
@@ -109,14 +121,29 @@ func (s *WikiService) Edit(wikiPage *WikiPage) (*WikiPage, error) {
 		return nil, errors.New("version is required for wiki page edit")
 	}
 
-	payload := wikiEditPayload{
-		Content: wikiPage.Content,
-		Project: wikiPage.Project,
-		Slug:    wikiPage.Slug,
+	patch := &WikiPatch{
+		Content: ptr(wikiPage.Content),
+		Project: ptr(wikiPage.Project),
+		Slug:    ptr(wikiPage.Slug),
 		Version: wikiPage.Version,
 	}
+	return s.Patch(wikiPage.ID, patch)
+}
 
-	_, err := s.client.Request.Patch(url, &payload, &responseWikiPage)
+// Patch sends an explicit PATCH payload to edit a wiki page.
+func (s *WikiService) Patch(wikiPageID int, patch *WikiPatch) (*WikiPage, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("wikiPageID", wikiPageID); err != nil {
+		return nil, err
+	}
+	if patch.Version == 0 {
+		return nil, errors.New("version is required for wiki page patch")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(wikiPageID))
+	var responseWikiPage WikiPage
+	_, err := s.client.Request.Patch(url, patch, &responseWikiPage)
 	if err != nil {
 		return nil, err
 	}
@@ -130,6 +157,9 @@ func (s *WikiService) Update(wikiPage *WikiPage) (*WikiPage, error) {
 
 // Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-delete
 func (s *WikiService) Delete(wikiPageID int) (*http.Response, error) {
+	if err := requirePositiveID("wikiPageID", wikiPageID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(wikiPageID))
 	return s.client.Request.Delete(url)
 }

@@ -22,17 +22,16 @@ const TokenBearer string = "Bearer"
 // They work in the same way than standard Taiga authentication tokens but the "Authorization" header change slightly.
 const TokenApplication string = "Application"
 
+// DefaultHTTPTimeout is applied when Client.HTTPClient is not provided.
+const DefaultHTTPTimeout = 30 * time.Second
+
 // Client is the session manager of Taiga Driver
 type Client struct {
 	Credentials               *Credentials
 	APIURL                    string                               // set by system
 	APIversion                string                               // default: "v1"
 	BaseURL                   string                               // i.e.: "http://taiga.test" | Same value as `api` in `taiga-front-dist/dist/conf.json`
-	Headers                   *http.Header                         // mostly set by system
 	HTTPClient                *http.Client                         // set by user
-	Token                     string                               // set by system; can be set manually
-	TokenType                 string                               // default=Bearer; options:Bearer,Application
-	RefreshToken              string                               // set by system; can be set manually
 	RefreshTokenRoutine       func(c *Client, ticker *time.Ticker) // routine periodically refreshing the token
 	Self                      *User                                // User logged in
 	pagination                *Pagination                          // Pagination details extracted from the LAST http response
@@ -92,8 +91,13 @@ type Client struct {
 	ObjectsSummary           *ObjectsSummaryService
 
 	// Token Refresh Helpers
-	TokenRefreshTicker *time.Ticker
+	tokenRefreshTicker *time.Ticker
 	tokenRefreshDone   chan bool
+
+	headers      *http.Header
+	token        string
+	tokenType    string
+	refreshToken string
 
 	initMu  sync.Mutex
 	stateMu sync.RWMutex
@@ -107,12 +111,26 @@ type Client struct {
 //   - It returns https://api.taiga.io/api/v1/epics/attachments
 //   - Suffixes are appended to the URL joined by a slash (/)
 func (c *Client) MakeURL(EndpointParts ...string) string {
-	return c.APIURL + "/" + strings.Join(EndpointParts, "/")
+	if len(EndpointParts) == 0 {
+		return c.APIURL
+	}
+	cleaned := make([]string, 0, len(EndpointParts))
+	for _, part := range EndpointParts {
+		part = strings.Trim(part, "/")
+		if part == "" {
+			continue
+		}
+		cleaned = append(cleaned, part)
+	}
+	if len(cleaned) == 0 {
+		return c.APIURL
+	}
+	return c.APIURL + "/" + strings.Join(cleaned, "/")
 }
 
 // Initialise returns a new Taiga Client which is the entrypoint of the driver
 // Initialise() is automatically called by the `AuthByCredentials` and `AuthByToken` methods.
-// If you, for some reason, would like to manually set the Client.Token field, then Initialise() must be called manually!
+// If you, for some reason, would like to manually set auth tokens, use SetAuthTokens before Initialise().
 func (c *Client) Initialise() error {
 	c.initMu.Lock()
 	defer c.initMu.Unlock()
@@ -128,15 +146,15 @@ func (c *Client) Initialise() error {
 		return fmt.Errorf("BaseURL is not set or invalid")
 	}
 	if c.HTTPClient == nil {
-		c.HTTPClient = &http.Client{}
+		c.HTTPClient = &http.Client{Timeout: DefaultHTTPTimeout}
 	}
 	// Set basic token type
-	if len(c.TokenType) <= 1 {
-		c.TokenType = TokenBearer
+	if len(c.tokenType) <= 1 {
+		c.tokenType = TokenBearer
 	}
 	// Set basic headers
 	c.stateMu.Lock()
-	c.Headers = &http.Header{}
+	c.headers = &http.Header{}
 	c.stateMu.Unlock()
 	c.setContentTypeToJSON() // Default Header = {"Content-Type": "application/json"}
 
@@ -226,13 +244,13 @@ func (c *Client) Initialise() error {
 	// Buffered channel avoids blocking on repeated disable calls.
 	c.stateMu.Lock()
 	c.tokenRefreshDone = make(chan bool, 1)
-	if c.TokenRefreshTicker == nil {
-		c.TokenRefreshTicker = time.NewTicker(autoRefreshTickerDuration)
+	if c.tokenRefreshTicker == nil {
+		c.tokenRefreshTicker = time.NewTicker(autoRefreshTickerDuration)
 	}
 	if c.RefreshTokenRoutine == nil {
 		c.RefreshTokenRoutine = defaultTokenRefreshRoutine
 	}
-	ticker := c.TokenRefreshTicker
+	ticker := c.tokenRefreshTicker
 	refreshRoutine := c.RefreshTokenRoutine
 	c.stateMu.Unlock()
 	refreshRoutine(c, ticker) // calling the Token Refresh Routine
@@ -242,8 +260,9 @@ func (c *Client) Initialise() error {
 func (c *Client) DisableAutomaticTokenRefresh() {
 	c.stateMu.Lock()
 	c.AutoRefreshDisabled = true
-	ticker := c.TokenRefreshTicker
+	ticker := c.tokenRefreshTicker
 	done := c.tokenRefreshDone
+	verbose := c.Verbose
 	c.stateMu.Unlock()
 
 	if ticker != nil {
@@ -255,8 +274,16 @@ func (c *Client) DisableAutomaticTokenRefresh() {
 		default:
 		}
 	}
-	if c.Verbose {
+	if verbose {
 		log.Println("automatic token refresh has been disabled")
+	}
+}
+
+// Close stops internal background routines and closes idle HTTP connections.
+func (c *Client) Close() {
+	c.DisableAutomaticTokenRefresh()
+	if c.HTTPClient != nil {
+		c.HTTPClient.CloseIdleConnections()
 	}
 }
 
@@ -289,7 +316,7 @@ func (c *Client) AuthByToken(tokenType, token, refreshToken string) error {
 	}
 	if tokenType == "" {
 		c.stateMu.RLock()
-		tokenType = c.TokenType
+		tokenType = c.tokenType
 		c.stateMu.RUnlock()
 		if tokenType == "" {
 			tokenType = TokenBearer
@@ -312,10 +339,10 @@ func (c *Client) DisablePagination(b bool) {
 	c.ensureHeadersLocked()
 	const headerName = "x-disable-pagination"
 	if b {
-		c.Headers.Set(headerName, cases.Title(language.BritishEnglish).String(strconv.FormatBool(true)))
+		c.headers.Set(headerName, cases.Title(language.BritishEnglish).String(strconv.FormatBool(true)))
 	} else {
 		// Taiga checks only header presence; remove the header to enable pagination.
-		c.Headers.Del(headerName)
+		c.headers.Del(headerName)
 	}
 	c.paginationDisabled = b
 }
@@ -334,10 +361,10 @@ func (c *Client) GetPagination() Pagination {
 func (c *Client) GetAuthorizationHeader() string {
 	c.stateMu.RLock()
 	defer c.stateMu.RUnlock()
-	if c.Headers == nil {
+	if c.headers == nil {
 		return ""
 	}
-	return c.Headers.Get("Authorization")
+	return c.headers.Get("Authorization")
 }
 
 // LoadExternalHeaders loads a map of header key/value pairs permemently into `Client.Headers`
@@ -346,33 +373,86 @@ func (c *Client) LoadExternalHeaders(headers map[string]string) {
 	defer c.stateMu.Unlock()
 	c.ensureHeadersLocked()
 	for k, v := range headers {
-		c.Headers.Set(k, v)
+		c.headers.Set(k, v)
 	}
+}
+
+// GetHeader returns a single header value from client-owned headers.
+func (c *Client) GetHeader(key string) string {
+	c.stateMu.RLock()
+	defer c.stateMu.RUnlock()
+	if c.headers == nil {
+		return ""
+	}
+	return c.headers.Get(key)
+}
+
+// GetHeaderValues returns all values for a header key.
+func (c *Client) GetHeaderValues(key string) []string {
+	c.stateMu.RLock()
+	defer c.stateMu.RUnlock()
+	if c.headers == nil {
+		return nil
+	}
+	values := c.headers.Values(key)
+	out := make([]string, len(values))
+	copy(out, values)
+	return out
+}
+
+// GetToken returns the current auth token.
+func (c *Client) GetToken() string {
+	c.stateMu.RLock()
+	defer c.stateMu.RUnlock()
+	return c.token
+}
+
+// GetRefreshToken returns the current refresh token.
+func (c *Client) GetRefreshToken() string {
+	c.stateMu.RLock()
+	defer c.stateMu.RUnlock()
+	return c.refreshToken
+}
+
+// GetTokenType returns the current token type.
+func (c *Client) GetTokenType() string {
+	c.stateMu.RLock()
+	defer c.stateMu.RUnlock()
+	return c.tokenType
+}
+
+// SetAuthTokens safely updates token type, auth token and refresh token.
+func (c *Client) SetAuthTokens(tokenType, token, refreshToken string) {
+	c.setAuthTokens(tokenType, token, refreshToken)
 }
 
 func (c *Client) setContentTypeToJSON() {
 	c.stateMu.Lock()
 	defer c.stateMu.Unlock()
 	c.ensureHeadersLocked()
-	c.Headers.Set("Content-Type", "application/json")
+	c.headers.Set("Content-Type", "application/json")
 }
 
 func (c *Client) setToken() {
 	c.stateMu.Lock()
 	defer c.stateMu.Unlock()
 	c.ensureHeadersLocked()
-	if c.TokenType == "" {
-		c.TokenType = TokenBearer
+	if c.tokenType == "" {
+		c.tokenType = TokenBearer
 	}
-	c.Headers.Set("Authorization", c.TokenType+" "+c.Token)
+	if c.token == "" {
+		c.headers.Del("Authorization")
+		return
+	}
+	c.headers.Set("Authorization", c.tokenType+" "+c.token)
 }
 
 // loadHeaders takes an http.Request and maps locally stored Header values to its .Header
 func (c *Client) loadHeaders(request *http.Request) {
 	c.stateMu.RLock()
 	headers := http.Header{}
-	if c.Headers != nil {
-		headers = c.Headers.Clone()
+	if c.headers != nil {
+		headers = c.headers.Clone()
 	}
 	c.stateMu.RUnlock()
 	for key, values := range headers {
@@ -391,27 +471,31 @@ func (c *Client) setPagination(pagination *Pagination) {
 func (c *Client) currentTokens() (token string, refreshToken string) {
 	c.stateMu.RLock()
 	defer c.stateMu.RUnlock()
-	return c.Token, c.RefreshToken
+	return c.token, c.refreshToken
 }
 
 func (c *Client) setAuthTokens(tokenType, token, refreshToken string) {
 	c.stateMu.Lock()
 	defer c.stateMu.Unlock()
 	if tokenType != "" {
-		c.TokenType = tokenType
+		c.tokenType = tokenType
 	}
-	if c.TokenType == "" {
-		c.TokenType = TokenBearer
+	if c.tokenType == "" {
+		c.tokenType = TokenBearer
 	}
-	c.Token = token
-	c.RefreshToken = refreshToken
+	c.token = token
+	c.refreshToken = refreshToken
 	c.ensureHeadersLocked()
-	c.Headers.Set("Authorization", c.TokenType+" "+c.Token)
+	if c.token == "" {
+		c.headers.Del("Authorization")
+		return
+	}
+	c.headers.Set("Authorization", c.tokenType+" "+c.token)
 }
 
 func (c *Client) ensureHeadersLocked() {
-	if c.Headers == nil {
-		c.Headers = &http.Header{}
+	if c.headers == nil {
+		c.headers = &http.Header{}
 	}
 }
 
@@ -420,12 +504,18 @@ func defaultTokenRefreshRoutine(c *Client, ticker *time.Ticker) {
 		for {
 			select {
 			case <-c.tokenRefreshDone:
-				if c.Verbose {
+				c.stateMu.RLock()
+				verbose := c.Verbose
+				c.stateMu.RUnlock()
+				if verbose {
 					log.Println("TokenRefreshRoutine has been stopped")
 				}
 				return
 			case t := <-ticker.C:
-				if c.Verbose {
+				c.stateMu.RLock()
+				verbose := c.Verbose
+				c.stateMu.RUnlock()
+				if verbose {
 					log.Println("TokenRefreshRoutine tick at", t, "-> Refreshing the stored tokens")
 				}
 				if _, err := c.Auth.RefreshAuthToken(true); err != nil {

@@ -58,7 +58,7 @@ func (s *SeverityService) Create(severity *Severity) (*Severity, error) {
 	if isEmpty(severity.Project) || isEmpty(severity.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, &severity, &responseSeverity)
+	_, err := s.client.Request.Post(url, severity, &responseSeverity)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (s *SeverityService) Edit(severity *Severity) (*Severity, error) {
 	if severity.ID == 0 {
 		return nil, errors.New("passed Severity does not have an ID yet. Does it exist?")
 	}
-	_, err := s.client.Request.Patch(url, &severity, &responseSeverity)
+	_, err := s.client.Request.Patch(url, severity, &responseSeverity)
 	if err != nil {
 		return nil, err
 	}

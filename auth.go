@@ -20,14 +20,15 @@ func (s *AuthService) RefreshAuthToken(selfUpdate bool) (RefreshResponse *Refres
 		AuthToken: authToken,
 		Refresh:   refreshToken,
 	}
-	_, err = s.client.Request.Post(url, &data, &RefreshResponse)
+	response := &RefreshToken{}
+	_, err = s.client.Request.Post(url, &data, response)
 	if err != nil {
 		return nil, err
 	}
 	if selfUpdate {
-		s.client.setAuthTokens("", RefreshResponse.AuthToken, RefreshResponse.Refresh)
+		s.client.setAuthTokens("", response.AuthToken, response.Refresh)
 	}
-	return
+	return response, nil
 }
 
 // PublicRegistry => https://taigaio.github.io/taiga-doc/dist/api.html#auth-public-registry
@@ -45,10 +46,10 @@ func (s *AuthService) PublicRegistry(credentials *Credentials) (*UserAuthenticat
 	}
 	url := s.client.MakeURL(s.Endpoint, "register")
 	u := UserAuthenticationDetail{}
-
-	credentials.Type = "public"
-	credentials.AcceptedTerms = true // Hardcoded for simplicity; otherwise this func would be useless
-	_, err := s.client.Request.Post(url, &credentials, &u)
+	payload := *credentials
+	payload.Type = "public"
+	payload.AcceptedTerms = true // Hardcoded for simplicity; otherwise this func would be useless
+	_, err := s.client.Request.Post(url, &payload, &u)
 	if err != nil {
 		return nil, err
 	}
@@ -63,12 +64,12 @@ func (s *AuthService) PrivateRegistry(credentials *Credentials) (*UserAuthentica
 	}
 	url := s.client.MakeURL(s.Endpoint, "register")
 	u := UserAuthenticationDetail{}
-
-	credentials.Type = "private"
-	if !credentials.AcceptedTerms {
-		credentials.AcceptedTerms = true
+	payload := *credentials
+	payload.Type = "private"
+	if !payload.AcceptedTerms {
+		payload.AcceptedTerms = true
 	}
-	_, err := s.client.Request.Post(url, &credentials, &u)
+	_, err := s.client.Request.Post(url, &payload, &u)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +85,7 @@ func (s *AuthService) login(credentials *Credentials) (*UserAuthenticationDetail
 	url := s.client.MakeURL(s.Endpoint)
 	u := UserAuthenticationDetail{}
 
-	_, err := s.client.Request.Post(url, &credentials, &u)
+	_, err := s.client.Request.Post(url, credentials, &u)
 	if err != nil {
 		return nil, err
 	}

@@ -15,6 +15,21 @@ type MilestoneService struct {
 	Endpoint         string
 }
 
+type milestoneCreatePayload struct {
+	EstimatedFinish string `json:"estimated_finish"`
+	EstimatedStart  string `json:"estimated_start"`
+	Name            string `json:"name"`
+	Project         int    `json:"project"`
+}
+
+type milestoneEditPayload struct {
+	Closed          *bool   `json:"closed,omitempty"`
+	EstimatedFinish *string `json:"estimated_finish,omitempty"`
+	EstimatedStart  *string `json:"estimated_start,omitempty"`
+	Name            *string `json:"name,omitempty"`
+	Project         *int    `json:"project,omitempty"`
+}
+
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#Milestones-list
 func (s *MilestoneService) List(queryParams *MilestonesQueryParams) ([]Milestone, *MilestoneTotalInfo, error) {
 	// prepare url & parameters
@@ -52,7 +67,13 @@ func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 		isEmpty(milestone.EstimatedFinish) {
 		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
-	_, err := s.client.Request.Post(url, &milestone, &respMilestone)
+	payload := milestoneCreatePayload{
+		EstimatedFinish: milestone.EstimatedFinish,
+		EstimatedStart:  milestone.EstimatedStart,
+		Name:            milestone.Name,
+		Project:         milestone.Project,
+	}
+	_, err := s.client.Request.Post(url, &payload, &respMilestone)
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +82,9 @@ func (s *MilestoneService) Create(milestone *Milestone) (*Milestone, error) {
 
 // Get => https://taigaio.github.io/taiga-doc/dist/api.html#Milestones-get
 func (s *MilestoneService) Get(milestoneID int) (*Milestone, error) {
+	if err := requirePositiveID("milestoneID", milestoneID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(milestoneID))
 	var m Milestone
 	_, err := s.client.Request.Get(url, &m)
@@ -76,13 +100,20 @@ func (s *MilestoneService) Edit(milestone *Milestone) (*Milestone, error) {
 	if err := requireNonNil("milestone", milestone); err != nil {
 		return nil, err
 	}
+	if err := requirePositiveID("milestoneID", milestone.ID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(milestone.ID))
 
 	var m Milestone
-	if milestone.ID == 0 {
-		return nil, errors.New("passed Milestone does not have an ID yet. Does it exist?")
+	payload := milestoneEditPayload{
+		Closed:          ptr(milestone.Closed),
+		EstimatedFinish: ptr(milestone.EstimatedFinish),
+		EstimatedStart:  ptr(milestone.EstimatedStart),
+		Name:            ptr(milestone.Name),
+		Project:         ptr(milestone.Project),
 	}
-	_, err := s.client.Request.Patch(url, &milestone, &m)
+	_, err := s.client.Request.Patch(url, &payload, &m)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +127,9 @@ func (s *MilestoneService) Update(milestone *Milestone) (*Milestone, error) {
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#milestones-delete
 func (s *MilestoneService) Delete(milestoneID int) (*http.Response, error) {
+	if err := requirePositiveID("milestoneID", milestoneID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(milestoneID))
 	return s.client.Request.Delete(url)
 }

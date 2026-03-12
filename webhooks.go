@@ -1,6 +1,7 @@
 package taigo
 
 import (
+	"errors"
 	"strconv"
 )
 
@@ -12,6 +13,22 @@ type WebhookService struct {
 	defaultProjectID int
 	Endpoint         string
 	EndpointLogs     string
+}
+
+type webhookCreatePayload struct {
+	Key     string `json:"key"`
+	Name    string `json:"name"`
+	Project int    `json:"project"`
+	URL     string `json:"url"`
+}
+
+// WebhookPatch represents an explicit PATCH payload for webhooks.
+// Pointer fields allow intentionally setting zero-values (false, 0, "").
+type WebhookPatch struct {
+	Key     *string `json:"key,omitempty"`
+	Name    *string `json:"name,omitempty"`
+	Project *int    `json:"project,omitempty"`
+	URL     *string `json:"url,omitempty"`
 }
 
 // List returns all webhooks for the current query scope.
@@ -82,10 +99,31 @@ func (s *WebhookService) CreateWebhook(webhook *Webhook) (*Webhook, error) {
 	if err := requireNonNil("webhook", webhook); err != nil {
 		return nil, err
 	}
+	projectID := webhook.Project
+	if projectID == 0 {
+		projectID = s.defaultProjectID
+	}
+	if err := requirePositiveID("project", projectID); err != nil {
+		return nil, err
+	}
+	if webhook.Key == "" {
+		return nil, errors.New("key is required")
+	}
+	if webhook.Name == "" {
+		return nil, errors.New("name is required")
+	}
+	if webhook.URL == "" {
+		return nil, errors.New("url is required")
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var wh Webhook
-
-	_, err := s.client.Request.Post(url, &webhook, &wh)
+	payload := webhookCreatePayload{
+		Key:     webhook.Key,
+		Name:    webhook.Name,
+		Project: projectID,
+		URL:     webhook.URL,
+	}
+	_, err := s.client.Request.Post(url, &payload, &wh)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +134,9 @@ func (s *WebhookService) CreateWebhook(webhook *Webhook) (*Webhook, error) {
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-get
 func (s *WebhookService) GetWebhook(webhook *Webhook) (*Webhook, error) {
 	if err := requireNonNil("webhook", webhook); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("webhookID", webhook.ID); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhook.ID))
@@ -113,9 +154,29 @@ func (s *WebhookService) EditWebhook(webhook *Webhook) (*Webhook, error) {
 	if err := requireNonNil("webhook", webhook); err != nil {
 		return nil, err
 	}
+	if webhook.ID == 0 {
+		return nil, errors.New("webhook ID is required")
+	}
+	patch := &WebhookPatch{
+		Key:     ptr(webhook.Key),
+		Name:    ptr(webhook.Name),
+		Project: ptr(webhook.Project),
+		URL:     ptr(webhook.URL),
+	}
+	return s.PatchWebhook(webhook.ID, patch)
+}
+
+// PatchWebhook sends an explicit PATCH payload to edit a webhook.
+func (s *WebhookService) PatchWebhook(webhookID int, patch *WebhookPatch) (*Webhook, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("webhookID", webhookID); err != nil {
+		return nil, err
+	}
 	var responseWebhook Webhook
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhook.ID))
-	_, err := s.client.Request.Patch(url, &webhook, &responseWebhook)
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhookID))
+	_, err := s.client.Request.Patch(url, patch, &responseWebhook)
 	if err != nil {
 		return nil, err
 	}
@@ -133,6 +194,9 @@ func (s *WebhookService) DeleteWebhook(webhook *Webhook) error {
 	if err := requireNonNil("webhook", webhook); err != nil {
 		return err
 	}
+	if err := requirePositiveID("webhookID", webhook.ID); err != nil {
+		return err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhook.ID))
 	_, err := s.client.Request.Delete(url)
 	if err != nil {
@@ -145,6 +209,9 @@ func (s *WebhookService) DeleteWebhook(webhook *Webhook) error {
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooks-test
 func (s *WebhookService) TestWebhook(webhook *Webhook) (*WebhookLog, error) {
 	if err := requireNonNil("webhook", webhook); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("webhookID", webhook.ID); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(webhook.ID), "test")
@@ -182,6 +249,9 @@ func (s *WebhookService) ListWebhookLogs(queryParameters *WebhookQueryParameters
 // GetWebhookLog returns a WebhookLog by ID
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooklogs-get
 func (s *WebhookService) GetWebhookLog(webhookLogID int) (*WebhookLog, error) {
+	if err := requirePositiveID("webhookLogID", webhookLogID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.EndpointLogs, strconv.Itoa(webhookLogID))
 	var whLog WebhookLog
 	_, err := s.client.Request.Get(url, &whLog)
@@ -195,6 +265,9 @@ func (s *WebhookService) GetWebhookLog(webhookLogID int) (*WebhookLog, error) {
 // https://taigaio.github.io/taiga-doc/dist/api.html#webhooklogs-resend
 func (s *WebhookService) ResendWebhookRequest(webhookLog *WebhookLog) (*WebhookLog, error) {
 	if err := requireNonNil("webhookLog", webhookLog); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("webhookLogID", webhookLog.ID); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.EndpointLogs, strconv.Itoa(webhookLog.ID), "resend")

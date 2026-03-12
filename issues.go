@@ -35,25 +35,27 @@ type issueCreatePayload struct {
 	DueDateStatus string   `json:"due_date_status,omitempty"`
 }
 
-type issueEditPayload struct {
-	AssignedTo    int      `json:"assigned_to,omitempty"`
-	BlockedNote   string   `json:"blocked_note,omitempty"`
-	Description   string   `json:"description,omitempty"`
-	IsBlocked     bool     `json:"is_blocked,omitempty"`
-	Milestone     int      `json:"milestone,omitempty"`
-	Owner         int      `json:"owner,omitempty"`
-	Priority      int      `json:"priority,omitempty"`
-	Project       int      `json:"project,omitempty"`
-	Severity      int      `json:"severity,omitempty"`
-	Status        int      `json:"status,omitempty"`
-	Subject       string   `json:"subject,omitempty"`
-	Tags          []string `json:"tags,omitempty"`
-	Type          int      `json:"type,omitempty"`
-	Version       int      `json:"version"`
-	Watchers      []int    `json:"watchers,omitempty"`
-	DueDate       string   `json:"due_date,omitempty"`
-	DueDateReason string   `json:"due_date_reason,omitempty"`
-	DueDateStatus string   `json:"due_date_status,omitempty"`
+// IssuePatch represents an explicit PATCH payload for issues.
+// Pointer fields allow intentionally setting zero-values (false, 0, "").
+type IssuePatch struct {
+	AssignedTo    *int      `json:"assigned_to,omitempty"`
+	BlockedNote   *string   `json:"blocked_note,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	IsBlocked     *bool     `json:"is_blocked,omitempty"`
+	Milestone     *int      `json:"milestone,omitempty"`
+	Owner         *int      `json:"owner,omitempty"`
+	Priority      *int      `json:"priority,omitempty"`
+	Project       *int      `json:"project,omitempty"`
+	Severity      *int      `json:"severity,omitempty"`
+	Status        *int      `json:"status,omitempty"`
+	Subject       *string   `json:"subject,omitempty"`
+	Tags          *[]string `json:"tags,omitempty"`
+	Type          *int      `json:"type,omitempty"`
+	Version       int       `json:"version"`
+	Watchers      *[]int    `json:"watchers,omitempty"`
+	DueDate       *string   `json:"due_date,omitempty"`
+	DueDateReason *string   `json:"due_date_reason,omitempty"`
+	DueDateStatus *string   `json:"due_date_status,omitempty"`
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#issues-list
@@ -120,6 +122,9 @@ func (s *IssueService) ListAttachments(issue any) ([]Attachment, error) {
 //
 // Available Meta: *IssueDetailGET
 func (s *IssueService) Get(issueID int) (*Issue, error) {
+	if err := requirePositiveID("issueID", issueID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueID))
 	var issue IssueDetailGET
 	_, err := s.client.Request.Get(url, &issue)
@@ -131,6 +136,9 @@ func (s *IssueService) Get(issueID int) (*Issue, error) {
 
 // GetByRef returns an Issue by Ref -> https://taigaio.github.io/taiga-doc/dist/api.html#issues-get-by-ref
 func (s *IssueService) GetByRef(issueRef int, project *Project) (*Issue, error) {
+	if err := requirePositiveID("issueRef", issueRef); err != nil {
+		return nil, err
+	}
 	var issue IssueDetailGET
 	var url string
 	if project == nil {
@@ -169,8 +177,6 @@ func (s *IssueService) Edit(issue *Issue) (*Issue, error) {
 	if err := requireNonNil("issue", issue); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issue.ID))
-	var responseIssue IssueDetail
 
 	if issue.ID == 0 {
 		return nil, errors.New("passed Issue does not have an ID yet. Does it exist?")
@@ -179,28 +185,52 @@ func (s *IssueService) Edit(issue *Issue) (*Issue, error) {
 		return nil, errors.New("version is required for issue edit")
 	}
 
-	payload := issueEditPayload{
-		AssignedTo:    issue.AssignedTo,
-		BlockedNote:   issue.BlockedNote,
-		Description:   issue.Description,
-		IsBlocked:     issue.IsBlocked,
-		Milestone:     issue.Milestone,
-		Owner:         issue.Owner,
-		Priority:      issue.Priority,
-		Project:       issue.Project,
-		Severity:      issue.Severity,
-		Status:        issue.Status,
-		Subject:       issue.Subject,
-		Tags:          tagsToNames(issue.Tags),
-		Type:          issue.Type,
+	patch := &IssuePatch{
+		AssignedTo:    ptr(issue.AssignedTo),
+		BlockedNote:   ptr(issue.BlockedNote),
+		Description:   ptr(issue.Description),
+		IsBlocked:     ptr(issue.IsBlocked),
+		Milestone:     ptr(issue.Milestone),
+		Owner:         ptr(issue.Owner),
+		Priority:      ptr(issue.Priority),
+		Project:       ptr(issue.Project),
+		Severity:      ptr(issue.Severity),
+		Status:        ptr(issue.Status),
+		Subject:       ptr(issue.Subject),
+		Type:          ptr(issue.Type),
 		Version:       issue.Version,
-		Watchers:      issue.Watchers,
-		DueDate:       issue.DueDate,
-		DueDateReason: issue.DueDateReason,
-		DueDateStatus: issue.DueDateStatus,
+		DueDate:       ptr(issue.DueDate),
+		DueDateReason: ptr(issue.DueDateReason),
+		DueDateStatus: ptr(issue.DueDateStatus),
 	}
+	if issue.Tags != nil {
+		tags := tagsToNames(issue.Tags)
+		if tags == nil {
+			tags = []string{}
+		}
+		patch.Tags = &tags
+	}
+	if issue.Watchers != nil {
+		watchers := append([]int(nil), issue.Watchers...)
+		patch.Watchers = &watchers
+	}
+	return s.Patch(issue.ID, patch)
+}
 
-	_, err := s.client.Request.Patch(url, &payload, &responseIssue)
+// Patch sends an explicit PATCH payload to edit an issue.
+func (s *IssueService) Patch(issueID int, patch *IssuePatch) (*Issue, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("issueID", issueID); err != nil {
+		return nil, err
+	}
+	if patch.Version == 0 {
+		return nil, errors.New("version is required for issue patch")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueID))
+	var responseIssue IssueDetail
+	_, err := s.client.Request.Patch(url, patch, &responseIssue)
 	if err != nil {
 		return nil, err
 	}
@@ -258,6 +288,9 @@ func (s *IssueService) Create(issue *Issue) (*Issue, error) {
 
 // Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#issues-delete
 func (s *IssueService) Delete(issueID int) (*http.Response, error) {
+	if err := requirePositiveID("issueID", issueID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueID))
 	return s.client.Request.Delete(url)
 }

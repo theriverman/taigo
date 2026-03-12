@@ -49,7 +49,7 @@ func (s *UserStoryStatusService) Create(status *UserStoryStatus) (*UserStoryStat
 	if isEmpty(status.ProjectID) || isEmpty(status.Name) {
 		return nil, errors.New("a mandatory field(project_id, name) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, &status, &responseStatus)
+	_, err := s.client.Request.Post(url, status, &responseStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (s *UserStoryStatusService) Edit(status *UserStoryStatus) (*UserStoryStatus
 	if status.ID == 0 {
 		return nil, errors.New("passed UserStoryStatus does not have an ID yet. Does it exist?")
 	}
-	_, err := s.client.Request.Patch(url, &status, &responseStatus)
+	_, err := s.client.Request.Patch(url, status, &responseStatus)
 	if err != nil {
 		return nil, err
 	}

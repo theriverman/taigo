@@ -71,17 +71,19 @@ type projectCreatePayload struct {
 	VideoconferencesExtraData string `json:"videoconferences_extra_data,omitempty"`
 }
 
-type projectEditPayload struct {
-	CreationTemplate          int    `json:"creation_template,omitempty"`
-	Description               string `json:"description,omitempty"`
-	IsBacklogActivated        bool   `json:"is_backlog_activated,omitempty"`
-	IsIssuesActivated         bool   `json:"is_issues_activated,omitempty"`
-	IsKanbanActivated         bool   `json:"is_kanban_activated,omitempty"`
-	IsPrivate                 bool   `json:"is_private,omitempty"`
-	IsWikiActivated           bool   `json:"is_wiki_activated,omitempty"`
-	Name                      string `json:"name,omitempty"`
-	Videoconferences          string `json:"videoconferences,omitempty"`
-	VideoconferencesExtraData string `json:"videoconferences_extra_data,omitempty"`
+// ProjectPatch represents an explicit PATCH payload for projects.
+// Pointer fields allow intentionally setting zero-values (false, 0, "").
+type ProjectPatch struct {
+	CreationTemplate          *int    `json:"creation_template,omitempty"`
+	Description               *string `json:"description,omitempty"`
+	IsBacklogActivated        *bool   `json:"is_backlog_activated,omitempty"`
+	IsIssuesActivated         *bool   `json:"is_issues_activated,omitempty"`
+	IsKanbanActivated         *bool   `json:"is_kanban_activated,omitempty"`
+	IsPrivate                 *bool   `json:"is_private,omitempty"`
+	IsWikiActivated           *bool   `json:"is_wiki_activated,omitempty"`
+	Name                      *string `json:"name,omitempty"`
+	Videoconferences          *string `json:"videoconferences,omitempty"`
+	VideoconferencesExtraData *string `json:"videoconferences_extra_data,omitempty"`
 }
 
 // ConfigureMappedServices maps all services to the *ProjectService with a selected project preconfigured
@@ -214,6 +216,9 @@ func (s *ProjectService) Create(project *Project) (*Project, error) {
 
 // Get -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get
 func (s *ProjectService) Get(projectID int) (*Project, error) {
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(projectID))
 	var p ProjectDetail
 
@@ -226,6 +231,9 @@ func (s *ProjectService) Get(projectID int) (*Project, error) {
 
 // GetBySlug -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get-by-slug
 func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
+	if slug == "" {
+		return nil, errors.New("slug is required")
+	}
 	queryParams := struct {
 		Slug string `url:"slug"`
 	}{Slug: slug}
@@ -248,27 +256,37 @@ func (s *ProjectService) Edit(project *Project) (*Project, error) {
 	if err := requireNonNil("project", project); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(project.ID))
-	var p ProjectDetail
 
 	if project.ID == 0 {
 		return nil, errors.New("passed Project does not have an ID yet. Does it exist?")
 	}
 
-	payload := projectEditPayload{
-		CreationTemplate:          project.CreationTemplate,
-		Description:               project.Description,
-		IsBacklogActivated:        project.IsBacklogActivated,
-		IsIssuesActivated:         project.IsIssuesActivated,
-		IsKanbanActivated:         project.IsKanbanActivated,
-		IsPrivate:                 project.IsPrivate,
-		IsWikiActivated:           project.IsWikiActivated,
-		Name:                      project.Name,
-		Videoconferences:          project.Videoconferences,
-		VideoconferencesExtraData: project.VideoconferencesExtraData,
+	patch := &ProjectPatch{
+		CreationTemplate:          ptr(project.CreationTemplate),
+		Description:               ptr(project.Description),
+		IsBacklogActivated:        ptr(project.IsBacklogActivated),
+		IsIssuesActivated:         ptr(project.IsIssuesActivated),
+		IsKanbanActivated:         ptr(project.IsKanbanActivated),
+		IsPrivate:                 ptr(project.IsPrivate),
+		IsWikiActivated:           ptr(project.IsWikiActivated),
+		Name:                      ptr(project.Name),
+		Videoconferences:          ptr(project.Videoconferences),
+		VideoconferencesExtraData: ptr(project.VideoconferencesExtraData),
 	}
+	return s.Patch(project.ID, patch)
+}
 
-	_, err := s.client.Request.Patch(url, &payload, &p)
+// Patch sends an explicit PATCH payload to edit a project.
+func (s *ProjectService) Patch(projectID int, patch *ProjectPatch) (*Project, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(projectID))
+	var p ProjectDetail
+	_, err := s.client.Request.Patch(url, patch, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -282,6 +300,9 @@ func (s *ProjectService) Update(project *Project) (*Project, error) {
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#projects-delete
 func (s *ProjectService) Delete(projectID int) (*http.Response, error) {
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(projectID))
 	return s.client.Request.Delete(url)
 }

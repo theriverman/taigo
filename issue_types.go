@@ -58,7 +58,7 @@ func (s *IssueTypeService) Create(issueType *IssueType) (*IssueType, error) {
 	if isEmpty(issueType.Project) || isEmpty(issueType.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, &issueType, &responseIssueType)
+	_, err := s.client.Request.Post(url, issueType, &responseIssueType)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (s *IssueTypeService) Edit(issueType *IssueType) (*IssueType, error) {
 	if issueType.ID == 0 {
 		return nil, errors.New("passed IssueType does not have an ID yet. Does it exist?")
 	}
-	_, err := s.client.Request.Patch(url, &issueType, &responseIssueType)
+	_, err := s.client.Request.Patch(url, issueType, &responseIssueType)
 	if err != nil {
 		return nil, err
 	}

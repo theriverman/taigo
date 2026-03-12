@@ -31,21 +31,29 @@ type epicCreatePayload struct {
 	Watchers          []int    `json:"watchers,omitempty"`
 }
 
-type epicEditPayload struct {
-	AssignedTo        int      `json:"assigned_to,omitempty"`
-	BlockedNote       string   `json:"blocked_note,omitempty"`
-	ClientRequirement bool     `json:"client_requirement,omitempty"`
-	Color             string   `json:"color,omitempty"`
-	Description       string   `json:"description,omitempty"`
-	EpicsOrder        int64    `json:"epics_order,omitempty"`
-	IsBlocked         bool     `json:"is_blocked,omitempty"`
-	Project           int      `json:"project,omitempty"`
-	Status            int      `json:"status,omitempty"`
-	Subject           string   `json:"subject,omitempty"`
-	Tags              []string `json:"tags,omitempty"`
-	TeamRequirement   bool     `json:"team_requirement,omitempty"`
-	Version           int      `json:"version"`
-	Watchers          []int    `json:"watchers,omitempty"`
+// EpicPatch represents an explicit PATCH payload for epics.
+// Pointer fields allow intentionally setting zero-values (false, 0, "").
+type EpicPatch struct {
+	AssignedTo        *int      `json:"assigned_to,omitempty"`
+	BlockedNote       *string   `json:"blocked_note,omitempty"`
+	ClientRequirement *bool     `json:"client_requirement,omitempty"`
+	Color             *string   `json:"color,omitempty"`
+	Description       *string   `json:"description,omitempty"`
+	EpicsOrder        *int64    `json:"epics_order,omitempty"`
+	IsBlocked         *bool     `json:"is_blocked,omitempty"`
+	Project           *int      `json:"project,omitempty"`
+	Status            *int      `json:"status,omitempty"`
+	Subject           *string   `json:"subject,omitempty"`
+	Tags              *[]string `json:"tags,omitempty"`
+	TeamRequirement   *bool     `json:"team_requirement,omitempty"`
+	Version           int       `json:"version"`
+	Watchers          *[]int    `json:"watchers,omitempty"`
+}
+
+// EpicBulkCreatePayload is used by the bulk-create endpoint.
+type EpicBulkCreatePayload struct {
+	Project   int    `json:"project"`
+	BulkEpics string `json:"bulk_epics"`
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#epics-list
@@ -110,6 +118,9 @@ func (s *EpicService) Create(epic *Epic) (*Epic, error) {
 //
 // Available Meta: *EpicDetailGET
 func (s *EpicService) Get(epicID int) (*Epic, error) {
+	if err := requirePositiveID("epicID", epicID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epicID))
 	var e EpicDetailGET
 	_, err := s.client.Request.Get(url, &e)
@@ -132,6 +143,9 @@ func (s *EpicService) Get(epicID int) (*Epic, error) {
 //
 // Available Meta: *EpicDetailGET
 func (s *EpicService) GetByRef(epicRef int, project *Project) (*Epic, error) {
+	if err := requirePositiveID("epicRef", epicRef); err != nil {
+		return nil, err
+	}
 	var e EpicDetailGET
 	var url string
 	if project == nil {
@@ -170,8 +184,6 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 	if err := requireNonNil("epic", epic); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epic.ID))
-	var e EpicDetail
 
 	if epic.ID == 0 {
 		return nil, errors.New("passed Epic does not have an ID yet. Does it exist?")
@@ -180,24 +192,48 @@ func (s *EpicService) Edit(epic *Epic) (*Epic, error) {
 		return nil, errors.New("version is required for epic edit")
 	}
 
-	payload := epicEditPayload{
-		AssignedTo:        epic.AssignedTo,
-		BlockedNote:       epic.BlockedNote,
-		ClientRequirement: epic.ClientRequirement,
-		Color:             epic.Color,
-		Description:       epic.Description,
-		EpicsOrder:        epic.EpicsOrder,
-		IsBlocked:         epic.IsBlocked,
-		Project:           epic.Project,
-		Status:            epic.Status,
-		Subject:           epic.Subject,
-		Tags:              tagsToNames(epic.Tags),
-		TeamRequirement:   epic.TeamRequirement,
+	patch := &EpicPatch{
+		AssignedTo:        ptr(epic.AssignedTo),
+		BlockedNote:       ptr(epic.BlockedNote),
+		ClientRequirement: ptr(epic.ClientRequirement),
+		Color:             ptr(epic.Color),
+		Description:       ptr(epic.Description),
+		EpicsOrder:        ptr(epic.EpicsOrder),
+		IsBlocked:         ptr(epic.IsBlocked),
+		Project:           ptr(epic.Project),
+		Status:            ptr(epic.Status),
+		Subject:           ptr(epic.Subject),
+		TeamRequirement:   ptr(epic.TeamRequirement),
 		Version:           epic.Version,
-		Watchers:          epic.Watchers,
 	}
+	if epic.Tags != nil {
+		tags := tagsToNames(epic.Tags)
+		if tags == nil {
+			tags = []string{}
+		}
+		patch.Tags = &tags
+	}
+	if epic.Watchers != nil {
+		watchers := append([]int(nil), epic.Watchers...)
+		patch.Watchers = &watchers
+	}
+	return s.Patch(epic.ID, patch)
+}
 
-	_, err := s.client.Request.Patch(url, &payload, &e)
+// Patch sends an explicit PATCH payload to edit an epic.
+func (s *EpicService) Patch(epicID int, patch *EpicPatch) (*Epic, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("epicID", epicID); err != nil {
+		return nil, err
+	}
+	if patch.Version == 0 {
+		return nil, errors.New("version is required for epic patch")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epicID))
+	var e EpicDetail
+	_, err := s.client.Request.Patch(url, patch, &e)
 	if err != nil {
 		return nil, err
 	}
@@ -211,26 +247,59 @@ func (s *EpicService) Update(epic *Epic) (*Epic, error) {
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#epics-delete
 func (s *EpicService) Delete(epicID int) (*http.Response, error) {
+	if err := requirePositiveID("epicID", epicID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epicID))
 	return s.client.Request.Delete(url)
 }
 
-// BulkCreation => https://taigaio.github.io/taiga-doc/dist/api.html#epics-bulk-create
-/*
-This is not yet implemented, placeholder only.
-It seems to be pointless to implement this operation here. A for loop around `Create` is much more efficient and accurate.
-*/
-// func (s *EpicService) BulkCreation() {}
+// BulkCreate => https://docs.taiga.io/api.html#epics-bulk-create
+func (s *EpicService) BulkCreate(payload *EpicBulkCreatePayload) ([]RawResource, error) {
+	if err := requireNonNil("payload", payload); err != nil {
+		return nil, err
+	}
+	copyPayload := *payload
+	if copyPayload.Project == 0 {
+		copyPayload.Project = s.defaultProjectID
+	}
+	if err := requirePositiveID("project", copyPayload.Project); err != nil {
+		return nil, err
+	}
+	if copyPayload.BulkEpics == "" {
+		return nil, errors.New("bulk_epics is required")
+	}
+	return postRawResourceListAtPath(s.client, &copyPayload, s.Endpoint, "bulk_create")
+}
 
-// EpicFiltersData => https://taigaio.github.io/taiga-doc/dist/api.html#epics-get-filters-data
-/*
-This is not yet implemented, placeholder only.
-It seems to be pointless to implement this operation here. A for loop around `Create` is much more efficient and accurate.
-*/
-// func (s *EpicService) EpicFiltersData() {}
+// GetFiltersData => https://docs.taiga.io/api.html#epics-get-filters-data
+func (s *EpicService) GetFiltersData(projectID int) (*EpicFiltersDataDetail, error) {
+	if projectID == 0 {
+		projectID = s.defaultProjectID
+	}
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return nil, err
+	}
+	queryParams := struct {
+		Project int `url:"project"`
+	}{Project: projectID}
+	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "filters_data"), &queryParams)
+	if err != nil {
+		return nil, err
+	}
+	var filtersData EpicFiltersDataDetail
+	_, err = s.client.Request.Get(url, &filtersData)
+	if err != nil {
+		return nil, err
+	}
+	return &filtersData, nil
+}
 
 // ListRelatedUserStories => https://taigaio.github.io/taiga-doc/dist/api.html#epics-related-user-stories-list
 func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStoryDetail, error) {
+	if err := requirePositiveID("epicID", epicID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(epicID), "related_userstories")
 	var e []EpicRelatedUserStoryDetail
 	_, err := s.client.Request.Get(url, &e)
@@ -245,6 +314,12 @@ func (s *EpicService) ListRelatedUserStories(epicID int) ([]EpicRelatedUserStory
 // Mandatory parameters: `EpicID`; `UserStoryID`
 // Accepted UserStory values: `UserStory.ID`
 func (s *EpicService) CreateRelatedUserStory(EpicID int, UserStoryID int) (*EpicRelatedUserStoryDetail, error) {
+	if err := requirePositiveID("epicID", EpicID); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("userStoryID", UserStoryID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(EpicID), "related_userstories")
 	e := EpicRelatedUserStoryDetail{EpicID: EpicID, UserStoryID: UserStoryID}
 	_, err := s.client.Request.Post(url, &e, &e)

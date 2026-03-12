@@ -36,25 +36,27 @@ type userStoryCreatePayload struct {
 	Watchers          []int       `json:"watchers,omitempty"`
 }
 
-type userStoryEditPayload struct {
-	AssignedTo        int         `json:"assigned_to,omitempty"`
-	BacklogOrder      int64       `json:"backlog_order,omitempty"`
-	BlockedNote       string      `json:"blocked_note,omitempty"`
-	ClientRequirement bool        `json:"client_requirement,omitempty"`
-	Description       string      `json:"description,omitempty"`
-	ExternalReference []string    `json:"external_reference,omitempty"`
-	IsBlocked         bool        `json:"is_blocked,omitempty"`
-	KanbanOrder       int64       `json:"kanban_order,omitempty"`
-	Milestone         int         `json:"milestone,omitempty"`
-	Points            AgilePoints `json:"points,omitempty"`
-	Project           int         `json:"project,omitempty"`
-	SprintOrder       int         `json:"sprint_order,omitempty"`
-	Status            int         `json:"status,omitempty"`
-	Subject           string      `json:"subject,omitempty"`
-	Tags              []string    `json:"tags,omitempty"`
-	TeamRequirement   bool        `json:"team_requirement,omitempty"`
-	Version           int         `json:"version"`
-	Watchers          []int       `json:"watchers,omitempty"`
+// UserStoryPatch represents an explicit PATCH payload for user stories.
+// Pointer fields allow intentionally setting zero-values (false, 0, "").
+type UserStoryPatch struct {
+	AssignedTo        *int         `json:"assigned_to,omitempty"`
+	BacklogOrder      *int64       `json:"backlog_order,omitempty"`
+	BlockedNote       *string      `json:"blocked_note,omitempty"`
+	ClientRequirement *bool        `json:"client_requirement,omitempty"`
+	Description       *string      `json:"description,omitempty"`
+	ExternalReference *[]string    `json:"external_reference,omitempty"`
+	IsBlocked         *bool        `json:"is_blocked,omitempty"`
+	KanbanOrder       *int64       `json:"kanban_order,omitempty"`
+	Milestone         *int         `json:"milestone,omitempty"`
+	Points            *AgilePoints `json:"points,omitempty"`
+	Project           *int         `json:"project,omitempty"`
+	SprintOrder       *int         `json:"sprint_order,omitempty"`
+	Status            *int         `json:"status,omitempty"`
+	Subject           *string      `json:"subject,omitempty"`
+	Tags              *[]string    `json:"tags,omitempty"`
+	TeamRequirement   *bool        `json:"team_requirement,omitempty"`
+	Version           int          `json:"version"`
+	Watchers          *[]int       `json:"watchers,omitempty"`
 }
 
 // List returns all User Stories | https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-list
@@ -121,6 +123,9 @@ func (s *UserStoryService) Create(userStory *UserStory) (*UserStory, error) {
 //
 // Available Meta: *UserStoryDetailGET
 func (s *UserStoryService) Get(userStoryID int) (*UserStory, error) {
+	if err := requirePositiveID("userStoryID", userStoryID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userStoryID))
 	var us UserStoryDetailGET
 	_, err := s.client.Request.Get(url, &us)
@@ -143,6 +148,9 @@ func (s *UserStoryService) Get(userStoryID int) (*UserStory, error) {
 //
 // Available Meta: UserStoryDetailGET
 func (s *UserStoryService) GetByRef(userStoryRef int, project *Project) (*UserStory, error) {
+	if err := requirePositiveID("userStoryRef", userStoryRef); err != nil {
+		return nil, err
+	}
 	var us UserStoryDetailGET
 	var url string
 	if project == nil {
@@ -181,8 +189,6 @@ func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
 	if err := requireNonNil("userStory", us); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(us.ID))
-	var responseUS UserStoryDetail
 
 	if us.ID == 0 {
 		return nil, errors.New("passed UserStory does not have an ID yet. Does it exist?")
@@ -191,28 +197,55 @@ func (s *UserStoryService) Edit(us *UserStory) (*UserStory, error) {
 		return nil, errors.New("version is required for user story edit")
 	}
 
-	payload := userStoryEditPayload{
-		AssignedTo:        us.AssignedTo,
-		BacklogOrder:      us.BacklogOrder,
-		BlockedNote:       us.BlockedNote,
-		ClientRequirement: us.ClientRequirement,
-		Description:       us.Description,
-		ExternalReference: us.ExternalReference,
-		IsBlocked:         us.IsBlocked,
-		KanbanOrder:       us.KanbanOrder,
-		Milestone:         us.Milestone,
-		Points:            us.Points,
-		Project:           us.Project,
-		SprintOrder:       us.SprintOrder,
-		Status:            us.Status,
-		Subject:           us.Subject,
-		Tags:              tagsToNames(us.Tags),
-		TeamRequirement:   us.TeamRequirement,
+	patch := &UserStoryPatch{
+		AssignedTo:        ptr(us.AssignedTo),
+		BacklogOrder:      ptr(us.BacklogOrder),
+		BlockedNote:       ptr(us.BlockedNote),
+		ClientRequirement: ptr(us.ClientRequirement),
+		Description:       ptr(us.Description),
+		IsBlocked:         ptr(us.IsBlocked),
+		KanbanOrder:       ptr(us.KanbanOrder),
+		Milestone:         ptr(us.Milestone),
+		Points:            ptr(us.Points),
+		Project:           ptr(us.Project),
+		SprintOrder:       ptr(us.SprintOrder),
+		Status:            ptr(us.Status),
+		Subject:           ptr(us.Subject),
+		TeamRequirement:   ptr(us.TeamRequirement),
 		Version:           us.Version,
-		Watchers:          us.Watchers,
 	}
+	if us.ExternalReference != nil {
+		externalRef := append([]string(nil), us.ExternalReference...)
+		patch.ExternalReference = &externalRef
+	}
+	if us.Tags != nil {
+		tags := tagsToNames(us.Tags)
+		if tags == nil {
+			tags = []string{}
+		}
+		patch.Tags = &tags
+	}
+	if us.Watchers != nil {
+		watchers := append([]int(nil), us.Watchers...)
+		patch.Watchers = &watchers
+	}
+	return s.Patch(us.ID, patch)
+}
 
-	_, err := s.client.Request.Patch(url, &payload, &responseUS)
+// Patch sends an explicit PATCH payload to edit a user story.
+func (s *UserStoryService) Patch(userStoryID int, patch *UserStoryPatch) (*UserStory, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("userStoryID", userStoryID); err != nil {
+		return nil, err
+	}
+	if patch.Version == 0 {
+		return nil, errors.New("version is required for user story patch")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userStoryID))
+	var responseUS UserStoryDetail
+	_, err := s.client.Request.Patch(url, patch, &responseUS)
 	if err != nil {
 		return nil, err
 	}
@@ -226,6 +259,9 @@ func (s *UserStoryService) Update(us *UserStory) (*UserStory, error) {
 
 // Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#user-stories-delete
 func (s *UserStoryService) Delete(usID int) (*http.Response, error) {
+	if err := requirePositiveID("userStoryID", usID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(usID))
 	return s.client.Request.Delete(url)
 }

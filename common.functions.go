@@ -3,6 +3,7 @@ package taigo
 import (
 	"encoding/json"
 	"fmt"
+	neturl "net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -12,7 +13,7 @@ import (
 
 /*
 	// Attachments Manager
-	since go does not have generics, a common attachments manager had to be created
+	a common attachments manager is used to avoid duplicating endpoint-specific code
 	Taiga objects (epics, tasks, issues, etc...) can wrap around this method to simplify otherwise redundant requests
 */
 
@@ -39,6 +40,9 @@ func listAttachmentsForEndpoint(c *Client, queryParams *attachmentsQueryParams) 
 
 // getAttachmentForEndpoint is a common method to get a specific attachment for an endpoint (epic, issue, etc...)
 func getAttachmentForEndpoint(c *Client, attachmentID int, endpointURI string) (*Attachment, error) {
+	if err := requirePositiveID("attachmentID", attachmentID); err != nil {
+		return nil, err
+	}
 	url := c.MakeURL(endpointURI, "attachments", strconv.Itoa(attachmentID))
 	var a Attachment
 	_, err := c.Request.Get(url, &a)
@@ -91,6 +95,10 @@ func BoolPtr(v bool) *bool {
 	return &v
 }
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 // requireNonNil validates that a required input is non-nil.
 func requireNonNil(name string, value any) error {
 	if value == nil {
@@ -102,6 +110,13 @@ func requireNonNil(name string, value any) error {
 		if v.IsNil() {
 			return fmt.Errorf("%s must not be nil", name)
 		}
+	}
+	return nil
+}
+
+func requirePositiveID(name string, id int) error {
+	if id <= 0 {
+		return fmt.Errorf("%s must be greater than 0", name)
 	}
 	return nil
 }
@@ -164,10 +179,22 @@ func appendQueryParams(baseURL string, queryParams any) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("encode query params: %w", err)
 	}
-	if encoded := paramValues.Encode(); encoded != "" {
-		return baseURL + "?" + encoded, nil
+	if len(paramValues) == 0 {
+		return baseURL, nil
 	}
-	return baseURL, nil
+
+	parsedURL, err := neturl.Parse(baseURL)
+	if err != nil {
+		return "", fmt.Errorf("parse base URL: %w", err)
+	}
+	merged := parsedURL.Query()
+	for key, values := range paramValues {
+		for _, value := range values {
+			merged.Add(key, value)
+		}
+	}
+	parsedURL.RawQuery = merged.Encode()
+	return parsedURL.String(), nil
 }
 
 // urlWithQueryOrDefaultProject applies query filters and falls back to default project.

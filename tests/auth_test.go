@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 	"os"
-	"reflect"
 	"testing"
 	"time"
 
@@ -63,7 +62,7 @@ func TestAuthService_RefreshAuthToken(t *testing.T) {
 				Endpoint:         "auth",
 			},
 			args:           args{selfUpdate: true},
-			oldClientToken: Client.Token,
+			oldClientToken: Client.GetToken(),
 			wantErr:        false,
 		},
 	}
@@ -74,9 +73,9 @@ func TestAuthService_RefreshAuthToken(t *testing.T) {
 				t.Errorf("AuthService.RefreshAuthToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if reflect.DeepEqual(tt.oldClientToken, Client.Token) {
-				t.Errorf("Value of Client.Token did not change which means that .RefreshAuthToken(true) has failed")
-				t.Errorf("AuthService.RefreshAuthToken().AuthToken = %v, want different than %v", Client.Token, tt.oldClientToken)
+			if tt.oldClientToken == Client.GetToken() {
+				t.Errorf("Value of Client token did not change which means that .RefreshAuthToken(true) has failed")
+				t.Errorf("AuthService.RefreshAuthToken().AuthToken = %v, want different than %v", Client.GetToken(), tt.oldClientToken)
 			}
 		})
 	}
@@ -119,14 +118,14 @@ func TestTokenRefreshRoutine(t *testing.T) {
 		if i == testLoopLength {
 			break
 		}
-		t.Logf("Loop %d | client.Token  : %s\n", i, client.Token)
-		t.Logf("Loop %d | client.Refresh: %s\n", i, client.RefreshToken)
+		t.Logf("Loop %d | client.Token  : %s\n", i, client.GetToken())
+		t.Logf("Loop %d | client.Refresh: %s\n", i, client.GetRefreshToken())
 		t.Logf("----------------------------\n")
-		tokens[client.Token] = struct{}{}
+		tokens[client.GetToken()] = struct{}{}
 		tokenCounter++
 		time.Sleep(customWaitTime)
 	}
-	client = nil
+	client.Close()
 	if len(tokens) != tokenCounter {
 		t.Errorf("Total Unique Tokens: %d wanted unique tokens count: %d", len(tokens), tokenCounter)
 	}

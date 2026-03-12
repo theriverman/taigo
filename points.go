@@ -58,7 +58,7 @@ func (s *PointService) Create(point *Point) (*Point, error) {
 	if isEmpty(point.Project) || isEmpty(point.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, &point, &responsePoint)
+	_, err := s.client.Request.Post(url, point, &responsePoint)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (s *PointService) Edit(point *Point) (*Point, error) {
 	if point.ID == 0 {
 		return nil, errors.New("passed Point does not have an ID yet. Does it exist?")
 	}
-	_, err := s.client.Request.Patch(url, &point, &responsePoint)
+	_, err := s.client.Request.Patch(url, point, &responsePoint)
 	if err != nil {
 		return nil, err
 	}

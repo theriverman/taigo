@@ -22,6 +22,9 @@ type TimelineService struct {
 
 // User -> https://docs.taiga.io/api.html#timelines-user-line
 func (s *TimelineService) User(userID int, queryParams *TimelineQueryParams) ([]TimelineEntry, error) {
+	if err := requirePositiveID("userID", userID); err != nil {
+		return nil, err
+	}
 	return getRawResourceListAtPathWithQuery(s.client, queryParams, s.Endpoint, "user", strconv.Itoa(userID))
 }
 
@@ -39,5 +42,8 @@ func (s *TimelineService) Project(projectID int, queryParams *TimelineQueryParam
 
 // Profile -> https://docs.taiga.io/api.html#timelines-user-profile-line
 func (s *TimelineService) Profile(userID int, queryParams *TimelineQueryParams) ([]TimelineEntry, error) {
+	if err := requirePositiveID("userID", userID); err != nil {
+		return nil, err
+	}
 	return getRawResourceListAtPathWithQuery(s.client, queryParams, s.Endpoint, "profile", strconv.Itoa(userID))
 }

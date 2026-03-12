@@ -33,23 +33,25 @@ type taskCreatePayload struct {
 	Watchers          []int    `json:"watchers,omitempty"`
 }
 
-type taskEditPayload struct {
-	AssignedTo        int      `json:"assigned_to,omitempty"`
-	BlockedNote       string   `json:"blocked_note,omitempty"`
-	Description       string   `json:"description,omitempty"`
-	ExternalReference []string `json:"external_reference,omitempty"`
-	IsBlocked         bool     `json:"is_blocked,omitempty"`
-	IsIocaine         bool     `json:"is_iocaine,omitempty"`
-	Milestone         int      `json:"milestone,omitempty"`
-	Project           int      `json:"project,omitempty"`
-	Status            int      `json:"status,omitempty"`
-	Subject           string   `json:"subject,omitempty"`
-	Tags              []string `json:"tags,omitempty"`
-	TaskboardOrder    int      `json:"taskboard_order,omitempty"`
-	UsOrder           int      `json:"us_order,omitempty"`
-	UserStory         int      `json:"user_story,omitempty"`
-	Version           int      `json:"version"`
-	Watchers          []int    `json:"watchers,omitempty"`
+// TaskPatch represents an explicit PATCH payload for tasks.
+// Pointer fields allow intentionally setting zero-values (false, 0, "").
+type TaskPatch struct {
+	AssignedTo        *int      `json:"assigned_to,omitempty"`
+	BlockedNote       *string   `json:"blocked_note,omitempty"`
+	Description       *string   `json:"description,omitempty"`
+	ExternalReference *[]string `json:"external_reference,omitempty"`
+	IsBlocked         *bool     `json:"is_blocked,omitempty"`
+	IsIocaine         *bool     `json:"is_iocaine,omitempty"`
+	Milestone         *int      `json:"milestone,omitempty"`
+	Project           *int      `json:"project,omitempty"`
+	Status            *int      `json:"status,omitempty"`
+	Subject           *string   `json:"subject,omitempty"`
+	Tags              *[]string `json:"tags,omitempty"`
+	TaskboardOrder    *int      `json:"taskboard_order,omitempty"`
+	UsOrder           *int      `json:"us_order,omitempty"`
+	UserStory         *int      `json:"user_story,omitempty"`
+	Version           int       `json:"version"`
+	Watchers          *[]int    `json:"watchers,omitempty"`
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-list
@@ -109,6 +111,9 @@ func (s *TaskService) Create(task *Task) (*Task, error) {
 
 // Get => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-get
 func (s *TaskService) Get(taskID int) (*Task, error) {
+	if err := requirePositiveID("taskID", taskID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(taskID))
 	var t TaskDetailGET
 	_, err := s.client.Request.Get(url, &t)
@@ -120,6 +125,9 @@ func (s *TaskService) Get(taskID int) (*Task, error) {
 
 // GetByRef => https://taigaio.github.io/taiga-doc/dist/api.html#tasks-get-by-ref
 func (s *TaskService) GetByRef(taskRef int, project *Project) (*Task, error) {
+	if err := requirePositiveID("taskRef", taskRef); err != nil {
+		return nil, err
+	}
 	var t TaskDetailGET
 	var url string
 	if project == nil {
@@ -156,8 +164,6 @@ func (s *TaskService) Edit(task *Task) (*Task, error) {
 	if err := requireNonNil("task", task); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(task.ID))
-	var responseTask TaskDetail
 
 	if task.ID == 0 {
 		return nil, errors.New("passed Task does not have an ID yet. Does it exist?")
@@ -166,26 +172,53 @@ func (s *TaskService) Edit(task *Task) (*Task, error) {
 		return nil, errors.New("version is required for task edit")
 	}
 
-	payload := taskEditPayload{
-		AssignedTo:        task.AssignedTo,
-		BlockedNote:       task.BlockedNote,
-		Description:       task.Description,
-		ExternalReference: task.ExternalReference,
-		IsBlocked:         task.IsBlocked,
-		IsIocaine:         task.IsIocaine,
-		Milestone:         task.Milestone,
-		Project:           task.Project,
-		Status:            task.Status,
-		Subject:           task.Subject,
-		Tags:              tagsToNames(task.Tags),
-		TaskboardOrder:    task.TaskboardOrder,
-		UsOrder:           task.UsOrder,
-		UserStory:         task.UserStory,
-		Version:           task.Version,
-		Watchers:          task.Watchers,
+	patch := &TaskPatch{
+		AssignedTo:     ptr(task.AssignedTo),
+		BlockedNote:    ptr(task.BlockedNote),
+		Description:    ptr(task.Description),
+		IsBlocked:      ptr(task.IsBlocked),
+		IsIocaine:      ptr(task.IsIocaine),
+		Milestone:      ptr(task.Milestone),
+		Project:        ptr(task.Project),
+		Status:         ptr(task.Status),
+		Subject:        ptr(task.Subject),
+		TaskboardOrder: ptr(task.TaskboardOrder),
+		UsOrder:        ptr(task.UsOrder),
+		UserStory:      ptr(task.UserStory),
+		Version:        task.Version,
 	}
+	if task.ExternalReference != nil {
+		externalRef := append([]string(nil), task.ExternalReference...)
+		patch.ExternalReference = &externalRef
+	}
+	if task.Tags != nil {
+		tags := tagsToNames(task.Tags)
+		if tags == nil {
+			tags = []string{}
+		}
+		patch.Tags = &tags
+	}
+	if task.Watchers != nil {
+		watchers := append([]int(nil), task.Watchers...)
+		patch.Watchers = &watchers
+	}
+	return s.Patch(task.ID, patch)
+}
 
-	_, err := s.client.Request.Patch(url, &payload, &responseTask)
+// Patch sends an explicit PATCH payload to edit a task.
+func (s *TaskService) Patch(taskID int, patch *TaskPatch) (*Task, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("taskID", taskID); err != nil {
+		return nil, err
+	}
+	if patch.Version == 0 {
+		return nil, errors.New("version is required for task patch")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(taskID))
+	var responseTask TaskDetail
+	_, err := s.client.Request.Patch(url, patch, &responseTask)
 	if err != nil {
 		return nil, err
 	}
@@ -199,6 +232,9 @@ func (s *TaskService) Update(task *Task) (*Task, error) {
 
 // Delete -> https://taigaio.github.io/taiga-doc/dist/api.html#tasks-delete
 func (s *TaskService) Delete(taskID int) (*http.Response, error) {
+	if err := requirePositiveID("taskID", taskID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(taskID))
 	return s.client.Request.Delete(url)
 }

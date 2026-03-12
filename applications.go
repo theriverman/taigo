@@ -20,5 +20,8 @@ func (s *ApplicationService) Get(applicationID int) (*Application, error) {
 // GetToken retrieves token data for a specific application.
 // https://docs.taiga.io/api.html#applications-token
 func (s *ApplicationService) GetToken(applicationID int) (*RawResource, error) {
+	if err := requirePositiveID("applicationID", applicationID); err != nil {
+		return nil, err
+	}
 	return getRawResourceAtPath(s.client, s.Endpoint, strconv.Itoa(applicationID), "token")
 }

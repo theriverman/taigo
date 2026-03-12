@@ -21,21 +21,33 @@ type historyDeleteCommentQueryParams struct {
 
 // UserStory -> https://docs.taiga.io/api.html#history-user-story-task-issue-or-wiki
 func (s *HistoryService) UserStory(userStoryID int) ([]HistoryEntry, error) {
+	if err := requirePositiveID("userStoryID", userStoryID); err != nil {
+		return nil, err
+	}
 	return getRawResourceListAtPath(s.client, s.Endpoint, "userstory", strconv.Itoa(userStoryID))
 }
 
 // Task -> https://docs.taiga.io/api.html#history-user-story-task-issue-or-wiki
 func (s *HistoryService) Task(taskID int) ([]HistoryEntry, error) {
+	if err := requirePositiveID("taskID", taskID); err != nil {
+		return nil, err
+	}
 	return getRawResourceListAtPath(s.client, s.Endpoint, "task", strconv.Itoa(taskID))
 }
 
 // Issue -> https://docs.taiga.io/api.html#history-user-story-task-issue-or-wiki
 func (s *HistoryService) Issue(issueID int) ([]HistoryEntry, error) {
+	if err := requirePositiveID("issueID", issueID); err != nil {
+		return nil, err
+	}
 	return getRawResourceListAtPath(s.client, s.Endpoint, "issue", strconv.Itoa(issueID))
 }
 
 // Wiki -> https://docs.taiga.io/api.html#history-user-story-task-issue-or-wiki
 func (s *HistoryService) Wiki(wikiID int) ([]HistoryEntry, error) {
+	if err := requirePositiveID("wikiID", wikiID); err != nil {
+		return nil, err
+	}
 	return getRawResourceListAtPath(s.client, s.Endpoint, "wiki", strconv.Itoa(wikiID))
 }
 
@@ -60,7 +72,17 @@ func (s *HistoryService) DeleteWikiComment(wikiID int, commentID any) (*RawResou
 }
 
 func (s *HistoryService) deleteComment(resourceType string, resourceID int, commentID any) (*RawResource, error) {
-	params := &historyDeleteCommentQueryParams{ID: fmt.Sprint(commentID)}
+	if err := requirePositiveID("resourceID", resourceID); err != nil {
+		return nil, err
+	}
+	if commentID == nil {
+		return nil, fmt.Errorf("commentID must not be nil")
+	}
+	commentIDValue := fmt.Sprint(commentID)
+	if commentIDValue == "" {
+		return nil, fmt.Errorf("commentID is required")
+	}
+	params := &historyDeleteCommentQueryParams{ID: commentIDValue}
 	return postRawResourceAtPathWithQuery(
 		s.client,
 		nil,

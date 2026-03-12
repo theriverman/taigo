@@ -1,6 +1,7 @@
 package taigo
 
 import (
+	"errors"
 	"strconv"
 )
 
@@ -11,6 +12,20 @@ type UserService struct {
 	client           *Client
 	defaultProjectID int
 	Endpoint         string
+}
+
+// UserPatch represents an explicit PATCH payload for users.
+// Pointer fields allow intentionally setting zero-values (false, 0, "").
+type UserPatch struct {
+	Bio          *string `json:"bio,omitempty"`
+	Color        *string `json:"color,omitempty"`
+	Email        *string `json:"email,omitempty"`
+	FullName     *string `json:"full_name,omitempty"`
+	Lang         *string `json:"lang,omitempty"`
+	ReadNewTerms *bool   `json:"read_new_terms,omitempty"`
+	Theme        *string `json:"theme,omitempty"`
+	Timezone     *string `json:"timezone,omitempty"`
+	Username     *string `json:"username,omitempty"`
 }
 
 // List => https://taigaio.github.io/taiga-doc/dist/api.html#users-list
@@ -30,6 +45,9 @@ func (s *UserService) List(queryParams *UsersQueryParams) ([]User, error) {
 
 // Get => https://taigaio.github.io/taiga-doc/dist/api.html#users-get
 func (s *UserService) Get(userID int) (*User, error) {
+	if err := requirePositiveID("userID", userID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID))
 	var u User
 	_, err := s.client.Request.Get(url, &u)
@@ -52,6 +70,9 @@ func (s *UserService) Me() (*User, error) {
 
 // GetStats => https://taigaio.github.io/taiga-doc/dist/api.html#users-stats
 func (s *UserService) GetStats(userID int) (*UserStatsDetail, error) {
+	if err := requirePositiveID("userID", userID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "stats")
 	var usd UserStatsDetail
 	_, err := s.client.Request.Get(url, &usd)
@@ -63,6 +84,9 @@ func (s *UserService) GetStats(userID int) (*UserStatsDetail, error) {
 
 // GetWatchedContent => https://taigaio.github.io/taiga-doc/dist/api.html#users-watched
 func (s *UserService) GetWatchedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]UserWatched, error) {
+	if err := requirePositiveID("userID", userID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "watched")
 	var err error
 	url, err = appendQueryParams(url, queryParams)
@@ -72,13 +96,16 @@ func (s *UserService) GetWatchedContent(userID int, queryParams *UsersHighlighte
 	var watched []UserWatched
 	_, err = s.client.Request.Get(url, &watched)
 	if err != nil {
-		return []UserWatched{}, err
+		return nil, err
 	}
 	return watched, nil
 }
 
 // GetLikedContent => https://taigaio.github.io/taiga-doc/dist/api.html#users-liked
 func (s *UserService) GetLikedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]UserLiked, error) {
+	if err := requirePositiveID("userID", userID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "liked")
 	var err error
 	url, err = appendQueryParams(url, queryParams)
@@ -88,13 +115,16 @@ func (s *UserService) GetLikedContent(userID int, queryParams *UsersHighlightedQ
 	var liked []UserLiked
 	_, err = s.client.Request.Get(url, &liked)
 	if err != nil {
-		return []UserLiked{}, err
+		return nil, err
 	}
 	return liked, nil
 }
 
 // https://taigaio.github.io/taiga-doc/dist/api.html#users-voted
 func (s *UserService) GetVotedContent(userID int, queryParams *UsersHighlightedQueryParams) ([]Voted, error) {
+	if err := requirePositiveID("userID", userID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID), "voted")
 	var err error
 	url, err = appendQueryParams(url, queryParams)
@@ -104,7 +134,7 @@ func (s *UserService) GetVotedContent(userID int, queryParams *UsersHighlightedQ
 	var voted []Voted
 	_, err = s.client.Request.Get(url, &voted)
 	if err != nil {
-		return []Voted{}, err
+		return nil, err
 	}
 	return voted, nil
 }
@@ -115,9 +145,34 @@ func (s *UserService) Edit(user *User) (*User, error) {
 	if err := requireNonNil("user", user); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(user.ID))
+	if user.ID == 0 {
+		return nil, errors.New("user ID is required")
+	}
+	patch := &UserPatch{
+		Bio:          ptr(user.Bio),
+		Color:        ptr(user.Color),
+		Email:        ptr(user.Email),
+		FullName:     ptr(user.FullName),
+		Lang:         ptr(user.Lang),
+		ReadNewTerms: ptr(user.ReadNewTerms),
+		Theme:        ptr(user.Theme),
+		Timezone:     ptr(user.Timezone),
+		Username:     ptr(user.Username),
+	}
+	return s.Patch(user.ID, patch)
+}
+
+// Patch sends an explicit PATCH payload to edit a user.
+func (s *UserService) Patch(userID int, patch *UserPatch) (*User, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("userID", userID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID))
 	var u User
-	_, err := s.client.Request.Patch(url, &user, &u)
+	_, err := s.client.Request.Patch(url, patch, &u)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +186,9 @@ func (s *UserService) Update(user *User) (*User, error) {
 
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#users-delete
 func (s *UserService) Delete(userID int) error {
+	if err := requirePositiveID("userID", userID); err != nil {
+		return err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(userID))
 	_, err := s.client.Request.Delete(url)
 	if err != nil {

@@ -58,7 +58,7 @@ func (s *PriorityService) Create(priority *Priority) (*Priority, error) {
 	if isEmpty(priority.Project) || isEmpty(priority.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	_, err := s.client.Request.Post(url, &priority, &responsePriority)
+	_, err := s.client.Request.Post(url, priority, &responsePriority)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (s *PriorityService) Edit(priority *Priority) (*Priority, error) {
 	if priority.ID == 0 {
 		return nil, errors.New("passed Priority does not have an ID yet. Does it exist?")
 	}
-	_, err := s.client.Request.Patch(url, &priority, &responsePriority)
+	_, err := s.client.Request.Patch(url, priority, &responsePriority)
 	if err != nil {
 		return nil, err
 	}

@@ -50,18 +50,18 @@ func TestDisablePaginationHeaderSemantics(t *testing.T) {
 		t.Fatalf("initialise client: %v", err)
 	}
 
-	if got := client.Headers.Get("x-disable-pagination"); got != "True" {
+	if got := client.GetHeader("x-disable-pagination"); got != "True" {
 		t.Fatalf("expected x-disable-pagination to be True by default, got %q", got)
 	}
 
 	client.DisablePagination(false)
-	if got := client.Headers.Get("x-disable-pagination"); got != "" {
+	if got := client.GetHeader("x-disable-pagination"); got != "" {
 		t.Fatalf("expected x-disable-pagination to be removed when pagination is enabled, got %q", got)
 	}
 
 	client.DisablePagination(true)
 	client.DisablePagination(true)
-	if got := len(client.Headers.Values("x-disable-pagination")); got != 1 {
+	if got := len(client.GetHeaderValues("x-disable-pagination")); got != 1 {
 		t.Fatalf("expected exactly one x-disable-pagination header value, got %d", got)
 	}
 }
@@ -531,13 +531,54 @@ func TestInitialiseSetsDefaultHTTPClientWhenUnset(t *testing.T) {
 	if client.HTTPClient == nil {
 		t.Fatalf("expected HTTPClient to be initialized")
 	}
+	if client.HTTPClient.Timeout != DefaultHTTPTimeout {
+		t.Fatalf("expected default HTTP timeout %s, got %s", DefaultHTTPTimeout, client.HTTPClient.Timeout)
+	}
 }
 
-func TestDisableAutomaticTokenRefreshSetsStickyFlag(t *testing.T) {
+func TestCloseDisablesAutoRefresh(t *testing.T) {
 	client := &Client{}
-	client.DisableAutomaticTokenRefresh()
+	client.Close()
 	if !client.AutoRefreshDisabled {
-		t.Fatalf("expected AutoRefreshDisabled to be true after DisableAutomaticTokenRefresh")
+		t.Fatalf("expected AutoRefreshDisabled to be true after Close")
+	}
+}
+
+func TestTaskPatchCanSendZeroAndFalseValues(t *testing.T) {
+	var gotPath string
+	var gotMethod string
+	var gotBody string
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		gotMethod = req.Method
+		body, _ := io.ReadAll(req.Body)
+		gotBody = string(body)
+		return newJSONResponse(req, http.StatusOK, `{"id":11,"version":2}`), nil
+	})
+
+	isBlocked := false
+	milestone := 0
+	subject := ""
+	_, err := client.Task.Patch(11, &TaskPatch{
+		IsBlocked: &isBlocked,
+		Milestone: &milestone,
+		Subject:   &subject,
+		Version:   1,
+	})
+	if err != nil {
+		t.Fatalf("task patch failed: %v", err)
+	}
+	if gotMethod != http.MethodPatch || gotPath != "/api/v1/tasks/11" {
+		t.Fatalf("unexpected request %s %s", gotMethod, gotPath)
+	}
+	if !strings.Contains(gotBody, `"is_blocked":false`) {
+		t.Fatalf("expected explicit false in payload, got %s", gotBody)
+	}
+	if !strings.Contains(gotBody, `"milestone":0`) {
+		t.Fatalf("expected explicit zero milestone in payload, got %s", gotBody)
+	}
+	if !strings.Contains(gotBody, `"subject":""`) {
+		t.Fatalf("expected explicit empty subject in payload, got %s", gotBody)
 	}
 }
 
@@ -764,5 +805,103 @@ func TestTaskListAttachmentsBuildsValidQueryURL(t *testing.T) {
 	}
 	if len(attachments) != 1 || attachments[0].ID != 1 {
 		t.Fatalf("unexpected attachments payload: %+v", attachments)
+	}
+}
+
+func TestMakeURLNormalizesEndpointParts(t *testing.T) {
+	client := &Client{APIURL: "http://taiga.test/api/v1"}
+	got := client.MakeURL("/projects/", "/42/", "userstories")
+	if got != "http://taiga.test/api/v1/projects/42/userstories" {
+		t.Fatalf("unexpected URL: %s", got)
+	}
+}
+
+func TestAppendQueryParamsMergesWithExistingQuery(t *testing.T) {
+	type qp struct {
+		Project int `url:"project,omitempty"`
+	}
+	got, err := appendQueryParams("http://taiga.test/api/v1/tasks?status=3", &qp{Project: 9})
+	if err != nil {
+		t.Fatalf("append query params: %v", err)
+	}
+	if !strings.Contains(got, "status=3") || !strings.Contains(got, "project=9") {
+		t.Fatalf("expected merged query string, got %s", got)
+	}
+}
+
+func TestSetAuthTokensClearsAuthorizationWhenTokenEmpty(t *testing.T) {
+	client := &Client{BaseURL: "http://example.com", AutoRefreshDisabled: true}
+	if err := client.Initialise(); err != nil {
+		t.Fatalf("initialise client: %v", err)
+	}
+	client.SetAuthTokens(TokenBearer, "token-1", "refresh-1")
+	if got := client.GetAuthorizationHeader(); got != "Bearer token-1" {
+		t.Fatalf("expected auth header to be set, got %q", got)
+	}
+	client.SetAuthTokens(TokenBearer, "", "refresh-2")
+	if got := client.GetAuthorizationHeader(); got != "" {
+		t.Fatalf("expected auth header to be cleared, got %q", got)
+	}
+}
+
+func TestEpicBulkCreateUsesBulkCreateEndpoint(t *testing.T) {
+	var gotPath, gotMethod, gotBody string
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		gotMethod = req.Method
+		body, _ := io.ReadAll(req.Body)
+		gotBody = string(body)
+		return newJSONResponse(req, http.StatusCreated, `[{"id":11}]`), nil
+	})
+	client.Project.ConfigureMappedServices(77)
+
+	_, err := client.Project.Epic.BulkCreate(&EpicBulkCreatePayload{BulkEpics: "Epic A\nEpic B"})
+	if err != nil {
+		t.Fatalf("bulk create epics: %v", err)
+	}
+	if gotMethod != http.MethodPost {
+		t.Fatalf("expected POST method, got %s", gotMethod)
+	}
+	if gotPath != "/api/v1/epics/bulk_create" {
+		t.Fatalf("expected /epics/bulk_create path, got %s", gotPath)
+	}
+	if !strings.Contains(gotBody, `"project":77`) {
+		t.Fatalf("expected default mapped project in payload, got %s", gotBody)
+	}
+	if !strings.Contains(gotBody, `"bulk_epics":"Epic A`) || !strings.Contains(gotBody, `Epic B"`) {
+		t.Fatalf("expected bulk_epics payload, got %s", gotBody)
+	}
+}
+
+func TestEpicGetFiltersDataUsesProjectQuery(t *testing.T) {
+	var gotPath, gotProject string
+
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotPath = req.URL.Path
+		gotProject = req.URL.Query().Get("project")
+		return newJSONResponse(req, http.StatusOK, `{"statuses":[]}`), nil
+	})
+	client.Project.ConfigureMappedServices(66)
+
+	if _, err := client.Project.Epic.GetFiltersData(0); err != nil {
+		t.Fatalf("get epic filters data: %v", err)
+	}
+	if gotPath != "/api/v1/epics/filters_data" {
+		t.Fatalf("unexpected path: %s", gotPath)
+	}
+	if gotProject != "66" {
+		t.Fatalf("expected mapped project query, got %q", gotProject)
+	}
+}
+
+func TestTaskGetRejectsNonPositiveID(t *testing.T) {
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		t.Fatalf("unexpected request for invalid task ID")
+		return nil, nil
+	})
+
+	if _, err := client.Task.Get(0); err == nil {
+		t.Fatalf("expected validation error for taskID=0")
 	}
 }

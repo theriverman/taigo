@@ -155,7 +155,7 @@ func (s *RequestService) TraceCtx(ctx context.Context, URL string, ResponseBody 
 	return newRawRequestWithContext(ctx, "TRACE", s.client, ResponseBody, URL, nil)
 }
 
-// NOTE: responseBody must always be a pointer otherwise we lose the response data!
+// newfileUploadRequest uploads multipart attachment payloads and decodes attachment response JSON.
 func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObject AttachmentTarget) (*Attachment, error) {
 	if err := requireNonNil("attachment", attachment); err != nil {
 		return nil, err
@@ -166,9 +166,8 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	if attachment.filePath == "" {
 		return nil, fmt.Errorf("attachment file path is required")
 	}
-	// Map Object details into *Attachment
-	attachment.ObjectID = tgObject.GetID()
-	attachment.Project = tgObject.GetProject()
+	objectID := tgObject.GetID()
+	projectID := tgObject.GetProject()
 
 	// Open file
 	f, err := os.Open(attachment.filePath)
@@ -190,10 +189,10 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	}
 
 	// Add object_id & project to the form-data
-	if err := writer.WriteField("object_id", strconv.Itoa(attachment.ObjectID)); err != nil {
+	if err := writer.WriteField("object_id", strconv.Itoa(objectID)); err != nil {
 		return nil, fmt.Errorf("could not set object_id field: %w", err)
 	}
-	if err := writer.WriteField("project", strconv.Itoa(attachment.Project)); err != nil {
+	if err := writer.WriteField("project", strconv.Itoa(projectID)); err != nil {
 		return nil, fmt.Errorf("could not set project field: %w", err)
 	}
 	if err := writer.WriteField("from_comment", strconv.FormatBool(attachment.FromComment)); err != nil {
