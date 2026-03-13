@@ -43,21 +43,21 @@ func (s *TaskStatusService) Get(statusID int) (*TaskStatus, error) {
 }
 
 // Create -> https://docs.taiga.io/api.html#task-statuses-create
-func (s *TaskStatusService) Create(status *TaskStatus) (*TaskStatus, error) {
-	if err := requireNonNil("status", status); err != nil {
+func (s *TaskStatusService) Create(request *TaskStatusCreateRequest) (*TaskStatus, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseStatus TaskStatus
-	projectID, err := resolveProjectID(status.ProjectID, s.defaultProjectID, "project_id")
+	projectID, err := resolveProjectID(request.Project, s.defaultProjectID, "project")
 	if err != nil {
 		return nil, err
 	}
-	if isEmpty(status.Name) {
+	if isEmpty(request.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	payload := *status
-	payload.ProjectID = projectID
+	payload := *request
+	payload.Project = projectID
 	_, err = s.client.Request.Post(url, &payload, &responseStatus)
 	if err != nil {
 		return nil, err
@@ -66,16 +66,16 @@ func (s *TaskStatusService) Create(status *TaskStatus) (*TaskStatus, error) {
 }
 
 // Edit -> https://docs.taiga.io/api.html#task-statuses-edit
-func (s *TaskStatusService) Edit(status *TaskStatus) (*TaskStatus, error) {
-	if err := requireNonNil("status", status); err != nil {
+func (s *TaskStatusService) Edit(statusID int, request *TaskStatusEditRequest) (*TaskStatus, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(status.ID))
+	if err := requirePositiveID("statusID", statusID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(statusID))
 	var responseStatus TaskStatus
-	if err := requirePositiveID("statusID", status.ID); err != nil {
-		return nil, err
-	}
-	payload, err := sparsePatchMapFromStruct(status, "id", "slug")
+	payload, err := sparsePatchMapFromStruct(request)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +84,28 @@ func (s *TaskStatusService) Edit(status *TaskStatus) (*TaskStatus, error) {
 		return nil, err
 	}
 	return &responseStatus, nil
+}
+
+// Patch sends an explicit PATCH payload to edit a task status.
+func (s *TaskStatusService) Patch(statusID int, patch *TaskStatusPatch) (*TaskStatus, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("statusID", statusID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(statusID))
+	var responseStatus TaskStatus
+	_, err := s.client.Request.Patch(url, patch, &responseStatus)
+	if err != nil {
+		return nil, err
+	}
+	return &responseStatus, nil
+}
+
+// Update is an alias for Edit.
+func (s *TaskStatusService) Update(statusID int, request *TaskStatusEditRequest) (*TaskStatus, error) {
+	return s.Edit(statusID, request)
 }
 
 // Delete -> https://docs.taiga.io/api.html#task-statuses-delete

@@ -43,20 +43,20 @@ func (s *EpicStatusService) Get(statusID int) (*EpicStatus, error) {
 }
 
 // Create -> https://docs.taiga.io/api.html#epic-statuses-create
-func (s *EpicStatusService) Create(status *EpicStatus) (*EpicStatus, error) {
-	if err := requireNonNil("status", status); err != nil {
+func (s *EpicStatusService) Create(request *EpicStatusCreateRequest) (*EpicStatus, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseStatus EpicStatus
-	projectID, err := resolveProjectID(status.Project, s.defaultProjectID, "project")
+	projectID, err := resolveProjectID(request.Project, s.defaultProjectID, "project")
 	if err != nil {
 		return nil, err
 	}
-	if isEmpty(status.Name) {
+	if isEmpty(request.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	payload := *status
+	payload := *request
 	payload.Project = projectID
 	_, err = s.client.Request.Post(url, &payload, &responseStatus)
 	if err != nil {
@@ -66,16 +66,16 @@ func (s *EpicStatusService) Create(status *EpicStatus) (*EpicStatus, error) {
 }
 
 // Edit -> https://docs.taiga.io/api.html#epic-statuses-edit
-func (s *EpicStatusService) Edit(status *EpicStatus) (*EpicStatus, error) {
-	if err := requireNonNil("status", status); err != nil {
+func (s *EpicStatusService) Edit(statusID int, request *EpicStatusEditRequest) (*EpicStatus, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(status.ID))
+	if err := requirePositiveID("statusID", statusID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(statusID))
 	var responseStatus EpicStatus
-	if err := requirePositiveID("statusID", status.ID); err != nil {
-		return nil, err
-	}
-	payload, err := sparsePatchMapFromStruct(status, "id", "slug")
+	payload, err := sparsePatchMapFromStruct(request)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +84,28 @@ func (s *EpicStatusService) Edit(status *EpicStatus) (*EpicStatus, error) {
 		return nil, err
 	}
 	return &responseStatus, nil
+}
+
+// Patch sends an explicit PATCH payload to edit an epic status.
+func (s *EpicStatusService) Patch(statusID int, patch *EpicStatusPatch) (*EpicStatus, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("statusID", statusID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(statusID))
+	var responseStatus EpicStatus
+	_, err := s.client.Request.Patch(url, patch, &responseStatus)
+	if err != nil {
+		return nil, err
+	}
+	return &responseStatus, nil
+}
+
+// Update is an alias for Edit.
+func (s *EpicStatusService) Update(statusID int, request *EpicStatusEditRequest) (*EpicStatus, error) {
+	return s.Edit(statusID, request)
 }
 
 // Delete -> https://docs.taiga.io/api.html#epic-statuses-delete

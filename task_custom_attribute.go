@@ -43,20 +43,20 @@ func (s *TaskCustomAttributeService) Get(customAttributeID int) (*TaskCustomAttr
 }
 
 // Create -> https://docs.taiga.io/api.html#task-custom-attributes-create
-func (s *TaskCustomAttributeService) Create(customAttribute *TaskCustomAttribute) (*TaskCustomAttribute, error) {
-	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+func (s *TaskCustomAttributeService) Create(request *TaskCustomAttributeCreateRequest) (*TaskCustomAttribute, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseAttr TaskCustomAttribute
-	projectID, err := resolveProjectID(customAttribute.Project, s.defaultProjectID, "project")
+	projectID, err := resolveProjectID(request.Project, s.defaultProjectID, "project")
 	if err != nil {
 		return nil, err
 	}
-	if isEmpty(customAttribute.Name) || isEmpty(customAttribute.Type) {
+	if isEmpty(request.Name) || isEmpty(request.Type) {
 		return nil, errors.New("a mandatory field(project, name, type) is missing. See API documentation")
 	}
-	payload := *customAttribute
+	payload := *request
 	payload.Project = projectID
 	_, err = s.client.Request.Post(url, &payload, &responseAttr)
 	if err != nil {
@@ -66,20 +66,37 @@ func (s *TaskCustomAttributeService) Create(customAttribute *TaskCustomAttribute
 }
 
 // Edit -> https://docs.taiga.io/api.html#task-custom-attributes-edit
-func (s *TaskCustomAttributeService) Edit(customAttribute *TaskCustomAttribute) (*TaskCustomAttribute, error) {
-	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+func (s *TaskCustomAttributeService) Edit(customAttributeID int, request *TaskCustomAttributeEditRequest) (*TaskCustomAttribute, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttribute.ID))
+	if err := requirePositiveID("customAttributeID", customAttributeID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttributeID))
 	var responseAttr TaskCustomAttribute
-	if err := requirePositiveID("customAttributeID", customAttribute.ID); err != nil {
-		return nil, err
-	}
-	payload, err := sparsePatchMapFromStruct(customAttribute, "id", "created_date", "modified_date")
+	payload, err := sparsePatchMapFromStruct(request)
 	if err != nil {
 		return nil, err
 	}
 	_, err = s.client.Request.Patch(url, &payload, &responseAttr)
+	if err != nil {
+		return nil, err
+	}
+	return &responseAttr, nil
+}
+
+// Patch sends an explicit PATCH payload to edit a task custom attribute.
+func (s *TaskCustomAttributeService) Patch(customAttributeID int, patch *TaskCustomAttributePatch) (*TaskCustomAttribute, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("customAttributeID", customAttributeID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttributeID))
+	var responseAttr TaskCustomAttribute
+	_, err := s.client.Request.Patch(url, patch, &responseAttr)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +113,6 @@ func (s *TaskCustomAttributeService) Delete(customAttributeID int) (*http.Respon
 }
 
 // Update is an alias for Edit.
-func (s *TaskCustomAttributeService) Update(customAttribute *TaskCustomAttribute) (*TaskCustomAttribute, error) {
-	return s.Edit(customAttribute)
+func (s *TaskCustomAttributeService) Update(customAttributeID int, request *TaskCustomAttributeEditRequest) (*TaskCustomAttribute, error) {
+	return s.Edit(customAttributeID, request)
 }

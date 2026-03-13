@@ -91,6 +91,42 @@ After:
 log, err := client.Webhook.GetWebhookLog(22)
 ```
 
+### Statuses, Classifications, Custom Attributes
+
+These service families now use write-specific request DTOs and explicit ID parameters for updates.
+
+Before:
+
+```go
+priority, err := client.Priority.Create(&taiga.Priority{
+	Project: projectID,
+	Name:    "High",
+})
+priority.Name = "Very High"
+priority, err = client.Priority.Edit(priority)
+```
+
+After:
+
+```go
+priority, err := client.Priority.Create(&taiga.PriorityCreateRequest{
+	Project: projectID,
+	Name:    "High",
+})
+priority, err = client.Priority.Edit(priority.ID, &taiga.PriorityEditRequest{
+	Name: "Very High",
+})
+```
+
+For explicit zero/false updates, use `Patch` with pointer fields:
+
+```go
+name := ""
+priority, err = client.Priority.Patch(priority.ID, &taiga.PriorityPatch{
+	Name: &name,
+})
+```
+
 ### Users watched/liked
 
 Before (single object):
@@ -160,7 +196,25 @@ Expanded existing resources include:
 Where practical, services now expose `Update(...)` aliases for `Edit(...)`.
 Existing `Edit(...)` calls continue to work.
 
-## 6) Integration Tests
+## 6) Response Field Normalization
+
+Several resources now decode Taiga's canonical `project_id` response key into `ProjectID` fields:
+
+- `Point`, `Priority`, `Severity`, `IssueType`
+- `EpicStatus`, `IssueStatus`, `TaskStatus`, `UserStoryStatus`
+- `EpicCustomAttribute`, `IssueCustomAttribute`, `TaskCustomAttribute`, `UserStoryCustomAttribute`
+
+If your code read `.Project` on these response models, migrate to `.ProjectID`.
+
+## 7) Validation and Mapped Defaults
+
+- `AuthByToken` now validates non-empty token input before network calls.
+- `AuthByCredentials` now validates non-empty username and password.
+- `Timeline.Project` now rejects non-positive project IDs.
+- `Wiki.Render` now applies mapped default project ID when `projectID == 0`.
+- Importer `*AuthURL` methods now require `project` and use mapped default project ID when configured.
+
+## 8) Integration Tests
 
 Integration tests now skip by default unless explicitly enabled:
 
@@ -170,10 +224,12 @@ TAIGO_RUN_INTEGRATION_TESTS=1 go test ./tests/...
 
 This prevents false failures when Taiga is not running locally.
 
-## 7) Recommended Upgrade Path
+## 9) Recommended Upgrade Path
 
 1. Update dependency to the v2 release tag.
 2. Fix method signature changes listed above.
-3. Update query struct initialisation for pointer-bool fields.
-4. Run `go test ./...` and address compiler feedback.
-5. If you use integration tests, run them with `TAIGO_RUN_INTEGRATION_TESTS=1`.
+3. Replace response-model write payloads with `*...CreateRequest` / `*...EditRequest` / `*...Patch`.
+4. Update response field reads from `.Project` to `.ProjectID` where applicable.
+5. Update query struct initialisation for pointer-bool fields.
+6. Run `go test ./...` and address compiler feedback.
+7. If you use integration tests, run them with `TAIGO_RUN_INTEGRATION_TESTS=1`.

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // WikiService is a handle to actions related to Wiki pages
@@ -185,6 +186,15 @@ func (s *WikiService) Delete(wikiPageID int) (*http.Response, error) {
 
 // Render -> https://taigaio.github.io/taiga-doc/dist/api.html#wiki-render
 func (s *WikiService) Render(content string, projectID int) (string, error) {
+	if strings.TrimSpace(content) == "" {
+		return "", errors.New("content is required")
+	}
+	if projectID == 0 {
+		projectID = s.defaultProjectID
+	}
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return "", err
+	}
 	url := s.client.MakeURL(s.Endpoint, "render")
 	payload := WikiRenderPayload{
 		Content:   content,

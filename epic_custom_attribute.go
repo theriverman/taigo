@@ -43,20 +43,20 @@ func (s *EpicCustomAttributeService) Get(customAttributeID int) (*EpicCustomAttr
 }
 
 // Create -> https://docs.taiga.io/api.html#epic-custom-attributes-create
-func (s *EpicCustomAttributeService) Create(customAttribute *EpicCustomAttribute) (*EpicCustomAttribute, error) {
-	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+func (s *EpicCustomAttributeService) Create(request *EpicCustomAttributeCreateRequest) (*EpicCustomAttribute, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseAttr EpicCustomAttribute
-	projectID, err := resolveProjectID(customAttribute.Project, s.defaultProjectID, "project")
+	projectID, err := resolveProjectID(request.Project, s.defaultProjectID, "project")
 	if err != nil {
 		return nil, err
 	}
-	if isEmpty(customAttribute.Name) || isEmpty(customAttribute.Type) {
+	if isEmpty(request.Name) || isEmpty(request.Type) {
 		return nil, errors.New("a mandatory field(project, name, type) is missing. See API documentation")
 	}
-	payload := *customAttribute
+	payload := *request
 	payload.Project = projectID
 	_, err = s.client.Request.Post(url, &payload, &responseAttr)
 	if err != nil {
@@ -66,20 +66,37 @@ func (s *EpicCustomAttributeService) Create(customAttribute *EpicCustomAttribute
 }
 
 // Edit -> https://docs.taiga.io/api.html#epic-custom-attributes-edit
-func (s *EpicCustomAttributeService) Edit(customAttribute *EpicCustomAttribute) (*EpicCustomAttribute, error) {
-	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+func (s *EpicCustomAttributeService) Edit(customAttributeID int, request *EpicCustomAttributeEditRequest) (*EpicCustomAttribute, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttribute.ID))
+	if err := requirePositiveID("customAttributeID", customAttributeID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttributeID))
 	var responseAttr EpicCustomAttribute
-	if err := requirePositiveID("customAttributeID", customAttribute.ID); err != nil {
-		return nil, err
-	}
-	payload, err := sparsePatchMapFromStruct(customAttribute, "id", "created_date", "modified_date")
+	payload, err := sparsePatchMapFromStruct(request)
 	if err != nil {
 		return nil, err
 	}
 	_, err = s.client.Request.Patch(url, &payload, &responseAttr)
+	if err != nil {
+		return nil, err
+	}
+	return &responseAttr, nil
+}
+
+// Patch sends an explicit PATCH payload to edit an epic custom attribute.
+func (s *EpicCustomAttributeService) Patch(customAttributeID int, patch *EpicCustomAttributePatch) (*EpicCustomAttribute, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("customAttributeID", customAttributeID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttributeID))
+	var responseAttr EpicCustomAttribute
+	_, err := s.client.Request.Patch(url, patch, &responseAttr)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +113,6 @@ func (s *EpicCustomAttributeService) Delete(customAttributeID int) (*http.Respon
 }
 
 // Update is an alias for Edit.
-func (s *EpicCustomAttributeService) Update(customAttribute *EpicCustomAttribute) (*EpicCustomAttribute, error) {
-	return s.Edit(customAttribute)
+func (s *EpicCustomAttributeService) Update(customAttributeID int, request *EpicCustomAttributeEditRequest) (*EpicCustomAttribute, error) {
+	return s.Edit(customAttributeID, request)
 }

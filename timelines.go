@@ -31,11 +31,14 @@ func (s *TimelineService) User(userID int, queryParams *TimelineQueryParams) ([]
 // Project -> https://docs.taiga.io/api.html#timelines-project-line
 func (s *TimelineService) Project(projectID int, queryParams *TimelineQueryParams) ([]TimelineEntry, error) {
 	switch {
-	case projectID != 0:
+	case projectID > 0:
 	case s.defaultProjectID != 0:
 		projectID = s.defaultProjectID
 	default:
 		return nil, errors.New("projectID is required")
+	}
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return nil, err
 	}
 	return getRawResourceListAtPathWithQuery(s.client, queryParams, s.Endpoint, "project", strconv.Itoa(projectID))
 }

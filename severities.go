@@ -8,11 +8,35 @@ import (
 
 // Severity -> https://docs.taiga.io/api.html#severities
 type Severity struct {
+	Color     string `json:"color,omitempty"`
+	ID        int    `json:"id,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Order     int    `json:"order,omitempty"`
+	ProjectID int    `json:"project_id,omitempty"`
+}
+
+// SeverityCreateRequest represents payload for creating severities.
+type SeverityCreateRequest struct {
 	Color   string `json:"color,omitempty"`
-	ID      int    `json:"id,omitempty"`
+	Name    string `json:"name"`
+	Order   int    `json:"order,omitempty"`
+	Project int    `json:"project"`
+}
+
+// SeverityEditRequest represents sparse non-destructive updates for severities.
+type SeverityEditRequest struct {
+	Color   string `json:"color,omitempty"`
 	Name    string `json:"name,omitempty"`
 	Order   int    `json:"order,omitempty"`
 	Project int    `json:"project,omitempty"`
+}
+
+// SeverityPatch represents explicit PATCH payload for severities.
+type SeverityPatch struct {
+	Color   *string `json:"color,omitempty"`
+	Name    *string `json:"name,omitempty"`
+	Order   *int    `json:"order,omitempty"`
+	Project *int    `json:"project,omitempty"`
 }
 
 // SeverityService is a handle to actions related to severities.
@@ -52,20 +76,20 @@ func (s *SeverityService) Get(severityID int) (*Severity, error) {
 }
 
 // Create -> https://docs.taiga.io/api.html#severities-create
-func (s *SeverityService) Create(severity *Severity) (*Severity, error) {
-	if err := requireNonNil("severity", severity); err != nil {
+func (s *SeverityService) Create(request *SeverityCreateRequest) (*Severity, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseSeverity Severity
-	projectID, err := resolveProjectID(severity.Project, s.defaultProjectID, "project")
+	projectID, err := resolveProjectID(request.Project, s.defaultProjectID, "project")
 	if err != nil {
 		return nil, err
 	}
-	if isEmpty(severity.Name) {
+	if isEmpty(request.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	payload := *severity
+	payload := *request
 	payload.Project = projectID
 	_, err = s.client.Request.Post(url, &payload, &responseSeverity)
 	if err != nil {
@@ -75,20 +99,42 @@ func (s *SeverityService) Create(severity *Severity) (*Severity, error) {
 }
 
 // Edit -> https://docs.taiga.io/api.html#severities-edit
-func (s *SeverityService) Edit(severity *Severity) (*Severity, error) {
-	if err := requireNonNil("severity", severity); err != nil {
+func (s *SeverityService) Edit(severityID int, request *SeverityEditRequest) (*Severity, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(severity.ID))
+	if err := requirePositiveID("severityID", severityID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(severityID))
 	var responseSeverity Severity
-	if err := requirePositiveID("severityID", severity.ID); err != nil {
-		return nil, err
-	}
-	payload, err := sparsePatchMapFromStruct(severity, "id")
+	payload, err := sparsePatchMapFromStruct(request)
 	if err != nil {
 		return nil, err
 	}
 	_, err = s.client.Request.Patch(url, &payload, &responseSeverity)
+	if err != nil {
+		return nil, err
+	}
+	return &responseSeverity, nil
+}
+
+// Update is an alias for Edit.
+func (s *SeverityService) Update(severityID int, request *SeverityEditRequest) (*Severity, error) {
+	return s.Edit(severityID, request)
+}
+
+// Patch sends an explicit PATCH payload to edit a severity.
+func (s *SeverityService) Patch(severityID int, patch *SeverityPatch) (*Severity, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("severityID", severityID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(severityID))
+	var responseSeverity Severity
+	_, err := s.client.Request.Patch(url, patch, &responseSeverity)
 	if err != nil {
 		return nil, err
 	}

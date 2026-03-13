@@ -43,21 +43,21 @@ func (s *UserStoryStatusService) Get(statusID int) (*UserStoryStatus, error) {
 }
 
 // Create -> https://docs.taiga.io/api.html#user-story-statuses-create
-func (s *UserStoryStatusService) Create(status *UserStoryStatus) (*UserStoryStatus, error) {
-	if err := requireNonNil("status", status); err != nil {
+func (s *UserStoryStatusService) Create(request *UserStoryStatusCreateRequest) (*UserStoryStatus, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseStatus UserStoryStatus
-	projectID, err := resolveProjectID(status.ProjectID, s.defaultProjectID, "project_id")
+	projectID, err := resolveProjectID(request.Project, s.defaultProjectID, "project")
 	if err != nil {
 		return nil, err
 	}
-	if isEmpty(status.Name) {
-		return nil, errors.New("a mandatory field(project_id, name) is missing. See API documentation")
+	if isEmpty(request.Name) {
+		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	payload := *status
-	payload.ProjectID = projectID
+	payload := *request
+	payload.Project = projectID
 	_, err = s.client.Request.Post(url, &payload, &responseStatus)
 	if err != nil {
 		return nil, err
@@ -66,20 +66,37 @@ func (s *UserStoryStatusService) Create(status *UserStoryStatus) (*UserStoryStat
 }
 
 // Edit -> https://docs.taiga.io/api.html#user-story-statuses-edit
-func (s *UserStoryStatusService) Edit(status *UserStoryStatus) (*UserStoryStatus, error) {
-	if err := requireNonNil("status", status); err != nil {
+func (s *UserStoryStatusService) Edit(statusID int, request *UserStoryStatusEditRequest) (*UserStoryStatus, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(status.ID))
+	if err := requirePositiveID("statusID", statusID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(statusID))
 	var responseStatus UserStoryStatus
-	if err := requirePositiveID("statusID", status.ID); err != nil {
-		return nil, err
-	}
-	payload, err := sparsePatchMapFromStruct(status, "id", "slug")
+	payload, err := sparsePatchMapFromStruct(request)
 	if err != nil {
 		return nil, err
 	}
 	_, err = s.client.Request.Patch(url, &payload, &responseStatus)
+	if err != nil {
+		return nil, err
+	}
+	return &responseStatus, nil
+}
+
+// Patch sends an explicit PATCH payload to edit a user story status.
+func (s *UserStoryStatusService) Patch(statusID int, patch *UserStoryStatusPatch) (*UserStoryStatus, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("statusID", statusID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(statusID))
+	var responseStatus UserStoryStatus
+	_, err := s.client.Request.Patch(url, patch, &responseStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +113,6 @@ func (s *UserStoryStatusService) Delete(statusID int) (*http.Response, error) {
 }
 
 // Update is an alias for Edit.
-func (s *UserStoryStatusService) Update(status *UserStoryStatus) (*UserStoryStatus, error) {
-	return s.Edit(status)
+func (s *UserStoryStatusService) Update(statusID int, request *UserStoryStatusEditRequest) (*UserStoryStatus, error) {
+	return s.Edit(statusID, request)
 }

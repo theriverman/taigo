@@ -12,9 +12,26 @@ type ImporterAuthURLQueryParams struct {
 	Project int `url:"project,omitempty"`
 }
 
+func (s *ImporterService) authURLQueryWithDefault(queryParams *ImporterAuthURLQueryParams) (*ImporterAuthURLQueryParams, error) {
+	merged := &ImporterAuthURLQueryParams{}
+	if queryParams != nil {
+		*merged = *queryParams
+	}
+	projectID, err := resolveProjectID(merged.Project, s.defaultProjectID, "project")
+	if err != nil {
+		return nil, err
+	}
+	merged.Project = projectID
+	return merged, nil
+}
+
 // TrelloAuthURL -> https://docs.taiga.io/api.html#importers-trello-auth-url
 func (s *ImporterService) TrelloAuthURL(queryParams *ImporterAuthURLQueryParams) (*RawResource, error) {
-	return getRawResourceAtPathWithQuery(s.client, queryParams, s.Endpoint, "trello", "auth_url")
+	authQuery, err := s.authURLQueryWithDefault(queryParams)
+	if err != nil {
+		return nil, err
+	}
+	return getRawResourceAtPathWithQuery(s.client, authQuery, s.Endpoint, "trello", "auth_url")
 }
 
 // TrelloListProjects -> https://docs.taiga.io/api.html#importers-trello-list-projects
@@ -39,7 +56,11 @@ func (s *ImporterService) TrelloAuthorize(payload any) (*RawResource, error) {
 
 // GithubAuthURL -> https://docs.taiga.io/api.html#importers-github-auth-url
 func (s *ImporterService) GithubAuthURL(queryParams *ImporterAuthURLQueryParams) (*RawResource, error) {
-	return getRawResourceAtPathWithQuery(s.client, queryParams, s.Endpoint, "github", "auth_url")
+	authQuery, err := s.authURLQueryWithDefault(queryParams)
+	if err != nil {
+		return nil, err
+	}
+	return getRawResourceAtPathWithQuery(s.client, authQuery, s.Endpoint, "github", "auth_url")
 }
 
 // GithubListProjects -> https://docs.taiga.io/api.html#importers-github-list-projects
@@ -69,7 +90,11 @@ func (s *ImporterService) GithubAuthorize(payload any) (*RawResource, error) {
 
 // JiraAuthURL -> https://docs.taiga.io/api.html#importers-jira-auth-url
 func (s *ImporterService) JiraAuthURL(queryParams *ImporterAuthURLQueryParams) (*RawResource, error) {
-	return getRawResourceAtPathWithQuery(s.client, queryParams, s.Endpoint, "jira", "auth_url")
+	authQuery, err := s.authURLQueryWithDefault(queryParams)
+	if err != nil {
+		return nil, err
+	}
+	return getRawResourceAtPathWithQuery(s.client, authQuery, s.Endpoint, "jira", "auth_url")
 }
 
 // JiraListProjects -> https://docs.taiga.io/api.html#importers-jira-list-projects

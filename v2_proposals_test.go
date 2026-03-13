@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1098,5 +1099,248 @@ func TestAttachmentUploadRejectsInvalidTargetIDs(t *testing.T) {
 	}
 	if _, err := newfileUploadRequest(client, client.MakeURL("tasks", "attachments"), attachment, &Task{ID: 1, Project: 0}); err == nil {
 		t.Fatalf("expected projectID validation error")
+	}
+}
+
+func TestClassificationResourcesDecodeProjectID(t *testing.T) {
+	tests := []struct {
+		name string
+		dst  any
+		want int
+	}{
+		{name: "point", dst: &Point{}, want: 12},
+		{name: "priority", dst: &Priority{}, want: 22},
+		{name: "severity", dst: &Severity{}, want: 32},
+		{name: "issue_type", dst: &IssueType{}, want: 42},
+		{name: "epic_status", dst: &EpicStatus{}, want: 52},
+		{name: "issue_status", dst: &IssueStatus{}, want: 62},
+		{name: "task_status", dst: &TaskStatus{}, want: 72},
+		{name: "userstory_status", dst: &UserStoryStatus{}, want: 82},
+		{name: "epic_custom_attribute", dst: &EpicCustomAttribute{}, want: 92},
+		{name: "issue_custom_attribute", dst: &IssueCustomAttribute{}, want: 102},
+		{name: "task_custom_attribute", dst: &TaskCustomAttribute{}, want: 112},
+		{name: "userstory_custom_attribute", dst: &UserStoryCustomAttribute{}, want: 122},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			payload := `{"project_id":` + strconv.Itoa(tc.want) + `}`
+			if err := json.Unmarshal([]byte(payload), tc.dst); err != nil {
+				t.Fatalf("unmarshal payload: %v", err)
+			}
+			var got int
+			switch dst := tc.dst.(type) {
+			case *Point:
+				got = dst.ProjectID
+			case *Priority:
+				got = dst.ProjectID
+			case *Severity:
+				got = dst.ProjectID
+			case *IssueType:
+				got = dst.ProjectID
+			case *EpicStatus:
+				got = dst.ProjectID
+			case *IssueStatus:
+				got = dst.ProjectID
+			case *TaskStatus:
+				got = dst.ProjectID
+			case *UserStoryStatus:
+				got = dst.ProjectID
+			case *EpicCustomAttribute:
+				got = dst.ProjectID
+			case *IssueCustomAttribute:
+				got = dst.ProjectID
+			case *TaskCustomAttribute:
+				got = dst.ProjectID
+			case *UserStoryCustomAttribute:
+				got = dst.ProjectID
+			default:
+				t.Fatalf("unexpected type %T", tc.dst)
+			}
+			if got != tc.want {
+				t.Fatalf("expected project_id=%d, got %d", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestIssueStatusCreateUsesProjectField(t *testing.T) {
+	var gotBody string
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		body, _ := io.ReadAll(req.Body)
+		gotBody = string(body)
+		return newJSONResponse(req, http.StatusCreated, `{"id":1,"name":"Open","project_id":77}`), nil
+	})
+	client.Project.ConfigureMappedServices(77)
+
+	status, err := client.Project.IssueStatus.Create(&IssueStatusCreateRequest{Name: "Open"})
+	if err != nil {
+		t.Fatalf("create issue status failed: %v", err)
+	}
+	if !strings.Contains(gotBody, `"project":77`) {
+		t.Fatalf("expected project field in create payload, got %s", gotBody)
+	}
+	if strings.Contains(gotBody, `"project_id"`) {
+		t.Fatalf("did not expect project_id in create payload, got %s", gotBody)
+	}
+	if status.ProjectID != 77 {
+		t.Fatalf("expected decoded project_id=77, got %d", status.ProjectID)
+	}
+}
+
+func TestIssueCustomAttributeCreateUsesProjectField(t *testing.T) {
+	var gotBody string
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		body, _ := io.ReadAll(req.Body)
+		gotBody = string(body)
+		return newJSONResponse(req, http.StatusCreated, `{"id":1,"name":"Story points","type":"number","project_id":88}`), nil
+	})
+	client.Project.ConfigureMappedServices(88)
+
+	attr, err := client.Project.IssueCustomAttribute.Create(&IssueCustomAttributeCreateRequest{
+		Name: "Story points",
+		Type: "number",
+	})
+	if err != nil {
+		t.Fatalf("create issue custom attribute failed: %v", err)
+	}
+	if !strings.Contains(gotBody, `"project":88`) {
+		t.Fatalf("expected project field in create payload, got %s", gotBody)
+	}
+	if strings.Contains(gotBody, `"project_id"`) {
+		t.Fatalf("did not expect project_id in create payload, got %s", gotBody)
+	}
+	if attr.ProjectID != 88 {
+		t.Fatalf("expected decoded project_id=88, got %d", attr.ProjectID)
+	}
+}
+
+func TestPointCreateUsesProjectField(t *testing.T) {
+	var gotBody string
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		body, _ := io.ReadAll(req.Body)
+		gotBody = string(body)
+		return newJSONResponse(req, http.StatusCreated, `{"id":1,"name":"8","project_id":99}`), nil
+	})
+	client.Project.ConfigureMappedServices(99)
+
+	point, err := client.Project.Point.Create(&PointCreateRequest{Name: "8"})
+	if err != nil {
+		t.Fatalf("create point failed: %v", err)
+	}
+	if !strings.Contains(gotBody, `"project":99`) {
+		t.Fatalf("expected project field in create payload, got %s", gotBody)
+	}
+	if strings.Contains(gotBody, `"project_id"`) {
+		t.Fatalf("did not expect project_id in create payload, got %s", gotBody)
+	}
+	if point.ProjectID != 99 {
+		t.Fatalf("expected decoded project_id=99, got %d", point.ProjectID)
+	}
+}
+
+func TestTimelineProjectRejectsNegativeID(t *testing.T) {
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		t.Fatalf("unexpected request with invalid projectID")
+		return nil, nil
+	})
+	if _, err := client.Timeline.Project(-1, nil); err == nil {
+		t.Fatalf("expected validation error for projectID=-1")
+	}
+}
+
+func TestWikiRenderUsesMappedDefaultProjectAndValidatesContent(t *testing.T) {
+	var gotBody string
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		body, _ := io.ReadAll(req.Body)
+		gotBody = string(body)
+		return newJSONResponse(req, http.StatusOK, `{"data":"<p>x</p>"}`), nil
+	})
+	client.Project.ConfigureMappedServices(66)
+
+	rendered, err := client.Project.Wiki.Render("x", 0)
+	if err != nil {
+		t.Fatalf("wiki render failed: %v", err)
+	}
+	if rendered != "<p>x</p>" {
+		t.Fatalf("unexpected rendered output: %q", rendered)
+	}
+	if !strings.Contains(gotBody, `"project_id":66`) {
+		t.Fatalf("expected mapped project_id in render payload, got %s", gotBody)
+	}
+	if _, err := client.Project.Wiki.Render("   ", 0); err == nil {
+		t.Fatalf("expected content validation error for blank content")
+	}
+}
+
+func TestAuthValidationRejectsMissingCredentialsInputs(t *testing.T) {
+	client := &Client{
+		BaseURL:             "http://taiga.test",
+		AutoRefreshDisabled: true,
+		HTTPClient: &http.Client{Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			t.Fatalf("unexpected HTTP call for invalid auth input")
+			return nil, nil
+		})},
+	}
+
+	if err := client.AuthByToken(TokenBearer, " ", "refresh"); err == nil {
+		t.Fatalf("expected missing token validation error")
+	}
+	if err := client.AuthByCredentials(&Credentials{Password: "p"}); err == nil {
+		t.Fatalf("expected username validation error")
+	}
+	if err := client.AuthByCredentials(&Credentials{Username: "u"}); err == nil {
+		t.Fatalf("expected password validation error")
+	}
+}
+
+func TestImporterAuthURLUsesDefaultProjectAndValidatesRequirement(t *testing.T) {
+	var gotProject string
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		gotProject = req.URL.Query().Get("project")
+		return newJSONResponse(req, http.StatusOK, `{"url":"https://example.com"}`), nil
+	})
+	client.Project.ConfigureMappedServices(44)
+
+	if _, err := client.Project.Importer.GithubAuthURL(nil); err != nil {
+		t.Fatalf("github auth url with mapped project failed: %v", err)
+	}
+	if gotProject != "44" {
+		t.Fatalf("expected mapped project query in auth_url call, got %q", gotProject)
+	}
+	if _, err := client.Importer.GithubAuthURL(nil); err == nil {
+		t.Fatalf("expected project validation error without mapped/default project")
+	}
+}
+
+func TestMembershipInvitationTokenValidation(t *testing.T) {
+	client := newUnitTestClient(t, func(req *http.Request) (*http.Response, error) {
+		t.Fatalf("unexpected HTTP call for invalid invitation token input")
+		return nil, nil
+	})
+	if _, err := client.MembershipInvitation.GetInvitationByToken(" "); err == nil {
+		t.Fatalf("expected invitationUUID validation error")
+	}
+	if _, err := client.MembershipInvitation.ApplyInvitationByToken("", RawResource{}); err == nil {
+		t.Fatalf("expected invitationUUID validation error")
+	}
+	if _, err := client.MembershipInvitation.ApplyInvitationByToken("uuid-1", nil); err == nil {
+		t.Fatalf("expected payload validation error")
+	}
+}
+
+func TestValidateResourceIDValidationCases(t *testing.T) {
+	if err := validateResourceID(""); err == nil {
+		t.Fatalf("expected empty string resourceID to fail validation")
+	}
+	if err := validateResourceID(uint(0)); err == nil {
+		t.Fatalf("expected uint(0) resourceID to fail validation")
+	}
+	if err := validateResourceID("abc"); err != nil {
+		t.Fatalf("expected non-empty string resourceID to pass validation: %v", err)
+	}
+	if err := validateResourceID(uint(1)); err != nil {
+		t.Fatalf("expected uint(1) resourceID to pass validation: %v", err)
 	}
 }

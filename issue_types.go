@@ -8,11 +8,35 @@ import (
 
 // IssueType -> https://docs.taiga.io/api.html#issue-types
 type IssueType struct {
+	Color     string `json:"color,omitempty"`
+	ID        int    `json:"id,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Order     int    `json:"order,omitempty"`
+	ProjectID int    `json:"project_id,omitempty"`
+}
+
+// IssueTypeCreateRequest represents payload for creating issue types.
+type IssueTypeCreateRequest struct {
 	Color   string `json:"color,omitempty"`
-	ID      int    `json:"id,omitempty"`
+	Name    string `json:"name"`
+	Order   int    `json:"order,omitempty"`
+	Project int    `json:"project"`
+}
+
+// IssueTypeEditRequest represents sparse non-destructive updates for issue types.
+type IssueTypeEditRequest struct {
+	Color   string `json:"color,omitempty"`
 	Name    string `json:"name,omitempty"`
 	Order   int    `json:"order,omitempty"`
 	Project int    `json:"project,omitempty"`
+}
+
+// IssueTypePatch represents explicit PATCH payload for issue types.
+type IssueTypePatch struct {
+	Color   *string `json:"color,omitempty"`
+	Name    *string `json:"name,omitempty"`
+	Order   *int    `json:"order,omitempty"`
+	Project *int    `json:"project,omitempty"`
 }
 
 // IssueTypeService is a handle to actions related to issue types.
@@ -52,20 +76,20 @@ func (s *IssueTypeService) Get(issueTypeID int) (*IssueType, error) {
 }
 
 // Create -> https://docs.taiga.io/api.html#issue-types-create
-func (s *IssueTypeService) Create(issueType *IssueType) (*IssueType, error) {
-	if err := requireNonNil("issueType", issueType); err != nil {
+func (s *IssueTypeService) Create(request *IssueTypeCreateRequest) (*IssueType, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseIssueType IssueType
-	projectID, err := resolveProjectID(issueType.Project, s.defaultProjectID, "project")
+	projectID, err := resolveProjectID(request.Project, s.defaultProjectID, "project")
 	if err != nil {
 		return nil, err
 	}
-	if isEmpty(issueType.Name) {
+	if isEmpty(request.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	payload := *issueType
+	payload := *request
 	payload.Project = projectID
 	_, err = s.client.Request.Post(url, &payload, &responseIssueType)
 	if err != nil {
@@ -75,20 +99,42 @@ func (s *IssueTypeService) Create(issueType *IssueType) (*IssueType, error) {
 }
 
 // Edit -> https://docs.taiga.io/api.html#issue-types-edit
-func (s *IssueTypeService) Edit(issueType *IssueType) (*IssueType, error) {
-	if err := requireNonNil("issueType", issueType); err != nil {
+func (s *IssueTypeService) Edit(issueTypeID int, request *IssueTypeEditRequest) (*IssueType, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueType.ID))
+	if err := requirePositiveID("issueTypeID", issueTypeID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueTypeID))
 	var responseIssueType IssueType
-	if err := requirePositiveID("issueTypeID", issueType.ID); err != nil {
-		return nil, err
-	}
-	payload, err := sparsePatchMapFromStruct(issueType, "id")
+	payload, err := sparsePatchMapFromStruct(request)
 	if err != nil {
 		return nil, err
 	}
 	_, err = s.client.Request.Patch(url, &payload, &responseIssueType)
+	if err != nil {
+		return nil, err
+	}
+	return &responseIssueType, nil
+}
+
+// Update is an alias for Edit.
+func (s *IssueTypeService) Update(issueTypeID int, request *IssueTypeEditRequest) (*IssueType, error) {
+	return s.Edit(issueTypeID, request)
+}
+
+// Patch sends an explicit PATCH payload to edit an issue type.
+func (s *IssueTypeService) Patch(issueTypeID int, patch *IssueTypePatch) (*IssueType, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("issueTypeID", issueTypeID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(issueTypeID))
+	var responseIssueType IssueType
+	_, err := s.client.Request.Patch(url, patch, &responseIssueType)
 	if err != nil {
 		return nil, err
 	}

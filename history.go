@@ -3,6 +3,7 @@ package taigo
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // HistoryEntry is a raw DTO for /history endpoints.
@@ -78,7 +79,7 @@ func (s *HistoryService) deleteComment(resourceType string, resourceID int, comm
 	if commentID == nil {
 		return nil, fmt.Errorf("commentID must not be nil")
 	}
-	commentIDValue := fmt.Sprint(commentID)
+	commentIDValue := strings.TrimSpace(fmt.Sprint(commentID))
 	if commentIDValue == "" {
 		return nil, fmt.Errorf("commentID is required")
 	}

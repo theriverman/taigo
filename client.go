@@ -259,6 +259,13 @@ func (c *Client) AuthByCredentials(credentials *Credentials) error {
 	}
 
 	loginCredentials := *credentials
+	loginCredentials.Username = strings.TrimSpace(loginCredentials.Username)
+	if loginCredentials.Username == "" {
+		return fmt.Errorf("username is required")
+	}
+	if loginCredentials.Password == "" {
+		return fmt.Errorf("password is required")
+	}
 	if len(loginCredentials.Type) <= 1 {
 		loginCredentials.Type = "normal"
 	}
@@ -277,6 +284,9 @@ func (c *Client) AuthByCredentials(credentials *Credentials) error {
 func (c *Client) AuthByToken(tokenType, token, refreshToken string) error {
 	if err := c.Initialise(); err != nil {
 		return err
+	}
+	if strings.TrimSpace(token) == "" {
+		return fmt.Errorf("token is required")
 	}
 	c.stateMu.RLock()
 	prevTokenType := c.tokenType
@@ -522,7 +532,9 @@ func defaultTokenRefreshRoutine(c *Client, ticker *time.Ticker) {
 					log.Println("TokenRefreshRoutine tick at", t, "-> Refreshing the stored tokens")
 				}
 				if _, err := c.Auth.RefreshAuthToken(true); err != nil {
-					log.Println(err)
+					if verbose {
+						log.Println(err)
+					}
 					continue
 				}
 			}

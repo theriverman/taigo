@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 )
 
 // RawResource is a generic JSON object container for endpoints without dedicated DTOs yet.
@@ -87,8 +88,16 @@ func validateResourceID(resourceID any) error {
 	}
 	v := reflect.ValueOf(resourceID)
 	switch v.Kind() {
+	case reflect.String:
+		if strings.TrimSpace(v.String()) == "" {
+			return fmt.Errorf("resourceID must not be empty")
+		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if v.Int() <= 0 {
+			return fmt.Errorf("resourceID must be greater than 0")
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if v.Uint() == 0 {
 			return fmt.Errorf("resourceID must be greater than 0")
 		}
 	}

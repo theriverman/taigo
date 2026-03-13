@@ -8,10 +8,34 @@ import (
 
 // Point -> https://docs.taiga.io/api.html#points
 type Point struct {
-	ID      int      `json:"id,omitempty"`
+	ID        int      `json:"id,omitempty"`
+	Name      string   `json:"name,omitempty"`
+	Order     int      `json:"order,omitempty"`
+	ProjectID int      `json:"project_id,omitempty"`
+	Value     *float64 `json:"value,omitempty"`
+}
+
+// PointCreateRequest represents payload for creating points.
+type PointCreateRequest struct {
+	Name    string   `json:"name"`
+	Order   int      `json:"order,omitempty"`
+	Project int      `json:"project"`
+	Value   *float64 `json:"value,omitempty"`
+}
+
+// PointEditRequest represents sparse non-destructive updates for points.
+type PointEditRequest struct {
 	Name    string   `json:"name,omitempty"`
 	Order   int      `json:"order,omitempty"`
 	Project int      `json:"project,omitempty"`
+	Value   *float64 `json:"value,omitempty"`
+}
+
+// PointPatch represents explicit PATCH payload for points.
+type PointPatch struct {
+	Name    *string  `json:"name,omitempty"`
+	Order   *int     `json:"order,omitempty"`
+	Project *int     `json:"project,omitempty"`
 	Value   *float64 `json:"value,omitempty"`
 }
 
@@ -52,20 +76,20 @@ func (s *PointService) Get(pointID int) (*Point, error) {
 }
 
 // Create -> https://docs.taiga.io/api.html#points-create
-func (s *PointService) Create(point *Point) (*Point, error) {
-	if err := requireNonNil("point", point); err != nil {
+func (s *PointService) Create(request *PointCreateRequest) (*Point, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responsePoint Point
-	projectID, err := resolveProjectID(point.Project, s.defaultProjectID, "project")
+	projectID, err := resolveProjectID(request.Project, s.defaultProjectID, "project")
 	if err != nil {
 		return nil, err
 	}
-	if isEmpty(point.Name) {
+	if isEmpty(request.Name) {
 		return nil, errors.New("a mandatory field(project, name) is missing. See API documentation")
 	}
-	payload := *point
+	payload := *request
 	payload.Project = projectID
 	_, err = s.client.Request.Post(url, &payload, &responsePoint)
 	if err != nil {
@@ -75,20 +99,42 @@ func (s *PointService) Create(point *Point) (*Point, error) {
 }
 
 // Edit -> https://docs.taiga.io/api.html#points-edit
-func (s *PointService) Edit(point *Point) (*Point, error) {
-	if err := requireNonNil("point", point); err != nil {
+func (s *PointService) Edit(pointID int, request *PointEditRequest) (*Point, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(point.ID))
+	if err := requirePositiveID("pointID", pointID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(pointID))
 	var responsePoint Point
-	if err := requirePositiveID("pointID", point.ID); err != nil {
-		return nil, err
-	}
-	payload, err := sparsePatchMapFromStruct(point, "id")
+	payload, err := sparsePatchMapFromStruct(request)
 	if err != nil {
 		return nil, err
 	}
 	_, err = s.client.Request.Patch(url, &payload, &responsePoint)
+	if err != nil {
+		return nil, err
+	}
+	return &responsePoint, nil
+}
+
+// Update is an alias for Edit.
+func (s *PointService) Update(pointID int, request *PointEditRequest) (*Point, error) {
+	return s.Edit(pointID, request)
+}
+
+// Patch sends an explicit PATCH payload to edit a point.
+func (s *PointService) Patch(pointID int, patch *PointPatch) (*Point, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("pointID", pointID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(pointID))
+	var responsePoint Point
+	_, err := s.client.Request.Patch(url, patch, &responsePoint)
 	if err != nil {
 		return nil, err
 	}

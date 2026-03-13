@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // Membership is a raw DTO for /memberships endpoints.
@@ -99,6 +100,10 @@ func (s *MembershipInvitationService) DeleteInvitation(invitationID int) (*http.
 // GetInvitationByToken resolves invitation details from a public invitation token.
 // https://docs.taiga.io/api.html#invitations
 func (s *MembershipInvitationService) GetInvitationByToken(invitationUUID string) (*MembershipInvitation, error) {
+	invitationUUID = strings.TrimSpace(invitationUUID)
+	if invitationUUID == "" {
+		return nil, errors.New("invitationUUID is required")
+	}
 	invitation, err := getRawResourceAtPath(s.client, s.PublicInvitationPath, invitationUUID)
 	if err == nil {
 		return invitation, nil
@@ -113,5 +118,12 @@ func (s *MembershipInvitationService) GetInvitationByToken(invitationUUID string
 
 // ApplyInvitationByToken applies invitation data for a public invitation token.
 func (s *MembershipInvitationService) ApplyInvitationByToken(invitationUUID string, payload any) (*MembershipInvitation, error) {
+	invitationUUID = strings.TrimSpace(invitationUUID)
+	if invitationUUID == "" {
+		return nil, errors.New("invitationUUID is required")
+	}
+	if err := requireNonNil("payload", payload); err != nil {
+		return nil, err
+	}
 	return postRawResourceAtPath(s.client, payload, s.PublicInvitationPath, invitationUUID)
 }

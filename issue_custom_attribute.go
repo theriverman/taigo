@@ -43,20 +43,20 @@ func (s *IssueCustomAttributeService) Get(customAttributeID int) (*IssueCustomAt
 }
 
 // Create -> https://docs.taiga.io/api.html#issue-custom-attributes-create
-func (s *IssueCustomAttributeService) Create(customAttribute *IssueCustomAttribute) (*IssueCustomAttribute, error) {
-	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+func (s *IssueCustomAttributeService) Create(request *IssueCustomAttributeCreateRequest) (*IssueCustomAttribute, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
 	url := s.client.MakeURL(s.Endpoint)
 	var responseAttr IssueCustomAttribute
-	projectID, err := resolveProjectID(customAttribute.Project, s.defaultProjectID, "project")
+	projectID, err := resolveProjectID(request.Project, s.defaultProjectID, "project")
 	if err != nil {
 		return nil, err
 	}
-	if isEmpty(customAttribute.Name) || isEmpty(customAttribute.Type) {
+	if isEmpty(request.Name) || isEmpty(request.Type) {
 		return nil, errors.New("a mandatory field(project, name, type) is missing. See API documentation")
 	}
-	payload := *customAttribute
+	payload := *request
 	payload.Project = projectID
 	_, err = s.client.Request.Post(url, &payload, &responseAttr)
 	if err != nil {
@@ -66,20 +66,37 @@ func (s *IssueCustomAttributeService) Create(customAttribute *IssueCustomAttribu
 }
 
 // Edit -> https://docs.taiga.io/api.html#issue-custom-attributes-edit
-func (s *IssueCustomAttributeService) Edit(customAttribute *IssueCustomAttribute) (*IssueCustomAttribute, error) {
-	if err := requireNonNil("customAttribute", customAttribute); err != nil {
+func (s *IssueCustomAttributeService) Edit(customAttributeID int, request *IssueCustomAttributeEditRequest) (*IssueCustomAttribute, error) {
+	if err := requireNonNil("request", request); err != nil {
 		return nil, err
 	}
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttribute.ID))
+	if err := requirePositiveID("customAttributeID", customAttributeID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttributeID))
 	var responseAttr IssueCustomAttribute
-	if err := requirePositiveID("customAttributeID", customAttribute.ID); err != nil {
-		return nil, err
-	}
-	payload, err := sparsePatchMapFromStruct(customAttribute, "id", "created_date", "modified_date")
+	payload, err := sparsePatchMapFromStruct(request)
 	if err != nil {
 		return nil, err
 	}
 	_, err = s.client.Request.Patch(url, &payload, &responseAttr)
+	if err != nil {
+		return nil, err
+	}
+	return &responseAttr, nil
+}
+
+// Patch sends an explicit PATCH payload to edit an issue custom attribute.
+func (s *IssueCustomAttributeService) Patch(customAttributeID int, patch *IssueCustomAttributePatch) (*IssueCustomAttribute, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("customAttributeID", customAttributeID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(customAttributeID))
+	var responseAttr IssueCustomAttribute
+	_, err := s.client.Request.Patch(url, patch, &responseAttr)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +113,6 @@ func (s *IssueCustomAttributeService) Delete(customAttributeID int) (*http.Respo
 }
 
 // Update is an alias for Edit.
-func (s *IssueCustomAttributeService) Update(customAttribute *IssueCustomAttribute) (*IssueCustomAttribute, error) {
-	return s.Edit(customAttribute)
+func (s *IssueCustomAttributeService) Update(customAttributeID int, request *IssueCustomAttributeEditRequest) (*IssueCustomAttribute, error) {
+	return s.Edit(customAttributeID, request)
 }

@@ -89,6 +89,11 @@ client.Project.ConfigureMappedServices(projectID)
 - `WikiService` now includes `List`, `Create`, `Get`, `GetBySlug`, `Edit`, `Delete`, `Render`.
 - `WebhookService.GetWebhookLog` now takes `webhookLogID int`.
 - `UserService.GetWatchedContent` and `GetLikedContent` return slices.
+- Status/classification/custom-attribute write APIs now use dedicated request DTOs:
+  - `Create(*...CreateRequest)`
+  - `Edit(resourceID int, *...EditRequest)` / `Update(...)`
+  - `Patch(resourceID int, *...Patch)` for explicit zero/false updates
+- `Point`, `Priority`, `Severity`, `IssueType`, status resources, and custom-attribute resources now decode `project_id` into `ProjectID` response fields.
 
 Many services now expose `Update(...)` as an alias for `Edit(...)`.
 
@@ -99,6 +104,14 @@ Query models were tightened to match Taiga semantics:
 - Optional booleans use pointer-bools (`*bool`) for tri-state filtering.
 - `TasksQueryParams.Tags` is a comma-delimited string; use `SetTags(...)` helper.
 - Project list ordering now serialises correctly via exported `OrderBy`.
+
+## Write DTO Convention
+
+For write operations, Taigo uses request DTOs separate from response DTOs.
+
+- `Create`: request DTO with Taiga write keys (for example `project`).
+- `Edit`: sparse, non-destructive update DTO (zero/false/empty values are omitted).
+- `Patch`: explicit DTO with pointer fields to allow intentional zero/false/empty updates.
 
 
 
