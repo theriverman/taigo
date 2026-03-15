@@ -181,7 +181,7 @@ When the public API changes, update the relevant documents in the same pull requ
 
 Before opening a PR:
 
-1. Branch from `master`.
+1. Branch from `master` or `v2`, depending on the release line you are targeting.
 2. Keep the change scoped and coherent.
 3. Run `gofmt`, tests, vet, and race checks.
 4. Update docs for any public API change.

@@ -42,7 +42,7 @@
 - CI gates in `.github/workflows/go.yml`:
   - PR/push: workflow lint, `gofmt`, module hygiene, shell lint, cross-platform offline build/test, static analysis, race tests, coverage, vulnerability scan.
   - PR/push: live smoke subset on pinned Docker Taiga.
-  - Push to `master`: full live suite on pinned Docker Taiga.
+  - Push to `master` or `v2`: full live suite on pinned Docker Taiga.
   - Nightly/manual/tag: full live compatibility matrix across `taiga-docker` refs `stable` and `main`.
   - Nightly/manual: role-matrix live checks when member credentials are available as secrets.
   - Separate `.github/workflows/codeql.yml`: CodeQL security analysis.

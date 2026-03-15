@@ -2,10 +2,10 @@ name: CI
 
 on:
   push:
-    branches: ["master"]
+    branches: ["master", "v2"]
     tags: ["v*"]
   pull_request:
-    branches: ["master"]
+    branches: ["master", "v2"]
   schedule:
     - cron: "0 3 * * *"
   workflow_dispatch:
@@ -351,7 +351,7 @@ jobs:
 
   live-full-stable:
     name: Live Full Stable
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v2')
     needs:
       - offline-matrix
       - static-analysis
