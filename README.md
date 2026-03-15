@@ -59,73 +59,18 @@ func main() {
 - Calling `DisablePagination(false)` removes that header (Taiga checks presence, not value).
 - Request errors return a typed `*taigo.APIError` with status code and response body.
 
-## Services
+## Coverage
 
-Core services available via `Client`:
+The library covers Taiga authentication, projects, epics, user stories, tasks, issues, milestones, wiki pages, webhooks, users, and related taxonomy/status/custom-attribute resources.
 
-- `Auth`, `Project`, `User`, `Resolver`, `Stats`
-- `Epic`, `UserStory`, `Task`, `Issue`, `Milestone`, `Wiki`
-- `Webhook`
-- `Point`, `Priority`, `Severity`, `IssueType`
-- `EpicStatus`, `IssueStatus`, `TaskStatus`, `UserStoryStatus`
-- `EpicCustomAttribute`, `IssueCustomAttribute`, `TaskCustomAttribute`, `UserStoryCustomAttribute`
-- `Application`, `ApplicationToken`, `Search`, `UserStorage`
-- `ProjectTemplate`, `ProjectTemplateDetail`
-- `MembershipInvitation`, `WikiLink`, `History`, `NotifyPolicy`
-- `Contact`, `Feedback`, `ExportImport`, `Timeline`, `Locale`, `Importer`
-- `ContribPlugin`, `ObjectsSummary`
+Project-scoped mapped services are available via `client.Project.ConfigureMappedServices(projectID)`.
 
-Project-scoped mapped services are available via:
+## Documentation
 
-```go
-client.Project.ConfigureMappedServices(projectID)
-```
-
-## Notable v2 API Changes
-
-- `TaskService.Get` now takes `taskID int`.
-- `TaskService.GetByRef` now takes `taskRef int, project *Project`.
-- `IssueService` now includes `GetByRef`, `Delete`, `GetAttachment`, `ListAttachments`.
-- `WikiService` now includes `List`, `Create`, `Get`, `GetBySlug`, `Edit`, `Delete`, `Render`.
-- `WebhookService.GetWebhookLog` now takes `webhookLogID int`.
-- `UserService.GetWatchedContent` and `GetLikedContent` return slices.
-- Status/classification/custom-attribute write APIs now use dedicated request DTOs:
-  - `Create(*...CreateRequest)`
-  - `Edit(resourceID int, *...EditRequest)` / `Update(...)`
-  - `Patch(resourceID int, *...Patch)` for explicit zero/false updates
-- `Point`, `Priority`, `Severity`, `IssueType`, status resources, and custom-attribute resources now decode `project_id` into `ProjectID` response fields.
-
-Many services now expose `Update(...)` as an alias for `Edit(...)`.
-
-## Query Parameters
-
-Query models were tightened to match Taiga semantics:
-
-- Optional booleans use pointer-bools (`*bool`) for tri-state filtering.
-- `TasksQueryParams.Tags` is a comma-delimited string; use `SetTags(...)` helper.
-- Project list ordering now serialises correctly via exported `OrderBy`.
-
-## Write DTO Convention
-
-For write operations, Taigo uses request DTOs separate from response DTOs.
-
-- `Create`: request DTO with Taiga write keys (for example `project`).
-- `Edit`: sparse, non-destructive update DTO (zero/false/empty values are omitted).
-- `Patch`: explicit DTO with pointer fields to allow intentional zero/false/empty updates.
-
-
-
-## Related Modules
-
-- `cli/`: CLI utility and auth/config workflow examples.
-- `contribute/`: small executable module for live-instance contribution tests.
-
-## References
-
-- Taiga API docs: <https://docs.taiga.io/api.html>
-- Taiga backend source: <https://github.com/taigaio/taiga-back>
+- [MIGRATION.md](./MIGRATION.md): breaking changes and upgrade notes for `v2`
+- [examples/README.MD](./examples/README.MD): runnable usage snippets and patterns
+- [CONTRIBUTION.md](./CONTRIBUTION.md): repository layout, contributor workflow, design rules, and test expectations
 
 ## Contributing
 
-- Please open issues or pull requests for bugs and endpoint gaps.
-- Keep endpoint paths, query encoding, and model fields aligned with Taiga docs and backend serializers.
+Contributor and maintainer guidance lives in [CONTRIBUTION.md](./CONTRIBUTION.md).
