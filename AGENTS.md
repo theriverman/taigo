@@ -3,9 +3,7 @@
 ## 1) What this repo is
 - Go client library for Taiga REST API v1 with **v2 module versioning** (`module github.com/theriverman/taigo/v2`).
 - Main package is a library (`package taigo`) with service-based API wrappers.
-- Two extra modules:
-  - `cli/`: standalone CLI utility.
-  - `contribute/`: integration/demo runner against a real Taiga instance.
+- The repository is currently a single Go module rooted at `go.mod`.
 
 ## 2) Repository layout
 - Root library:
@@ -42,10 +40,13 @@
 - `tests/negative_matrix_test.go` covers live negative paths.
 - `tests/auth_role_matrix_test.go` covers auth and optional role expectations.
 - CI gates in `.github/workflows/go.yml`:
-  - PR/push: unit+contract+query+negative offline checks.
-  - PR/push: live smoke subset on Docker Taiga.
-  - Nightly/manual: full live test suite.
-  - Tag `v*`: pre-release full live suite across Taiga refs (`master`, `v2`).
+  - PR/push: workflow lint, `gofmt`, module hygiene, shell lint, cross-platform offline build/test, static analysis, race tests, coverage, vulnerability scan.
+  - PR/push: live smoke subset on pinned Docker Taiga.
+  - Push to `master`: full live suite on pinned Docker Taiga.
+  - Nightly/manual/tag: full live compatibility matrix across `taiga-docker` refs `stable` and `main`.
+  - Nightly/manual: role-matrix live checks when member credentials are available as secrets.
+  - Separate `.github/workflows/codeql.yml`: CodeQL security analysis.
+  - `.github/dependabot.yml`: weekly Go module and GitHub Actions update automation.
 - Integration suite is opt-in and skipped by default unless:
   - `TAIGO_RUN_INTEGRATION_TESTS=1`
 - Default integration target in tests: `http://localhost:9000` (override via `TAIGO_BASE_URL` and related env vars).
@@ -55,10 +56,6 @@
   - `rg --files -g '*.go'`
 - Run root tests:
   - `GOWORK=off GOCACHE=/tmp/taigo-gocache go test ./...`
-- Run CLI module:
-  - `cd cli && GOWORK=off GOCACHE=/tmp/taigo-gocache-cli go test ./...`
-- Run contribute module:
-  - `cd contribute && GOWORK=off GOCACHE=/tmp/taigo-gocache-contrib go test ./...`
 - Run integration tests explicitly:
   - `TAIGO_RUN_INTEGRATION_TESTS=1 GOWORK=off GOCACHE=/tmp/taigo-gocache go test ./tests/...`
   - `TAIGO_RUN_INTEGRATION_TESTS=1 TAIGO_PROJECT_ID=2 go test ./tests/... -run TestSmokeCRUDMatrix -v`

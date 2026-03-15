@@ -9,7 +9,7 @@ github.com/theriverman/taigo/v2
 This document is for contributors and maintainers.
 User-facing installation and quick-start guidance lives in [`README.md`](./README.md).
 Breaking-change upgrade notes live in [`MIGRATION.md`](./MIGRATION.md).
-Runnable usage snippets live in [`examples/README.MD`](./examples/README.MD).
+Runnable usage snippets live in [`examples/README.md`](./examples/README.md).
 
 ## Sources of truth
 
@@ -24,11 +24,11 @@ If the code, docs, and backend disagree, prefer the backend behavior and update 
 ## Project layout
 
 - Root module: Go client library in `package taigo`
-- `cli/`: standalone CLI utility and auth/config example module
-- `contribute/`: executable module for live-instance exploratory checks and demos
 - `tests/`: opt-in integration test suite for a real Taiga instance
-- `examples/README.MD`: usage snippets
+- `examples/README.md`: usage snippets
 - `.github/workflows/go.yml`: CI definition
+- `.github/workflows/codeql.yml`: CodeQL security analysis
+- `.github/dependabot.yml`: dependency update automation
 
 Core implementation areas:
 
@@ -45,7 +45,7 @@ This is a Go project.
 There is no Node.js, no npm, and no JavaScript build pipeline.
 Do not add frontend toolchain dependencies to contributor workflows or CI unless the project direction explicitly changes.
 
-Use the Go toolchain declared in `go.mod` and `go.work`.
+Use the Go toolchain declared in `go.mod`.
 At the time of writing, the repository targets Go `1.25`.
 
 ## Development principles
@@ -106,8 +106,6 @@ Run these from the repository root before opening a pull request:
 GOWORK=off go test ./...
 GOWORK=off go vet ./...
 GOWORK=off go test -race ./...
-cd cli && GOWORK=off go test ./...
-cd contribute && GOWORK=off go test ./...
 ```
 
 If you want an isolated cache, set `GOCACHE` explicitly:
@@ -174,7 +172,7 @@ Keep documentation split by audience:
 
 - `README.md`: user-facing overview, install, quick start, high-level behavior
 - `MIGRATION.md`: breaking changes and upgrade guidance
-- `examples/README.MD`: usage snippets
+- `examples/README.md`: usage snippets
 - `CONTRIBUTION.md`: contributor workflow, design rules, testing expectations
 
 When the public API changes, update the relevant documents in the same pull request.

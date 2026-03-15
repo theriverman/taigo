@@ -68,7 +68,7 @@ Project-scoped mapped services are available via `client.Project.ConfigureMapped
 ## Documentation
 
 - [MIGRATION.md](./MIGRATION.md): breaking changes and upgrade notes for `v2`
-- [examples/README.MD](./examples/README.MD): runnable usage snippets and patterns
+- [examples/README.md](./examples/README.md): runnable usage snippets and patterns
 - [CONTRIBUTION.md](./CONTRIBUTION.md): repository layout, contributor workflow, design rules, and test expectations
 
 ## Contributing

@@ -1,136 +1,552 @@
-name: Go CI
+name: CI
 
 on:
   push:
-    branches: ["master", "ci-docker-test", "feature_*", "issue_*"]
+    branches: ["master"]
     tags: ["v*"]
   pull_request:
-    branches: ["master", "ci-docker-test"]
+    branches: ["master"]
   schedule:
-    - cron: "0 2 * * *"
+    - cron: "0 3 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GOFLAGS: -buildvcs=false
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  unit_contract:
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+  workflow-lint:
+    name: Workflow Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      - name: Lint GitHub Actions workflows
+        uses: rhysd/actionlint@v1
+
+  dependency-review:
+    name: Dependency Review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v4
+
+  gofmt:
+    name: gofmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
 
       - name: Set up Go from go.mod
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
+          cache-dependency-path: go.sum
 
-      - name: Vet
-        run: GOWORK=off GOCACHE=/tmp/taigo-gocache go vet ./...
+      - name: Check formatting
+        run: |
+          files="$(git ls-files '*.go')"
+          if [[ -z "$files" ]]; then
+            exit 0
+          fi
+          unformatted="$(gofmt -l $files)"
+          if [[ -n "$unformatted" ]]; then
+            echo "The following files are not gofmt-formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
 
-      - name: Unit and Contract Tests
-        run: GOWORK=off GOCACHE=/tmp/taigo-gocache go test ./... -v
-
-  live_smoke_pr:
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+  mod-tidy:
+    name: Module Hygiene
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Go from go.mod
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
+          cache-dependency-path: go.sum
 
-      - name: Initialise taiga-docker submodule (master)
+      - name: Verify tidy module metadata
         run: |
-          git submodule update --init --recursive
-          git -C tests/taiga-docker fetch --all --depth=1 || true
-          git -C tests/taiga-docker checkout master
+          GOWORK=off go mod tidy
+          git diff --exit-code -- go.mod go.sum
 
-      - name: Build Taiga stack
-        run: cd tests && docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml up -d
-
-      - name: Wait for Taiga and load fixtures
-        run: cd tests && ./load_initial_test_data.bash
-
-      - name: Run live smoke subset
-        run: |
-          TAIGO_RUN_INTEGRATION_TESTS=1 \
-          GOWORK=off GOCACHE=/tmp/taigo-gocache \
-          go test ./tests/... -run 'TestSmokeCRUDMatrix/(epics|userstories|tasks)|TestAuthMatrixLive' -v
-
-      - name: Teardown Taiga stack
-        if: always()
-        run: cd tests && docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml down -v
-
-  live_nightly_full:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  shellcheck:
+    name: Shell Scripts
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Set up Go from go.mod
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Initialise taiga-docker submodule (v2)
+      - name: Install shellcheck
         run: |
-          git submodule update --init --recursive
-          git -C tests/taiga-docker fetch --all --depth=1 || true
-          git -C tests/taiga-docker checkout v2
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
 
-      - name: Build Taiga stack
-        run: cd tests && docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml up -d
-
-      - name: Wait for Taiga and load fixtures
-        run: cd tests && ./load_initial_test_data.bash
-
-      - name: Run full live matrix
+      - name: Lint shell scripts
         run: |
-          TAIGO_RUN_INTEGRATION_TESTS=1 \
-          GOWORK=off GOCACHE=/tmp/taigo-gocache \
-          go test ./tests/... -v
+          files="$(git ls-files '*.bash' '*.sh')"
+          if [[ -z "$files" ]]; then
+            exit 0
+          fi
+          shellcheck $files
 
-      - name: Teardown Taiga stack
-        if: always()
-        run: cd tests && docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml down -v
-
-  prerelease_live_matrix:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+  offline-matrix:
+    name: Offline Build/Test (${{ matrix.os }})
+    needs:
+      - workflow-lint
+      - gofmt
+      - mod-tidy
+      - shellcheck
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        taiga_ref: ["master", "v2"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Go from go.mod
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
+          cache-dependency-path: go.sum
 
-      - name: Initialise taiga-docker submodule (${{ matrix.taiga_ref }})
+      - name: Show Go version
+        run: go version
+
+      - name: Build all packages
+        run: GOWORK=off go build ./...
+
+      - name: Run offline tests
+        run: GOWORK=off go test ./... -count=1
+
+  static-analysis:
+    name: Static Analysis
+    needs:
+      - workflow-lint
+      - gofmt
+      - mod-tidy
+      - shellcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Run go vet
+        run: GOWORK=off go vet ./...
+
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Run staticcheck
+        run: GOWORK=off "$(go env GOPATH)/bin/staticcheck" ./...
+
+  race-tests:
+    name: Race Tests
+    needs:
+      - workflow-lint
+      - gofmt
+      - mod-tidy
+      - shellcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Run race detector
+        run: GOWORK=off go test -race ./... -count=1
+
+  coverage:
+    name: Coverage
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    needs:
+      - offline-matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Generate coverage profile
         run: |
-          git submodule update --init --recursive
-          git -C tests/taiga-docker fetch --all --depth=1 || true
-          git -C tests/taiga-docker checkout ${{ matrix.taiga_ref }}
+          GOWORK=off go test -covermode=atomic -coverprofile=coverage.out ./... -count=1
+          go tool cover -func=coverage.out | tee coverage.txt
 
-      - name: Build Taiga stack
-        run: cd tests && docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml up -d
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-artifacts
+          path: |
+            coverage.out
+            coverage.txt
+          if-no-files-found: error
+
+  govulncheck:
+    name: Vulnerability Scan
+    needs:
+      - workflow-lint
+      - gofmt
+      - mod-tidy
+      - shellcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Scan module
+        run: GOWORK=off "$(go env GOPATH)/bin/govulncheck" ./...
+
+  forward-compat:
+    name: Forward Compatibility
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs:
+      - workflow-lint
+      - gofmt
+      - mod-tidy
+      - shellcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up latest stable Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          check-latest: true
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Build and test on latest stable Go
+        run: |
+          GOWORK=off go build ./...
+          GOWORK=off go test ./... -count=1
+          GOWORK=off go vet ./...
+
+  live-smoke:
+    name: Live Smoke
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    needs:
+      - offline-matrix
+      - static-analysis
+      - race-tests
+      - govulncheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TAIGO_RUN_INTEGRATION_TESTS: "1"
+      TAIGO_BASE_URL: http://127.0.0.1:9000
+      TAIGO_USERNAME: admin
+      TAIGO_PASSWORD: "123123"
+      TAIGO_PROJECT_ID: "2"
+      TAIGO_PROJECT_SLUG: taigo-test
+      TAIGO_USER_ID: "5"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Show Docker Compose version
+        run: docker compose version
+
+      - name: Build pinned Taiga stack
+        working-directory: tests
+        run: docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml up -d
 
       - name: Wait for Taiga and load fixtures
-        run: cd tests && ./load_initial_test_data.bash
+        working-directory: tests
+        run: timeout 10m ./load_initial_test_data.bash
 
-      - name: Run full live matrix on ${{ matrix.taiga_ref }}
+      - name: Run live smoke suite
         run: |
-          TAIGO_RUN_INTEGRATION_TESTS=1 \
-          GOWORK=off GOCACHE=/tmp/taigo-gocache \
-          go test ./tests/... -v
+          GOWORK=off go test ./tests/... \
+            -run 'TestSmokeCRUDMatrix|TestWorkflowMatrixLive|TestNegativeMatrixLive|TestAuthMatrixLive' \
+            -count=1 \
+            -v
+
+      - name: Collect Taiga logs
+        if: failure()
+        working-directory: tests
+        run: |
+          mkdir -p ci-artifacts
+          docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml ps > ci-artifacts/docker-ps.txt
+          docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml logs --no-color > ci-artifacts/taiga-compose.log
+
+      - name: Upload live smoke diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-smoke-diagnostics
+          path: tests/ci-artifacts
+          if-no-files-found: ignore
 
       - name: Teardown Taiga stack
         if: always()
-        run: cd tests && docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml down -v
+        working-directory: tests
+        run: docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml down -v
+
+  live-full-stable:
+    name: Live Full Stable
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs:
+      - offline-matrix
+      - static-analysis
+      - race-tests
+      - govulncheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TAIGO_RUN_INTEGRATION_TESTS: "1"
+      TAIGO_BASE_URL: http://127.0.0.1:9000
+      TAIGO_USERNAME: admin
+      TAIGO_PASSWORD: "123123"
+      TAIGO_PROJECT_ID: "2"
+      TAIGO_PROJECT_SLUG: taigo-test
+      TAIGO_USER_ID: "5"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Build pinned Taiga stack
+        working-directory: tests
+        run: docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml up -d
+
+      - name: Wait for Taiga and load fixtures
+        working-directory: tests
+        run: timeout 10m ./load_initial_test_data.bash
+
+      - name: Run full live suite
+        run: GOWORK=off go test ./tests/... -count=1 -v
+
+      - name: Collect Taiga logs
+        if: failure()
+        working-directory: tests
+        run: |
+          mkdir -p ci-artifacts
+          docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml ps > ci-artifacts/docker-ps.txt
+          docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml logs --no-color > ci-artifacts/taiga-compose.log
+
+      - name: Upload live full diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-full-stable-diagnostics
+          path: tests/ci-artifacts
+          if-no-files-found: ignore
+
+      - name: Teardown Taiga stack
+        if: always()
+        working-directory: tests
+        run: docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml down -v
+
+  live-compatibility-matrix:
+    name: Live Compatibility (${{ matrix.taiga_ref }})
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    needs:
+      - offline-matrix
+      - static-analysis
+      - race-tests
+      - govulncheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      matrix:
+        taiga_ref: ["stable", "main"]
+    env:
+      TAIGO_RUN_INTEGRATION_TESTS: "1"
+      TAIGO_BASE_URL: http://127.0.0.1:9000
+      TAIGO_USERNAME: admin
+      TAIGO_PASSWORD: "123123"
+      TAIGO_PROJECT_ID: "2"
+      TAIGO_PROJECT_SLUG: taigo-test
+      TAIGO_USER_ID: "5"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Check out taiga-docker ${{ matrix.taiga_ref }}
+        run: |
+          git -C tests/taiga-docker fetch origin stable main --depth=1
+          git -C tests/taiga-docker checkout --detach origin/${{ matrix.taiga_ref }}
+
+      - name: Build Taiga stack (${{ matrix.taiga_ref }})
+        working-directory: tests
+        run: docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml up -d
+
+      - name: Wait for Taiga and load fixtures
+        working-directory: tests
+        run: timeout 10m ./load_initial_test_data.bash
+
+      - name: Run full live suite on ${{ matrix.taiga_ref }}
+        run: GOWORK=off go test ./tests/... -count=1 -v
+
+      - name: Collect compatibility logs
+        if: failure()
+        working-directory: tests
+        run: |
+          mkdir -p ci-artifacts
+          docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml ps > ci-artifacts/docker-ps.txt
+          docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml logs --no-color > ci-artifacts/taiga-compose.log
+
+      - name: Upload compatibility diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-compatibility-${{ matrix.taiga_ref }}-diagnostics
+          path: tests/ci-artifacts
+          if-no-files-found: ignore
+
+      - name: Teardown Taiga stack
+        if: always()
+        working-directory: tests
+        run: docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml down -v
+
+  live-role-matrix:
+    name: Live Role Matrix
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && secrets.TAIGO_MEMBER_USERNAME != '' && secrets.TAIGO_MEMBER_PASSWORD != ''
+    needs:
+      - offline-matrix
+      - static-analysis
+      - race-tests
+      - govulncheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TAIGO_RUN_INTEGRATION_TESTS: "1"
+      TAIGO_BASE_URL: http://127.0.0.1:9000
+      TAIGO_USERNAME: admin
+      TAIGO_PASSWORD: "123123"
+      TAIGO_PROJECT_ID: "2"
+      TAIGO_PROJECT_SLUG: taigo-test
+      TAIGO_USER_ID: "5"
+      TAIGO_MEMBER_USERNAME: ${{ secrets.TAIGO_MEMBER_USERNAME }}
+      TAIGO_MEMBER_PASSWORD: ${{ secrets.TAIGO_MEMBER_PASSWORD }}
+      TAIGO_MEMBER_WRITE_EXPECTATION: ${{ secrets.TAIGO_MEMBER_WRITE_EXPECTATION }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Build pinned Taiga stack
+        working-directory: tests
+        run: docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml up -d
+
+      - name: Wait for Taiga and load fixtures
+        working-directory: tests
+        run: timeout 10m ./load_initial_test_data.bash
+
+      - name: Run auth and role matrix
+        run: |
+          GOWORK=off go test ./tests/... \
+            -run 'TestAuthMatrixLive|TestRoleMatrixLive' \
+            -count=1 \
+            -v
+
+      - name: Collect role-matrix logs
+        if: failure()
+        working-directory: tests
+        run: |
+          mkdir -p ci-artifacts
+          docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml ps > ci-artifacts/docker-ps.txt
+          docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml logs --no-color > ci-artifacts/taiga-compose.log
+
+      - name: Upload role-matrix diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-role-matrix-diagnostics
+          path: tests/ci-artifacts
+          if-no-files-found: ignore
+
+      - name: Teardown Taiga stack
+        if: always()
+        working-directory: tests
+        run: docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml down -v
