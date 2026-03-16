@@ -141,8 +141,8 @@ jobs:
       - name: Show Go version
         run: go version
 
-      - name: Build all packages
-        run: GOWORK=off go build ./...
+      - name: Compile all packages
+        run: GOWORK=off go test -run '^$' ./... -count=1
 
       - name: Run offline tests
         run: GOWORK=off go test ./... -count=1
@@ -276,7 +276,7 @@ jobs:
 
       - name: Build and test on latest stable Go
         run: |
-          GOWORK=off go build ./...
+          GOWORK=off go test -run '^$' ./... -count=1
           GOWORK=off go test ./... -count=1
           GOWORK=off go vet ./...
 

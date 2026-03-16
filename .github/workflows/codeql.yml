@@ -50,8 +50,8 @@ jobs:
           cache: true
           cache-dependency-path: go.sum
 
-      - name: Build module
-        run: GOWORK=off go build ./...
+      - name: Compile module for CodeQL
+        run: GOWORK=off go test -run '^$' ./... -count=1
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
