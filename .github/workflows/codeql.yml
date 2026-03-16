@@ -38,8 +38,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: true
-          cache-dependency-path: go.sum
+          cache: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
@@ -49,8 +48,11 @@ jobs:
 
       - name: Compile module for CodeQL
         env:
+          GOCACHE: /tmp/taigo-codeql-gocache
           GOFLAGS: -buildvcs=false
-        run: GOWORK=off go test -run '^$' ./... -count=1
+        run: |
+          GOWORK=off go clean -cache -testcache
+          GOWORK=off go test -a -run '^$' ./... -count=1
 
       - name: Perform CodeQL analysis
         env:
