@@ -29,6 +29,12 @@ The integration harness supports environment overrides:
 - `TAIGO_MEMBER_USERNAME` / `TAIGO_MEMBER_PASSWORD` (optional role-matrix actor)
 - `TAIGO_MEMBER_WRITE_EXPECTATION` (`forbid` or `allow`, default: `forbid`)
 
+When you bootstrap the Docker-backed test instance through `tests/load_initial_test_data.bash`, it also creates a deterministic non-member user for the role-matrix checks:
+
+- `TAIGO_MEMBER_USERNAME=taigo_role_ci_r4h7m2`
+- `TAIGO_MEMBER_PASSWORD=N7k3Q9x2R5m8P1c4`
+- `TAIGO_MEMBER_WRITE_EXPECTATION=forbid`
+
 Run only the table-driven smoke matrix harness:
 
 ```bash
@@ -51,7 +57,7 @@ Run auth/role matrix checks:
 
 ```bash
 TAIGO_RUN_INTEGRATION_TESTS=1 go test ./tests/... -run TestAuthMatrixLive -v
-TAIGO_RUN_INTEGRATION_TESTS=1 TAIGO_MEMBER_USERNAME=<user> TAIGO_MEMBER_PASSWORD=<pass> TAIGO_MEMBER_WRITE_EXPECTATION=forbid go test ./tests/... -run TestRoleMatrixLive -v
+TAIGO_RUN_INTEGRATION_TESTS=1 TAIGO_MEMBER_USERNAME=taigo_role_ci_r4h7m2 TAIGO_MEMBER_PASSWORD=N7k3Q9x2R5m8P1c4 TAIGO_MEMBER_WRITE_EXPECTATION=forbid go test ./tests/... -run TestRoleMatrixLive -v
 ```
 
 # Table-driven Real-Instance Harness for CRUD Smoke Matrix
@@ -72,8 +78,8 @@ export TAIGO_BASE_URL=http://127.0.0.1:9000
 export TAIGO_USERNAME=admin
 export TAIGO_PASSWORD=123123
 export TAIGO_PROJECT_ID=1
-export TAIGO_MEMBER_USERNAME=demo1
-export TAIGO_MEMBER_PASSWORD=123123
+export TAIGO_MEMBER_USERNAME=taigo_role_ci_r4h7m2
+export TAIGO_MEMBER_PASSWORD=N7k3Q9x2R5m8P1c4
 export TAIGO_MEMBER_WRITE_EXPECTATION=forbid  # allow|forbid
 go test ./tests/... -run TestRoleMatrixLive -v
 ```
