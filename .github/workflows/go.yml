@@ -76,11 +76,11 @@ jobs:
 
       - name: Check formatting
         run: |
-          files="$(git ls-files '*.go')"
-          if [[ -z "$files" ]]; then
+          mapfile -t files < <(git ls-files '*.go')
+          if [[ "${#files[@]}" -eq 0 ]]; then
             exit 0
           fi
-          unformatted="$(gofmt -l $files)"
+          unformatted="$(gofmt -l "${files[@]}")"
           if [[ -n "$unformatted" ]]; then
             echo "The following files are not gofmt-formatted:"
             echo "$unformatted"
@@ -120,11 +120,11 @@ jobs:
 
       - name: Lint shell scripts
         run: |
-          files="$(git ls-files '*.bash' '*.sh')"
-          if [[ -z "$files" ]]; then
+          mapfile -t files < <(git ls-files '*.bash' '*.sh')
+          if [[ "${#files[@]}" -eq 0 ]]; then
             exit 0
           fi
-          shellcheck $files
+          shellcheck "${files[@]}"
 
   offline-matrix:
     name: Offline Build/Test (${{ matrix.os }})
