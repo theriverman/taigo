@@ -414,20 +414,6 @@ func (c *Client) setContentTypeToJSON() {
 	c.headers.Set("Content-Type", "application/json")
 }
 
-func (c *Client) setToken() {
-	c.stateMu.Lock()
-	defer c.stateMu.Unlock()
-	c.ensureHeadersLocked()
-	if c.tokenType == "" {
-		c.tokenType = TokenBearer
-	}
-	if c.token == "" {
-		c.headers.Del("Authorization")
-		return
-	}
-	c.headers.Set("Authorization", c.tokenType+" "+c.token)
-}
-
 // loadHeaders takes an http.Request and maps locally stored Header values to its .Header
 func (c *Client) loadHeaders(request *http.Request) {
 	c.stateMu.RLock()

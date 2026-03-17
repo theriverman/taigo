@@ -246,10 +246,6 @@ func newfileUploadRequest(c *Client, url string, attachment *Attachment, tgObjec
 	}
 }
 
-func newRawRequest(RequestType string, c *Client, ResponseBody any, URL string, Payload any) (*http.Response, error) {
-	return newRawRequestWithContext(context.Background(), RequestType, c, ResponseBody, URL, Payload)
-}
-
 func newRawRequestWithContext(ctx context.Context, RequestType string, c *Client, ResponseBody any, URL string, Payload any) (*http.Response, error) {
 	// New RAW request
 	var request *http.Request

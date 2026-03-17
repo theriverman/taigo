@@ -188,28 +188,3 @@ func postRawResourceListAtPath(c *Client, payload any, endpointParts ...string) 
 	}
 	return resources, nil
 }
-
-func putRawResourceAtPath(c *Client, payload any, endpointParts ...string) (*RawResource, error) {
-	url := c.MakeURL(endpointParts...)
-	var resource RawResource
-	_, err := c.Request.Put(url, payload, &resource)
-	if err != nil {
-		return nil, err
-	}
-	return &resource, nil
-}
-
-func patchRawResourceAtPath(c *Client, payload any, endpointParts ...string) (*RawResource, error) {
-	url := c.MakeURL(endpointParts...)
-	var resource RawResource
-	_, err := c.Request.Patch(url, payload, &resource)
-	if err != nil {
-		return nil, err
-	}
-	return &resource, nil
-}
-
-func deleteRawResourceAtPath(c *Client, endpointParts ...string) (*http.Response, error) {
-	url := c.MakeURL(endpointParts...)
-	return c.Request.Delete(url)
-}
