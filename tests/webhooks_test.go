@@ -19,6 +19,7 @@ func TestWebhooks(t *testing.T) {
 
 	// Create webhook
 	webhook, err := Client.Webhook.CreateWebhook(&taiga.Webhook{
+		Key:     "taigo-integration-webhook-key",
 		Name:    "Taigo Integration Webhook",
 		Project: testProjID,
 		URL:     "https://example.com/taigo-integration-webhook",
