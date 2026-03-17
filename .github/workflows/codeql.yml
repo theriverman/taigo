@@ -52,7 +52,8 @@ jobs:
           GOFLAGS: -buildvcs=false
         run: |
           GOWORK=off go clean -cache -testcache
-          GOWORK=off go test -a -run '^$' ./... -count=1
+          GOWORK=off go build -a .
+          GOWORK=off go test -a -run '^$' ./tests -count=1
 
       - name: Perform CodeQL analysis
         env:

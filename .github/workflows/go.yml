@@ -484,7 +484,7 @@ jobs:
 
   live-role-matrix:
     name: Live Role Matrix
-    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && secrets.TAIGO_MEMBER_USERNAME != '' && secrets.TAIGO_MEMBER_PASSWORD != ''
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs:
       - offline-matrix
       - static-analysis
@@ -508,7 +508,18 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Check role-matrix secret availability
+        id: role-matrix-secrets
+        run: |
+          if [[ -z "${TAIGO_MEMBER_USERNAME}" || -z "${TAIGO_MEMBER_PASSWORD}" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "TAIGO_MEMBER_USERNAME and/or TAIGO_MEMBER_PASSWORD are not configured; skipping role matrix."
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
       - name: Set up Go from go.mod
+        if: steps.role-matrix-secrets.outputs.enabled == 'true'
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -516,14 +527,17 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Build pinned Taiga stack
+        if: steps.role-matrix-secrets.outputs.enabled == 'true'
         working-directory: tests
         run: docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml up -d
 
       - name: Wait for Taiga and load fixtures
+        if: steps.role-matrix-secrets.outputs.enabled == 'true'
         working-directory: tests
         run: timeout 10m ./load_initial_test_data.bash
 
       - name: Run auth and role matrix
+        if: steps.role-matrix-secrets.outputs.enabled == 'true'
         run: |
           GOWORK=off go test ./tests/... \
             -run 'TestAuthMatrixLive|TestRoleMatrixLive' \
@@ -531,7 +545,7 @@ jobs:
             -v
 
       - name: Collect role-matrix logs
-        if: failure()
+        if: failure() && steps.role-matrix-secrets.outputs.enabled == 'true'
         working-directory: tests
         run: |
           mkdir -p ci-artifacts
@@ -539,7 +553,7 @@ jobs:
           docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml logs --no-color > ci-artifacts/taiga-compose.log
 
       - name: Upload role-matrix diagnostics
-        if: failure()
+        if: failure() && steps.role-matrix-secrets.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: live-role-matrix-diagnostics
@@ -547,6 +561,6 @@ jobs:
           if-no-files-found: ignore
 
       - name: Teardown Taiga stack
-        if: always()
+        if: always() && steps.role-matrix-secrets.outputs.enabled == 'true'
         working-directory: tests
         run: docker compose -f ./taiga-docker/docker-compose.yml -f docker-compose-ci-config.yml down -v
