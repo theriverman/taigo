@@ -1,6 +1,7 @@
 # Taigo
 
-[![Go](https://github.com/theriverman/taigo/actions/workflows/go.yml/badge.svg)](https://github.com/theriverman/taigo/actions/workflows/go.yml)
+[![CI](https://github.com/theriverman/taigo/actions/workflows/go.yml/badge.svg)](https://github.com/theriverman/taigo/actions/workflows/go.yml)
+[![CodeQL](https://github.com/theriverman/taigo/actions/workflows/codeql.yml/badge.svg)](https://github.com/theriverman/taigo/actions/workflows/codeql.yml)
 [![GoDoc](https://godoc.org/github.com/theriverman/taigo/v2?status.svg)](https://pkg.go.dev/github.com/theriverman/taigo/v2?tab=doc)
 [![Go Report Card](https://goreportcard.com/badge/github.com/theriverman/taigo)](https://goreportcard.com/report/github.com/theriverman/taigo)
 
