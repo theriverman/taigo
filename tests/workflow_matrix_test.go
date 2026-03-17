@@ -159,8 +159,11 @@ func TestWorkflowMatrixLive(t *testing.T) {
 		t.Fatalf("update epic failed: %v", err)
 	}
 
-	userStory.Subject = workflowPrefix + "-userstory-updated"
-	if _, err := Client.UserStory.Update(userStory); err != nil {
+	userStorySubject := workflowPrefix + "-userstory-updated"
+	if _, err := Client.UserStory.Patch(userStory.ID, &taiga.UserStoryPatch{
+		Version: userStory.Version,
+		Subject: &userStorySubject,
+	}); err != nil {
 		t.Fatalf("update user story failed: %v", err)
 	}
 
@@ -169,8 +172,11 @@ func TestWorkflowMatrixLive(t *testing.T) {
 		t.Fatalf("update task failed: %v", err)
 	}
 
-	issue.Description = workflowPrefix + "-issue-description"
-	if _, err := Client.Issue.Update(issue); err != nil {
+	issueDescription := workflowPrefix + "-issue-description"
+	if _, err := Client.Issue.Patch(issue.ID, &taiga.IssuePatch{
+		Version:     issue.Version,
+		Description: &issueDescription,
+	}); err != nil {
 		t.Fatalf("update issue failed: %v", err)
 	}
 

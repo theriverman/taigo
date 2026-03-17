@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	taiga "github.com/theriverman/taigo/v2"
@@ -14,9 +15,10 @@ func TestNegativeMatrixLive(t *testing.T) {
 	t.Cleanup(teardownClient)
 
 	type negativeCase struct {
-		name         string
-		invoke       func() error
-		wantStatuses []int
+		name          string
+		invoke        func() error
+		wantStatuses  []int
+		wantSubstring string
 	}
 
 	cases := []negativeCase{
@@ -74,7 +76,7 @@ func TestNegativeMatrixLive(t *testing.T) {
 			},
 		},
 		{
-			name: "webhook/create_missing_key_backend_error",
+			name: "webhook/create_missing_key_validation",
 			invoke: func() error {
 				_, err := Client.Webhook.Create(&taiga.Webhook{
 					Project: testProjID,
@@ -83,7 +85,7 @@ func TestNegativeMatrixLive(t *testing.T) {
 				})
 				return err
 			},
-			wantStatuses: []int{http.StatusBadRequest},
+			wantSubstring: "key is required",
 		},
 	}
 
@@ -93,6 +95,9 @@ func TestNegativeMatrixLive(t *testing.T) {
 			err := tc.invoke()
 			if err == nil {
 				t.Fatalf("expected an error in negative test")
+			}
+			if tc.wantSubstring != "" && !strings.Contains(err.Error(), tc.wantSubstring) {
+				t.Fatalf("expected error containing %q, got %v", tc.wantSubstring, err)
 			}
 			if len(tc.wantStatuses) == 0 {
 				return

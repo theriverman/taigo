@@ -253,8 +253,11 @@ func userStorySmokeCase() smokeCRUDCase {
 		},
 		update: func(t *testing.T, s *smokeSuite, resource any) (any, error) {
 			userStory := mustCastResource[taiga.UserStory](t, resource)
-			userStory.Subject = s.unique("smoke-us-updated")
-			return s.client.UserStory.Edit(userStory)
+			subject := s.unique("smoke-us-updated")
+			return s.client.UserStory.Patch(userStory.ID, &taiga.UserStoryPatch{
+				Version: userStory.Version,
+				Subject: &subject,
+			})
 		},
 		verify: func(t *testing.T, _ *smokeSuite, created any, fetched any, updated any) {
 			createdUS := mustCastResource[taiga.UserStory](t, created)
@@ -411,8 +414,11 @@ func issueSmokeCase() smokeCRUDCase {
 		},
 		update: func(t *testing.T, s *smokeSuite, resource any) (any, error) {
 			issue := mustCastResource[taiga.Issue](t, resource)
-			issue.Description = s.unique("smoke-issue-description")
-			return s.client.Issue.Edit(issue)
+			description := s.unique("smoke-issue-description")
+			return s.client.Issue.Patch(issue.ID, &taiga.IssuePatch{
+				Version:     issue.Version,
+				Description: &description,
+			})
 		},
 		verify: func(t *testing.T, _ *smokeSuite, created any, fetched any, updated any) {
 			createdIssue := mustCastResource[taiga.Issue](t, created)

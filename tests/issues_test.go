@@ -33,11 +33,14 @@ func TestIssues(t *testing.T) {
 		t.Logf("Total Issues: %d", len(issues))
 	}
 
-	// Edit Issue
-	issue.Description = "Added some text here via Client.Issue.Edit()"
-	issuePatched, err := Client.Issue.Edit(issue)
+	// Patch Issue
+	description := "Added some text here via Client.Issue.Patch()"
+	issuePatched, err := Client.Issue.Patch(issue.ID, &taiga.IssuePatch{
+		Version:     issue.Version,
+		Description: &description,
+	})
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if issuePatched.Version != 2 {
 		t.Errorf("got %d, want %d", issuePatched.Version, 2)
