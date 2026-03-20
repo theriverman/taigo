@@ -21,3 +21,9 @@ type TaigaBaseObject interface {
 	GetSubject() string
 	GetProject() int
 }
+
+// AttachmentTarget is the minimum contract required to upload attachments.
+type AttachmentTarget interface {
+	GetID() int
+	GetProject() int
+}

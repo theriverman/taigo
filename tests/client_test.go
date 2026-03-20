@@ -1,21 +1,22 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 )
 
 func TestClient(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	var makeurltests = []struct {
 		in  []string
 		out string
 	}{
-		{[]string{"epics"}, "http://localhost:9000/api/v1/epics"},
-		{[]string{"epics", "5"}, "http://localhost:9000/api/v1/epics/5"},
-		{[]string{"epics", "bulk_create"}, "http://localhost:9000/api/v1/epics/bulk_create"},
-		{[]string{"epics", "attachments", "5"}, "http://localhost:9000/api/v1/epics/attachments/5"},
+		{[]string{"epics"}, fmt.Sprintf("%s/api/v1/epics", testHostURL)},
+		{[]string{"epics", "5"}, fmt.Sprintf("%s/api/v1/epics/5", testHostURL)},
+		{[]string{"epics", "bulk_create"}, fmt.Sprintf("%s/api/v1/epics/bulk_create", testHostURL)},
+		{[]string{"epics", "attachments", "5"}, fmt.Sprintf("%s/api/v1/epics/attachments/5", testHostURL)},
 	}
 
 	for _, tt := range makeurltests {

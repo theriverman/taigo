@@ -5,7 +5,7 @@ import (
 )
 
 func TestStats(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	discoverStats, err := Client.Stats.GetDiscoverStats()

@@ -111,3 +111,6 @@ contribute/*
 
 # Goland
 .idea/
+
+# macOS
+.DS_Store

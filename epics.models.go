@@ -4,40 +4,43 @@ import (
 	"time"
 )
 
-func genericToEpic(anyEpicObject interface{}) *Epic {
+func genericToEpic(anyEpicObject any) (*Epic, error) {
 	payloadEpic := Epic{}
-	convertStructViaJSON(&anyEpicObject, &payloadEpic)
-	return &payloadEpic
+	if err := convertStructViaJSON(&anyEpicObject, &payloadEpic); err != nil {
+		return nil, err
+	}
+	return &payloadEpic, nil
 }
 
-func genericToEpics(anyEpicObjectSlice interface{}) []Epic {
+func genericToEpics(anyEpicObjectSlice any) ([]Epic, error) {
 	payloadEpicsSlice := []Epic{}
-	convertStructViaJSON(&anyEpicObjectSlice, &payloadEpicsSlice)
-	return payloadEpicsSlice
+	if err := convertStructViaJSON(&anyEpicObjectSlice, &payloadEpicsSlice); err != nil {
+		return nil, err
+	}
+	return payloadEpicsSlice, nil
 }
 
 // Epic represents the mandatory fields of an Epic only
 type Epic struct {
-	TaigaBaseObject
-	ID                int      `json:"id,omitempty"`
-	Ref               int      `json:"ref,omitempty"`
-	Version           int      `json:"version,omitempty"`
-	AssignedTo        int      `json:"assigned_to,omitempty"`
-	BlockedNote       string   `json:"blocked_note,omitempty"`
-	ClientRequirement bool     `json:"client_requirement,omitempty"`
-	Color             string   `json:"color,omitempty"`
-	Description       string   `json:"description,omitempty"`
-	EpicsOrder        int64    `json:"epics_order,omitempty"`
-	IsBlocked         bool     `json:"is_blocked,omitempty"`
-	Project           int      `json:"project,omitempty"`
-	Status            int      `json:"status,omitempty"`
-	Subject           string   `json:"subject,omitempty"`
-	Tags              []string `json:"tags,omitempty"`
-	TeamRequirement   bool     `json:"team_requirement,omitempty"`
-	Watchers          []int    `json:"watchers,omitempty"`
-	EpicDetail        *EpicDetail
-	EpicDetailGET     *EpicDetailGET
-	EpicDetailLIST    *EpicDetailLIST
+	ID                int             `json:"id,omitempty"`
+	Ref               int             `json:"ref,omitempty"`
+	Version           int             `json:"version,omitempty"`
+	AssignedTo        int             `json:"assigned_to,omitempty"`
+	BlockedNote       string          `json:"blocked_note,omitempty"`
+	ClientRequirement bool            `json:"client_requirement,omitempty"`
+	Color             string          `json:"color,omitempty"`
+	Description       string          `json:"description,omitempty"`
+	EpicsOrder        int64           `json:"epics_order,omitempty"`
+	IsBlocked         bool            `json:"is_blocked,omitempty"`
+	Project           int             `json:"project,omitempty"`
+	Status            int             `json:"status,omitempty"`
+	Subject           string          `json:"subject,omitempty"`
+	Tags              Tags            `json:"tags,omitempty"`
+	TeamRequirement   bool            `json:"team_requirement,omitempty"`
+	Watchers          []int           `json:"watchers,omitempty"`
+	EpicDetail        *EpicDetail     `json:"-"`
+	EpicDetailGET     *EpicDetailGET  `json:"-"`
+	EpicDetailLIST    *EpicDetailLIST `json:"-"`
 }
 
 // GetID returns the ID
@@ -63,6 +66,16 @@ func (e *Epic) GetSubject() string {
 // GetProject returns the project ID
 func (e *Epic) GetProject() int {
 	return e.Project
+}
+
+// SetTagNames sets tags from plain tag names.
+func (e *Epic) SetTagNames(names ...string) {
+	e.Tags = namesToTags(names...)
+}
+
+// TagNames returns tag names without color metadata.
+func (e *Epic) TagNames() []string {
+	return tagsToNames(e.Tags)
 }
 
 // ListRelatedUserStories => https://taigaio.github.io/taiga-doc/dist/api.html#epics-related-user-stories-list
@@ -106,7 +119,10 @@ type EpicDetailLIST []struct {
 
 // AsEpics packs the returned EpicDetailLIST into a generic Epic struct
 func (e *EpicDetailLIST) AsEpics() ([]Epic, error) {
-	epics := genericToEpics(&e)
+	epics, err := genericToEpics(&e)
+	if err != nil {
+		return nil, err
+	}
 	for i := 0; i < len(epics); i++ {
 		epics[i].EpicDetailLIST = e
 	}
@@ -153,7 +169,10 @@ type EpicDetailGET struct {
 
 // AsEpic packs the returned EpicDetailGET into a generic Epic struct
 func (e *EpicDetailGET) AsEpic() (*Epic, error) {
-	epic := genericToEpic(&e)
+	epic, err := genericToEpic(&e)
+	if err != nil {
+		return nil, err
+	}
 	epic.EpicDetailGET = e // Backmap original EpicDetailLIST
 	return epic, nil
 }
@@ -198,7 +217,10 @@ type EpicDetail struct {
 
 // AsEpic packs the returned EpicDetail into a generic Epic struct
 func (e *EpicDetail) AsEpic() (*Epic, error) {
-	epic := genericToEpic(&e)
+	epic, err := genericToEpic(&e)
+	if err != nil {
+		return nil, err
+	}
 	epic.EpicDetail = e
 	return epic, nil
 }
@@ -238,11 +260,17 @@ type EpicRelatedUserStoryDetail struct {
 
 // GetUserStory returns the UserStory referred in the EpicRelatedUserStoryDetail
 func (e *EpicRelatedUserStoryDetail) GetUserStory(c *Client) (*UserStory, error) {
+	if err := requireNonNil("client", c); err != nil {
+		return nil, err
+	}
 	return c.UserStory.Get(e.UserStoryID)
 }
 
 // GetEpic returns the Epic referred in the EpicRelatedUserStoryDetail
 func (e *EpicRelatedUserStoryDetail) GetEpic(c *Client) (*Epic, error) {
+	if err := requireNonNil("client", c); err != nil {
+		return nil, err
+	}
 	return c.Epic.Get(e.EpicID)
 }
 
@@ -255,11 +283,11 @@ type EpicWatcherDetail struct {
 
 // EpicsQueryParams holds fields to be used as URL query parameters to filter the queried objects
 type EpicsQueryParams struct {
-	IncludeAttachments bool   `url:"include_attachments,omitempty"`
+	IncludeAttachments *bool  `url:"include_attachments,omitempty"`
 	Project            int    `url:"project,omitempty"`
 	ProjectSlug        string `url:"project__slug,omitempty"`
 	AssignedTo         int    `url:"assigned_to,omitempty"`
-	StatusIsClosed     bool   `url:"status__is_closed,omitempty"`
+	StatusIsClosed     *bool  `url:"status__is_closed,omitempty"`
 }
 
 // EpicMinimal represent a small subset of a full Epic object

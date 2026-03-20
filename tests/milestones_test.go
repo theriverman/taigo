@@ -3,11 +3,11 @@ package main
 import (
 	"testing"
 
-	taiga "github.com/theriverman/taigo"
+	taiga "github.com/theriverman/taigo/v2"
 )
 
 func TestMilestones(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	// Create a milestone(sprint)

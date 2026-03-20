@@ -5,11 +5,11 @@ import (
 	"os"
 	"testing"
 
-	taiga "github.com/theriverman/taigo"
+	taiga "github.com/theriverman/taigo/v2"
 )
 
 func TestEpics(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	cwd, err := os.Getwd()

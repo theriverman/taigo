@@ -4,23 +4,30 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
 // AgilePoints is a [string/int] key/value pair to represent agile points in a UserStory, Milestone, etc...
 // JSON Representation example:
-// {
-// 	"points": {
-// 		"1": 12,
-// 		"2": 2,
-// 		"3": 5,
-// 		"4": 5
-// 	}
-// }
+//
+//	{
+//		"points": {
+//			"1": 12,
+//			"2": 2,
+//			"3": 5,
+//			"4": 5
+//		}
+//	}
 type AgilePoints map[string]float64
 
 // Points represent the Agile Points configured for the project and set for respective Taiga object
 type Points = AgilePoints
+
+// ProjectIDQueryParams is a reusable query param helper for endpoints filtered by project ID.
+type ProjectIDQueryParams struct {
+	Project int `url:"project,omitempty"`
+}
 
 // Tags represent the tags slice of respective Taiga object
 type Tags [][]string
@@ -143,7 +150,7 @@ type ProjectExtraInfo struct {
 }
 
 // TgObjectCAVD is the default type for object custom attribute values
-type TgObjectCAVD map[string]interface{}
+type TgObjectCAVD map[string]any
 
 // TgObjCAVDBase is the bare minimum for all tgCustomAttributeValue structs
 type TgObjCAVDBase struct {
@@ -179,9 +186,13 @@ type Pagination struct {
 
 // LoadFromHeaders accepts an *http.Response struct and reads the relevant
 // pagination headers returned by Taiga
-func (p *Pagination) LoadFromHeaders(c *Client, response *http.Response) {
-	paginated := response.Header.Get("X-Paginated") // Check if response is paginated
-	if paginated == "true" {
+func (p *Pagination) LoadFromHeaders(response *http.Response) {
+	if response == nil {
+		p.Paginated = false
+		return
+	}
+	paginated := strings.EqualFold(response.Header.Get("X-Paginated"), "true") // Check if response is paginated
+	if paginated {
 		p.Paginated = true
 		p.PaginatedBy, _ = strconv.Atoi(response.Header.Get("X-Paginated-By"))
 		p.PaginationCount, _ = strconv.Atoi(response.Header.Get("X-Paginated-Count"))

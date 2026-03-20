@@ -21,7 +21,8 @@ type UserAuthenticationDetail struct {
 }
 
 // AsUser returns a *User from *UserAuthenticationDetail
-// 	The AuthToken can be accessed from `User` via `.GetToken()`
+//
+//	The AuthToken can be accessed from `User` via `.GetToken()`
 func (u *UserAuthenticationDetail) AsUser() *User {
 	user := &User{}
 	err := convertStructViaJSON(u, user)

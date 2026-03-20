@@ -3,7 +3,7 @@
     "model": "users.user",
     "pk": 5,
     "fields": {
-      "password": "pbkdf2_sha256$150000$1LHMqWXkcS7w$sFJaVI8mCHLyN52tu/N+dtUCtb4gyie3nQ0WTZjyBhs=",
+      "password": "pbkdf2_sha256$150000$1LHMqWXkcS7w$7IjBkcYtkLtdFNKM33LK6ZI78kSso0rmh5IOuYVrSD8=",
       "last_login": "2021-02-28T14:07:40.828Z",
       "is_superuser": true,
       "uuid": "5e0c640bc1c34d9a9b31fee2bff87222",

@@ -4,16 +4,20 @@ import (
 	"time"
 )
 
-func genericToProject(anyProjectObject interface{}) *Project {
+func genericToProject(anyProjectObject any) (*Project, error) {
 	payloadProject := Project{}
-	convertStructViaJSON(&anyProjectObject, &payloadProject)
-	return &payloadProject
+	if err := convertStructViaJSON(&anyProjectObject, &payloadProject); err != nil {
+		return nil, err
+	}
+	return &payloadProject, nil
 }
 
-func genericToProjects(anyProjectObjectSlice interface{}) []Project {
+func genericToProjects(anyProjectObjectSlice any) ([]Project, error) {
 	payloadProjectsSlice := []Project{}
-	convertStructViaJSON(&anyProjectObjectSlice, &payloadProjectsSlice)
-	return payloadProjectsSlice
+	if err := convertStructViaJSON(&anyProjectObjectSlice, &payloadProjectsSlice); err != nil {
+		return nil, err
+	}
+	return payloadProjectsSlice, nil
 }
 
 // ProjectPoints represents the registered Agile Points to a project
@@ -27,12 +31,13 @@ type ProjectPoints struct {
 
 // ProjectTagsColors is a [string/string] key/value pair to represent project-wide Tag/Colour combinations
 // JSON Representation example:
-// {
-// 	"tags_colors": {
-// 		"high": "#D35163",
-// 		"normal": "#78D351"
-//  },
-// }
+//
+//	{
+//		"tags_colors": {
+//			"high": "#D35163",
+//			"normal": "#78D351"
+//	 },
+//	}
 type ProjectTagsColors map[string]string
 
 // IsValueNil returns true if ProjectPoints.Value is nil
@@ -44,34 +49,40 @@ func (pp ProjectPoints) IsValueNil() bool {
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#projects-create
 type Project struct {
-	ID                        int     `json:"id,omitempty"`
-	Slug                      string  `json:"slug,omitempty"`
-	CreationTemplate          int     `json:"creation_template,omitempty"`
-	Description               string  `json:"description,omitempty"`
-	IsBacklogActivated        bool    `json:"is_backlog_activated,omitempty"`
-	IsIssuesActivated         bool    `json:"is_issues_activated,omitempty"`
-	IsKanbanActivated         bool    `json:"is_kanban_activated,omitempty"`
-	IsPrivate                 bool    `json:"is_private,omitempty"`
-	IsWikiActivated           bool    `json:"is_wiki_activated,omitempty"`
-	Name                      string  `json:"name,omitempty"`
-	TotalMilestones           int     `json:"total_milestones,omitempty"`
-	TotalStoryPoints          float64 `json:"total_story_points,omitempty"`
-	Videoconferences          string  `json:"videoconferences,omitempty"`
-	VideoconferencesExtraData string  `json:"videoconferences_extra_data,omitempty"`
-	ProjectsLIST              *ProjectsList
-	ProjectDETAIL             *ProjectDetail
+	ID                        int            `json:"id,omitempty"`
+	Slug                      string         `json:"slug,omitempty"`
+	CreationTemplate          int            `json:"creation_template,omitempty"`
+	Description               string         `json:"description,omitempty"`
+	IsBacklogActivated        bool           `json:"is_backlog_activated,omitempty"`
+	IsIssuesActivated         bool           `json:"is_issues_activated,omitempty"`
+	IsKanbanActivated         bool           `json:"is_kanban_activated,omitempty"`
+	IsPrivate                 bool           `json:"is_private,omitempty"`
+	IsWikiActivated           bool           `json:"is_wiki_activated,omitempty"`
+	Name                      string         `json:"name,omitempty"`
+	TotalMilestones           int            `json:"total_milestones,omitempty"`
+	TotalStoryPoints          float64        `json:"total_story_points,omitempty"`
+	Videoconferences          string         `json:"videoconferences,omitempty"`
+	VideoconferencesExtraData string         `json:"videoconferences_extra_data,omitempty"`
+	ProjectsLIST              *ProjectsList  `json:"-"`
+	ProjectDETAIL             *ProjectDetail `json:"-"`
 }
 
 // AsProject packs the returned ProjectDETAIL into a generic Project struct
 func (p *ProjectDetail) AsProject() (*Project, error) {
-	project := genericToProject(&p)
+	project, err := genericToProject(&p)
+	if err != nil {
+		return nil, err
+	}
 	project.ProjectDETAIL = p
 	return project, nil
 }
 
 // AsProjects packs the returned ProjectsLIST into a generic Project []struct
 func (p *ProjectsList) AsProjects() ([]Project, error) {
-	projects := genericToProjects(&p)
+	projects, err := genericToProjects(&p)
+	if err != nil {
+		return nil, err
+	}
 	for i := 0; i < len(projects); i++ {
 		projects[i].ProjectsLIST = p
 	}
@@ -125,7 +136,7 @@ type ProjectDetail struct {
 	Members                   []members                            `json:"members"`
 	Milestones                []milestone                          `json:"milestones"`
 	ModifiedDate              time.Time                            `json:"modified_date"`
-	MyHomepage                interface{}                          `json:"my_homepage"`
+	MyHomepage                any                                  `json:"my_homepage"`
 	MyPermissions             []string                             `json:"my_permissions"`
 	Name                      string                               `json:"name"`
 	NotifyLevel               int                                  `json:"notify_level"`
@@ -167,15 +178,15 @@ type ProjectDetail struct {
 
 // EpicCustomAttributeDefinition != EpicCustomAttribute
 type EpicCustomAttributeDefinition struct {
-	CreatedDate  time.Time   `json:"created_date"`
-	Description  string      `json:"description"`
-	Extra        interface{} `json:"extra"`
-	ID           int         `json:"id"`
-	ModifiedDate time.Time   `json:"modified_date"`
-	Name         string      `json:"name"`
-	Order        int         `json:"order"`
-	ProjectID    int         `json:"project_id"`
-	Type         string      `json:"type"`
+	CreatedDate  time.Time `json:"created_date"`
+	Description  string    `json:"description"`
+	Extra        any       `json:"extra"`
+	ID           int       `json:"id"`
+	ModifiedDate time.Time `json:"modified_date"`
+	Name         string    `json:"name"`
+	Order        int       `json:"order"`
+	ProjectID    int       `json:"project_id"`
+	Type         string    `json:"type"`
 }
 
 // epicStatus != EpicStatus
@@ -191,15 +202,15 @@ type epicStatus struct {
 
 // IssueCustomAttributeDefinition != IssueCustomAttribute
 type IssueCustomAttributeDefinition struct {
-	CreatedDate  time.Time   `json:"created_date"`
-	Description  string      `json:"description"`
-	Extra        interface{} `json:"extra"`
-	ID           int         `json:"id"`
-	ModifiedDate time.Time   `json:"modified_date"`
-	Name         string      `json:"name"`
-	Order        int         `json:"order"`
-	ProjectID    int         `json:"project_id"`
-	Type         string      `json:"type"`
+	CreatedDate  time.Time `json:"created_date"`
+	Description  string    `json:"description"`
+	Extra        any       `json:"extra"`
+	ID           int       `json:"id"`
+	ModifiedDate time.Time `json:"modified_date"`
+	Name         string    `json:"name"`
+	Order        int       `json:"order"`
+	ProjectID    int       `json:"project_id"`
+	Type         string    `json:"type"`
 }
 
 type issueDueDate struct {
@@ -278,15 +289,15 @@ type severity struct {
 
 // TaskCustomAttributeDefinition != TaskCustomAttribute
 type TaskCustomAttributeDefinition struct {
-	CreatedDate  time.Time   `json:"created_date"`
-	Description  string      `json:"description"`
-	Extra        interface{} `json:"extra"`
-	ID           int         `json:"id"`
-	ModifiedDate time.Time   `json:"modified_date"`
-	Name         string      `json:"name"`
-	Order        int         `json:"order"`
-	ProjectID    int         `json:"project_id"`
-	Type         string      `json:"type"`
+	CreatedDate  time.Time `json:"created_date"`
+	Description  string    `json:"description"`
+	Extra        any       `json:"extra"`
+	ID           int       `json:"id"`
+	ModifiedDate time.Time `json:"modified_date"`
+	Name         string    `json:"name"`
+	Order        int       `json:"order"`
+	ProjectID    int       `json:"project_id"`
+	Type         string    `json:"type"`
 }
 
 type taskDueDates struct {
@@ -335,15 +346,15 @@ type userStoryStatus struct {
 
 // UserStoryCustomAttributeDefinition != UserStoryCustomAttribute
 type UserStoryCustomAttributeDefinition struct {
-	CreatedDate  time.Time   `json:"created_date"`
-	Description  string      `json:"description"`
-	Extra        interface{} `json:"extra"`
-	ID           int         `json:"id"`
-	ModifiedDate time.Time   `json:"modified_date"`
-	Name         string      `json:"name"`
-	Order        int         `json:"order"`
-	ProjectID    int         `json:"project_id"`
-	Type         string      `json:"type"`
+	CreatedDate  time.Time `json:"created_date"`
+	Description  string    `json:"description"`
+	Extra        any       `json:"extra"`
+	ID           int       `json:"id"`
+	ModifiedDate time.Time `json:"modified_date"`
+	Name         string    `json:"name"`
+	Order        int       `json:"order"`
+	ProjectID    int       `json:"project_id"`
+	Type         string    `json:"type"`
 }
 
 // ProjectsList -> https://taigaio.github.io/taiga-doc/dist/api.html#object-project-list-entry
@@ -458,54 +469,54 @@ type ProjectStatsDetail struct {
 type ProjectsQueryParameters struct {
 	Member             int    `url:"member,omitempty"`
 	Members            []int  `url:"members,omitempty"`
-	IsLookingForPeople bool   `url:"is_looking_for_people,omitempty"`
-	IsFeatured         bool   `url:"is_featured,omitempty"`
-	IsBacklogActivated bool   `url:"is_backlog_activated,omitempty"`
-	IsKanbanActivated  bool   `url:"is_kanban_activated,omitempty"`
-	orderBy            string `url:"order_by,omitempty"` // Can be set via struct methods
+	IsLookingForPeople *bool  `url:"is_looking_for_people,omitempty"`
+	IsFeatured         *bool  `url:"is_featured,omitempty"`
+	IsBacklogActivated *bool  `url:"is_backlog_activated,omitempty"`
+	IsKanbanActivated  *bool  `url:"is_kanban_activated,omitempty"`
+	OrderBy            string `url:"order_by,omitempty"` // Can be set via struct methods
 }
 
 // MembershipsUserOrder => Order by the project order specified by the user
 func (queryParams *ProjectsQueryParameters) MembershipsUserOrder() {
-	queryParams.orderBy = "memberships__user_order"
+	queryParams.OrderBy = "memberships__user_order"
 }
 
 // TotalFans => Order by total fans for the project
 func (queryParams *ProjectsQueryParameters) TotalFans() {
-	queryParams.orderBy = "total_fans"
+	queryParams.OrderBy = "total_fans"
 }
 
 // TotalFansLastWeek => Order by number of new fans in the last week
 func (queryParams *ProjectsQueryParameters) TotalFansLastWeek() {
-	queryParams.orderBy = "total_fans_last_week"
+	queryParams.OrderBy = "total_fans_last_week"
 }
 
 // TotalFansLastMonth => Order by number of new fans in the last month
 func (queryParams *ProjectsQueryParameters) TotalFansLastMonth() {
-	queryParams.orderBy = "total_fans_last_month"
+	queryParams.OrderBy = "total_fans_last_month"
 }
 
 // TotalFansLastYear => Order by number of new fans in the last year
 func (queryParams *ProjectsQueryParameters) TotalFansLastYear() {
-	queryParams.orderBy = "total_fans_last_year"
+	queryParams.OrderBy = "total_fans_last_year"
 }
 
 // TotalActivity => Order by number of history entries for the project
 func (queryParams *ProjectsQueryParameters) TotalActivity() {
-	queryParams.orderBy = "total_activity"
+	queryParams.OrderBy = "total_activity"
 }
 
 // TotalActivityLastWeek => Order by number of history entries generated in the last week
 func (queryParams *ProjectsQueryParameters) TotalActivityLastWeek() {
-	queryParams.orderBy = "total_activity_last_week"
+	queryParams.OrderBy = "total_activity_last_week"
 }
 
 // TotalActivityLastMonth => Order by number of history entries generated in the last month
 func (queryParams *ProjectsQueryParameters) TotalActivityLastMonth() {
-	queryParams.orderBy = "total_activity_last_month"
+	queryParams.OrderBy = "total_activity_last_month"
 }
 
 // TotalActivityLastYear => Order by number of history entries generated in the last year
 func (queryParams *ProjectsQueryParameters) TotalActivityLastYear() {
-	queryParams.orderBy = "total_activity_last_year"
+	queryParams.OrderBy = "total_activity_last_year"
 }

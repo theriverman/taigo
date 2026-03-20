@@ -2,15 +2,15 @@ package main
 
 import (
 	"net/http"
-	"reflect"
+	"os"
 	"testing"
 	"time"
 
-	taiga "github.com/theriverman/taigo"
+	taiga "github.com/theriverman/taigo/v2"
 )
 
 func TestAuth(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	// Test Public Registry
@@ -36,7 +36,7 @@ func TestAuth(t *testing.T) {
 }
 
 func TestAuthService_RefreshAuthToken(t *testing.T) {
-	setupClient()
+	setupClient(t)
 	t.Cleanup(teardownClient)
 
 	type fields struct {
@@ -62,7 +62,7 @@ func TestAuthService_RefreshAuthToken(t *testing.T) {
 				Endpoint:         "auth",
 			},
 			args:           args{selfUpdate: true},
-			oldClientToken: Client.Token,
+			oldClientToken: Client.GetToken(),
 			wantErr:        false,
 		},
 	}
@@ -73,15 +73,19 @@ func TestAuthService_RefreshAuthToken(t *testing.T) {
 				t.Errorf("AuthService.RefreshAuthToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if reflect.DeepEqual(tt.oldClientToken, Client.Token) {
-				t.Errorf("Value of Client.Token did not change which means that .RefreshAuthToken(true) has failed")
-				t.Errorf("AuthService.RefreshAuthToken().AuthToken = %v, want different than %v", Client.Token, tt.oldClientToken)
+			if tt.oldClientToken == Client.GetToken() {
+				t.Errorf("Value of Client token did not change which means that .RefreshAuthToken(true) has failed")
+				t.Errorf("AuthService.RefreshAuthToken().AuthToken = %v, want different than %v", Client.GetToken(), tt.oldClientToken)
 			}
 		})
 	}
 }
 
 func TestTokenRefreshRoutine(t *testing.T) {
+	if os.Getenv("TAIGO_RUN_INTEGRATION_TESTS") != "1" {
+		t.Skip("set TAIGO_RUN_INTEGRATION_TESTS=1 to run integration tests against a live Taiga instance")
+	}
+
 	// we need a custom client here to set `AutoRefreshTickerDuration` to 5 seconds
 	// otherwise the the test would fail b/c the default ticker duration is 12hrs
 	customWaitTime := 5 * time.Second
@@ -94,7 +98,7 @@ func TestTokenRefreshRoutine(t *testing.T) {
 	// Initialise client (authenticates to Taiga)
 	err := client.Initialise()
 	if err != nil {
-		panic(err)
+		t.Fatalf("initialise client: %v", err)
 	}
 	err = client.AuthByCredentials(&taiga.Credentials{
 		Type:     "normal",
@@ -102,27 +106,22 @@ func TestTokenRefreshRoutine(t *testing.T) {
 		Password: testPassword,
 	})
 	if err != nil {
-		panic(err)
+		t.Fatalf("auth by credentials: %v", err)
 	}
 
 	testLoopLength := 5 // if you increase this, tests may fail due to timeout (usually 30s)
 	tokens := make(map[string]struct{})
-	tokenCounter := 0
 
-	// Let's loop for 35 seconds to observe the routine working
+	// Sample more frequently than the refresh interval and verify that the token rotates at least once.
 	for i := 0; i < testLoopLength; i++ {
-		if i == testLoopLength {
-			break
-		}
-		t.Logf("Loop %d | client.Token  : %s\n", i, client.Token)
-		t.Logf("Loop %d | client.Refresh: %s\n", i, client.RefreshToken)
+		t.Logf("Loop %d | client.Token  : %s\n", i, client.GetToken())
+		t.Logf("Loop %d | client.Refresh: %s\n", i, client.GetRefreshToken())
 		t.Logf("----------------------------\n")
-		tokens[client.Token] = struct{}{}
-		tokenCounter++
-		time.Sleep(customWaitTime)
+		tokens[client.GetToken()] = struct{}{}
+		time.Sleep(customWaitTime + 500*time.Millisecond)
 	}
-	client = nil
-	if len(tokens) != tokenCounter {
-		t.Errorf("Total Unique Tokens: %d wanted unique tokens count: %d", len(tokens), tokenCounter)
+	client.Close()
+	if len(tokens) < 2 {
+		t.Errorf("expected automatic refresh routine to rotate the auth token at least once; observed %d unique token(s)", len(tokens))
 	}
 }

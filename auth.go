@@ -11,23 +11,25 @@ type AuthService struct {
 
 // RefreshAuthToken => https://docs.taiga.io/api.html#auth-refresh
 //
-//   Generates a new pair of bearer and refresh token
-//   If `selfUpdate` is true, `*Client` is refreshed with the returned token values
+//	Generates a new pair of bearer and refresh token
+//	If `selfUpdate` is true, `*Client` is refreshed with the returned token values
 func (s *AuthService) RefreshAuthToken(selfUpdate bool) (RefreshResponse *RefreshToken, err error) {
 	url := s.client.MakeURL(s.Endpoint, "refresh")
+	authToken, refreshToken := s.client.currentTokens()
 	data := RefreshToken{
-		AuthToken: s.client.Token,
-		Refresh:   s.client.RefreshToken,
+		AuthToken: authToken,
+		Refresh:   refreshToken,
 	}
-	_, err = s.client.Request.Post(url, &data, &RefreshResponse)
+	response := &RefreshToken{}
+	_, err = s.client.Request.Post(url, &data, response)
 	if err != nil {
 		return nil, err
 	}
 	if selfUpdate {
-		s.client.Token = RefreshResponse.AuthToken
-		s.client.RefreshToken = RefreshResponse.Refresh
+		s.client.setAuthTokens("", response.AuthToken, response.Refresh)
+		s.client.startTokenRefreshRoutineIfNeeded()
 	}
-	return
+	return response, nil
 }
 
 // PublicRegistry => https://taigaio.github.io/taiga-doc/dist/api.html#auth-public-registry
@@ -40,12 +42,15 @@ func (s *AuthService) RefreshAuthToken(selfUpdate bool) (RefreshResponse *Refres
 	accepted_terms (required): boolean
 */
 func (s *AuthService) PublicRegistry(credentials *Credentials) (*UserAuthenticationDetail, error) {
+	if err := requireNonNil("credentials", credentials); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, "register")
 	u := UserAuthenticationDetail{}
-
-	credentials.Type = "public"
-	credentials.AcceptedTerms = true // Hardcoded for simplicity; otherwise this func would be useless
-	_, err := s.client.Request.Post(url, &credentials, &u)
+	payload := *credentials
+	payload.Type = "public"
+	payload.AcceptedTerms = true // Hardcoded for simplicity; otherwise this func would be useless
+	_, err := s.client.Request.Post(url, &payload, &u)
 	if err != nil {
 		return nil, err
 	}
@@ -54,20 +59,37 @@ func (s *AuthService) PublicRegistry(credentials *Credentials) (*UserAuthenticat
 }
 
 // PrivateRegistry => https://taigaio.github.io/taiga-doc/dist/api.html#auth-private-registry
-// TODO: TO BE IMPLEMENTED
-// func (s *AuthService) PrivateRegistry(credentials *Credentials) {}
-
-// login authenticates to Taiga
-func (s *AuthService) login(credentials *Credentials) (*UserAuthenticationDetail, error) {
-	url := s.client.MakeURL(s.Endpoint)
+func (s *AuthService) PrivateRegistry(credentials *Credentials) (*UserAuthenticationDetail, error) {
+	if err := requireNonNil("credentials", credentials); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, "register")
 	u := UserAuthenticationDetail{}
-
-	_, err := s.client.Request.Post(url, &credentials, &u)
+	payload := *credentials
+	payload.Type = "private"
+	if !payload.AcceptedTerms {
+		payload.AcceptedTerms = true
+	}
+	_, err := s.client.Request.Post(url, &payload, &u)
 	if err != nil {
 		return nil, err
 	}
-	s.client.Token = u.AuthToken
-	s.client.RefreshToken = u.Refresh
-	s.client.setToken()
+
+	return &u, nil
+}
+
+// login authenticates to Taiga
+func (s *AuthService) login(credentials *Credentials) (*UserAuthenticationDetail, error) {
+	if err := requireNonNil("credentials", credentials); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint)
+	u := UserAuthenticationDetail{}
+
+	_, err := s.client.Request.Post(url, credentials, &u)
+	if err != nil {
+		return nil, err
+	}
+	s.client.setAuthTokens("", u.AuthToken, u.Refresh)
 	return &u, nil
 }

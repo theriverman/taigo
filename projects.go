@@ -2,20 +2,17 @@ package taigo
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/google/go-querystring/query"
 )
 
 // ProjectService is a handle to actions related to Projects
 //
 // https://taigaio.github.io/taiga-doc/dist/api.html#projects
 type ProjectService struct {
-	client           *Client
+	client *Client
 	// defaultProjectID int
-	Endpoint         string
+	Endpoint string
 	// Mapped services for simple access
 	areMappedServicesConfigured bool
 	Auth                        *AuthService
@@ -29,6 +26,64 @@ type ProjectService struct {
 	User                        *UserService
 	Webhook                     *WebhookService
 	Wiki                        *WikiService
+	Point                       *PointService
+	Priority                    *PriorityService
+	Severity                    *SeverityService
+	IssueType                   *IssueTypeService
+	EpicStatus                  *EpicStatusService
+	IssueStatus                 *IssueStatusService
+	TaskStatus                  *TaskStatusService
+	UserStoryStatus             *UserStoryStatusService
+	EpicCustomAttribute         *EpicCustomAttributeService
+	IssueCustomAttribute        *IssueCustomAttributeService
+	TaskCustomAttribute         *TaskCustomAttributeService
+	UserStoryCustomAttribute    *UserStoryCustomAttributeService
+	Application                 *ApplicationService
+	ApplicationToken            *ApplicationTokenService
+	Search                      *SearchService
+	UserStorage                 *UserStorageService
+	ProjectTemplate             *ProjectTemplateService
+	ProjectTemplateDetail       *ProjectTemplateDetailService
+	MembershipInvitation        *MembershipInvitationService
+	WikiLink                    *WikiLinkService
+	History                     *HistoryService
+	NotifyPolicy                *NotifyPolicyService
+	Contact                     *ContactService
+	Feedback                    *FeedbackService
+	ExportImport                *ExportImportService
+	Timeline                    *TimelineService
+	Locale                      *LocaleService
+	Importer                    *ImporterService
+	ContribPlugin               *ContribPluginService
+	ObjectsSummary              *ObjectsSummaryService
+}
+
+type projectCreatePayload struct {
+	CreationTemplate          int    `json:"creation_template,omitempty"`
+	Description               string `json:"description"`
+	IsBacklogActivated        bool   `json:"is_backlog_activated,omitempty"`
+	IsIssuesActivated         bool   `json:"is_issues_activated,omitempty"`
+	IsKanbanActivated         bool   `json:"is_kanban_activated,omitempty"`
+	IsPrivate                 bool   `json:"is_private,omitempty"`
+	IsWikiActivated           bool   `json:"is_wiki_activated,omitempty"`
+	Name                      string `json:"name"`
+	Videoconferences          string `json:"videoconferences,omitempty"`
+	VideoconferencesExtraData string `json:"videoconferences_extra_data,omitempty"`
+}
+
+// ProjectPatch represents an explicit PATCH payload for projects.
+// Pointer fields allow intentionally setting zero-values (false, 0, "").
+type ProjectPatch struct {
+	CreationTemplate          *int    `json:"creation_template,omitempty"`
+	Description               *string `json:"description,omitempty"`
+	IsBacklogActivated        *bool   `json:"is_backlog_activated,omitempty"`
+	IsIssuesActivated         *bool   `json:"is_issues_activated,omitempty"`
+	IsKanbanActivated         *bool   `json:"is_kanban_activated,omitempty"`
+	IsPrivate                 *bool   `json:"is_private,omitempty"`
+	IsWikiActivated           *bool   `json:"is_wiki_activated,omitempty"`
+	Name                      *string `json:"name,omitempty"`
+	Videoconferences          *string `json:"videoconferences,omitempty"`
+	VideoconferencesExtraData *string `json:"videoconferences_extra_data,omitempty"`
 }
 
 // ConfigureMappedServices maps all services to the *ProjectService with a selected project preconfigured
@@ -44,6 +99,36 @@ func (s *ProjectService) ConfigureMappedServices(ProjectID int) {
 	s.User = &UserService{s.client, ProjectID, "users"}
 	s.Webhook = &WebhookService{s.client, ProjectID, "webhooks", "webhooklogs"}
 	s.Wiki = &WikiService{s.client, ProjectID, "wiki"}
+	s.Point = &PointService{s.client, ProjectID, "points"}
+	s.Priority = &PriorityService{s.client, ProjectID, "priorities"}
+	s.Severity = &SeverityService{s.client, ProjectID, "severities"}
+	s.IssueType = &IssueTypeService{s.client, ProjectID, "issue-types"}
+	s.EpicStatus = &EpicStatusService{s.client, ProjectID, "epic-statuses"}
+	s.IssueStatus = &IssueStatusService{s.client, ProjectID, "issue-statuses"}
+	s.TaskStatus = &TaskStatusService{s.client, ProjectID, "task-statuses"}
+	s.UserStoryStatus = &UserStoryStatusService{s.client, ProjectID, "userstory-statuses"}
+	s.EpicCustomAttribute = &EpicCustomAttributeService{s.client, ProjectID, "epic-custom-attributes"}
+	s.IssueCustomAttribute = &IssueCustomAttributeService{s.client, ProjectID, "issue-custom-attributes"}
+	s.TaskCustomAttribute = &TaskCustomAttributeService{s.client, ProjectID, "task-custom-attributes"}
+	s.UserStoryCustomAttribute = &UserStoryCustomAttributeService{s.client, ProjectID, "userstory-custom-attributes"}
+	s.Application = &ApplicationService{s.client, ProjectID, "applications"}
+	s.ApplicationToken = &ApplicationTokenService{s.client, ProjectID, "application-tokens"}
+	s.Search = &SearchService{s.client, ProjectID, "search"}
+	s.UserStorage = &UserStorageService{s.client, ProjectID, "user-storage"}
+	s.ProjectTemplate = &ProjectTemplateService{s.client, ProjectID, "project-templates"}
+	s.ProjectTemplateDetail = &ProjectTemplateDetailService{s.client, ProjectID, "project-templates"}
+	s.MembershipInvitation = &MembershipInvitationService{s.client, ProjectID, "memberships", "invitations"}
+	s.WikiLink = &WikiLinkService{s.client, ProjectID, "wiki-links"}
+	s.History = &HistoryService{s.client, ProjectID, "history"}
+	s.NotifyPolicy = &NotifyPolicyService{s.client, ProjectID, "notify-policies"}
+	s.Contact = &ContactService{s.client, ProjectID, "contact"}
+	s.Feedback = &FeedbackService{s.client, ProjectID, "feedback"}
+	s.ExportImport = &ExportImportService{s.client, ProjectID, "exporter", "importer"}
+	s.Timeline = &TimelineService{s.client, ProjectID, "timeline"}
+	s.Locale = &LocaleService{s.client, ProjectID, "locales"}
+	s.Importer = &ImporterService{s.client, ProjectID, "importers"}
+	s.ContribPlugin = &ContribPluginService{s.client, ProjectID, "contrib-plugins"}
+	s.ObjectsSummary = &ObjectsSummaryService{s.client, ProjectID, "objects-summary"}
 
 	s.areMappedServicesConfigured = true
 }
@@ -80,8 +165,11 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 
 	url := s.client.MakeURL(s.Endpoint)
 	if queryParameters != nil {
-		paramValues, _ := query.Values(queryParameters)
-		url = fmt.Sprintf("%s?%s", url, paramValues.Encode())
+		var err error
+		url, err = appendQueryParams(url, queryParameters)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var projects ProjectsList
 
@@ -95,6 +183,9 @@ func (s *ProjectService) List(queryParameters *ProjectsQueryParameters) (*Projec
 // Create -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-create
 // Required fields: name, description
 func (s *ProjectService) Create(project *Project) (*Project, error) {
+	if err := requireNonNil("project", project); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint)
 	var p ProjectDetail
 	// Check for required fields
@@ -102,7 +193,21 @@ func (s *ProjectService) Create(project *Project) (*Project, error) {
 	if isEmpty(project.Name) || isEmpty(project.Description) {
 		return nil, errors.New("a mandatory field is missing. See API documentataion")
 	}
-	_, err := s.client.Request.Post(url, &project, &p)
+
+	payload := projectCreatePayload{
+		CreationTemplate:          project.CreationTemplate,
+		Description:               project.Description,
+		IsBacklogActivated:        project.IsBacklogActivated,
+		IsIssuesActivated:         project.IsIssuesActivated,
+		IsKanbanActivated:         project.IsKanbanActivated,
+		IsPrivate:                 project.IsPrivate,
+		IsWikiActivated:           project.IsWikiActivated,
+		Name:                      project.Name,
+		Videoconferences:          project.Videoconferences,
+		VideoconferencesExtraData: project.VideoconferencesExtraData,
+	}
+
+	_, err := s.client.Request.Post(url, &payload, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +216,9 @@ func (s *ProjectService) Create(project *Project) (*Project, error) {
 
 // Get -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get
 func (s *ProjectService) Get(projectID int) (*Project, error) {
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(projectID))
 	var p ProjectDetail
 
@@ -123,10 +231,19 @@ func (s *ProjectService) Get(projectID int) (*Project, error) {
 
 // GetBySlug -> https://taigaio.github.io/taiga-doc/dist/api.html#projects-get-by-slug
 func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
-	url := s.client.MakeURL(s.Endpoint, "by_slug?slug="+slug)
+	if slug == "" {
+		return nil, errors.New("slug is required")
+	}
+	queryParams := struct {
+		Slug string `url:"slug"`
+	}{Slug: slug}
+	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint, "by_slug"), &queryParams)
+	if err != nil {
+		return nil, err
+	}
 	var p ProjectDetail
 
-	_, err := s.client.Request.Get(url, &p)
+	_, err = s.client.Request.Get(url, &p)
 	if err != nil {
 		return nil, err
 	}
@@ -136,22 +253,84 @@ func (s *ProjectService) GetBySlug(slug string) (*Project, error) {
 // Edit edits an Project via a PATCH request => https://taigaio.github.io/taiga-doc/dist/api.html#projects-edit
 // Available Meta: ProjectDetail
 func (s *ProjectService) Edit(project *Project) (*Project, error) {
-	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(project.ID))
-	var p ProjectDetail
+	if err := requireNonNil("project", project); err != nil {
+		return nil, err
+	}
 
 	if project.ID == 0 {
 		return nil, errors.New("passed Project does not have an ID yet. Does it exist?")
 	}
 
-	_, err := s.client.Request.Patch(url, &project, &p)
+	patchPayload := map[string]any{}
+	if project.CreationTemplate != 0 {
+		patchPayload["creation_template"] = project.CreationTemplate
+	}
+	if project.Description != "" {
+		patchPayload["description"] = project.Description
+	}
+	if project.IsBacklogActivated {
+		patchPayload["is_backlog_activated"] = project.IsBacklogActivated
+	}
+	if project.IsIssuesActivated {
+		patchPayload["is_issues_activated"] = project.IsIssuesActivated
+	}
+	if project.IsKanbanActivated {
+		patchPayload["is_kanban_activated"] = project.IsKanbanActivated
+	}
+	if project.IsPrivate {
+		patchPayload["is_private"] = project.IsPrivate
+	}
+	if project.IsWikiActivated {
+		patchPayload["is_wiki_activated"] = project.IsWikiActivated
+	}
+	if project.Name != "" {
+		patchPayload["name"] = project.Name
+	}
+	if project.Videoconferences != "" {
+		patchPayload["videoconferences"] = project.Videoconferences
+	}
+	if project.VideoconferencesExtraData != "" {
+		patchPayload["videoconferences_extra_data"] = project.VideoconferencesExtraData
+	}
+	if len(patchPayload) == 0 {
+		return nil, errors.New("no updatable project fields were provided; use Patch for explicit zero-value updates")
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(project.ID))
+	var responseProject ProjectDetail
+	_, err := s.client.Request.Patch(url, &patchPayload, &responseProject)
+	if err != nil {
+		return nil, err
+	}
+	return responseProject.AsProject()
+}
+
+// Patch sends an explicit PATCH payload to edit a project.
+func (s *ProjectService) Patch(projectID int, patch *ProjectPatch) (*Project, error) {
+	if err := requireNonNil("patch", patch); err != nil {
+		return nil, err
+	}
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return nil, err
+	}
+	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(projectID))
+	var p ProjectDetail
+	_, err := s.client.Request.Patch(url, patch, &p)
 	if err != nil {
 		return nil, err
 	}
 	return p.AsProject()
 }
 
+// Update is an alias for Edit.
+func (s *ProjectService) Update(project *Project) (*Project, error) {
+	return s.Edit(project)
+}
+
 // Delete => https://taigaio.github.io/taiga-doc/dist/api.html#projects-delete
 func (s *ProjectService) Delete(projectID int) (*http.Response, error) {
+	if err := requirePositiveID("projectID", projectID); err != nil {
+		return nil, err
+	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(projectID))
 	return s.client.Request.Delete(url)
 }

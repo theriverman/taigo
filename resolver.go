@@ -1,9 +1,7 @@
 package taigo
 
 import (
-	"fmt"
-
-	"github.com/google/go-querystring/query"
+	"errors"
 )
 
 /*
@@ -23,6 +21,9 @@ type ResolverService struct {
 
 // ResolveProject => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-projects
 func (s *ResolverService) ResolveProject(queryParameters *ResolverQueryParams) (*Resolver, error) {
+	if queryParameters == nil {
+		return nil, errors.New("queryParameters must not be nil")
+	}
 	qp := ResolverQueryParams{
 		Project: queryParameters.Project,
 	}
@@ -31,6 +32,9 @@ func (s *ResolverService) ResolveProject(queryParameters *ResolverQueryParams) (
 
 // ResolveUserStory => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-user-stories
 func (s *ResolverService) ResolveUserStory(queryParameters *ResolverQueryParams) (*Resolver, error) {
+	if queryParameters == nil {
+		return nil, errors.New("queryParameters must not be nil")
+	}
 	qp := ResolverQueryParams{
 		US:      queryParameters.US,
 		Project: queryParameters.Project,
@@ -40,6 +44,9 @@ func (s *ResolverService) ResolveUserStory(queryParameters *ResolverQueryParams)
 
 // ResolveIssue => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-issues
 func (s *ResolverService) ResolveIssue(queryParameters *ResolverQueryParams) (*Resolver, error) {
+	if queryParameters == nil {
+		return nil, errors.New("queryParameters must not be nil")
+	}
 	qp := ResolverQueryParams{
 		Issue:   queryParameters.Issue,
 		Project: queryParameters.Project,
@@ -49,6 +56,9 @@ func (s *ResolverService) ResolveIssue(queryParameters *ResolverQueryParams) (*R
 
 // ResolveTask => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-tasks
 func (s *ResolverService) ResolveTask(queryParameters *ResolverQueryParams) (*Resolver, error) {
+	if queryParameters == nil {
+		return nil, errors.New("queryParameters must not be nil")
+	}
 	qp := ResolverQueryParams{
 		Task:    queryParameters.Task,
 		Project: queryParameters.Project,
@@ -58,6 +68,9 @@ func (s *ResolverService) ResolveTask(queryParameters *ResolverQueryParams) (*Re
 
 // ResolveMilestone => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-milestones
 func (s *ResolverService) ResolveMilestone(queryParameters *ResolverQueryParams) (*Resolver, error) {
+	if queryParameters == nil {
+		return nil, errors.New("queryParameters must not be nil")
+	}
 	qp := ResolverQueryParams{
 		Milestone: queryParameters.Milestone,
 		Project:   queryParameters.Project,
@@ -67,6 +80,9 @@ func (s *ResolverService) ResolveMilestone(queryParameters *ResolverQueryParams)
 
 // ResolveWikiPage => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-wiki-pages
 func (s *ResolverService) ResolveWikiPage(queryParameters *ResolverQueryParams) (*Resolver, error) {
+	if queryParameters == nil {
+		return nil, errors.New("queryParameters must not be nil")
+	}
 	qp := ResolverQueryParams{
 		WikiPage: queryParameters.WikiPage,
 		Project:  queryParameters.Project,
@@ -76,18 +92,26 @@ func (s *ResolverService) ResolveWikiPage(queryParameters *ResolverQueryParams) 
 
 // ResolveMultipleObjects => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-multiple-resolution
 func (s *ResolverService) ResolveMultipleObjects(queryParameters *ResolverQueryParams) (*Resolver, error) {
+	if queryParameters == nil {
+		return nil, errors.New("queryParameters must not be nil")
+	}
 	return s.genericResolver(queryParameters)
 }
 
 // ResolveByRefValue => https://taigaio.github.io/taiga-doc/dist/api.html#resolver-ref
-// TODO: Not yet implemented. Considered for later.
+func (s *ResolverService) ResolveByRefValue(ref string) (*Resolver, error) {
+	qp := ResolverQueryParams{Ref: ref}
+	return s.genericResolver(&qp)
+}
 
 // genericResolver acts as a common request execution middleware
 func (s *ResolverService) genericResolver(queryParameters *ResolverQueryParams) (*Resolver, error) {
-	paramValues, _ := query.Values(queryParameters)
-	url := s.client.MakeURL(fmt.Sprintf("%s?%s", s.Endpoint, paramValues.Encode()))
+	url, err := appendQueryParams(s.client.MakeURL(s.Endpoint), queryParameters)
+	if err != nil {
+		return nil, err
+	}
 	var respResolver Resolver
-	_, err := s.client.Request.Get(url, &respResolver)
+	_, err = s.client.Request.Get(url, &respResolver)
 	if err != nil {
 		return nil, err
 	}

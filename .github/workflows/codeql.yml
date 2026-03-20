@@ -1,0 +1,61 @@
+name: CodeQL
+
+on:
+  push:
+    branches: ["master", "v2"]
+  pull_request:
+    branches: ["master", "v2"]
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["go"]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: manual
+
+      - name: Compile module for CodeQL
+        env:
+          GOCACHE: /tmp/taigo-codeql-gocache
+          GOFLAGS: -buildvcs=false
+        run: |
+          GOWORK=off go clean -cache -testcache
+          GOWORK=off go build -a .
+          GOWORK=off go test -a -run '^$' ./tests -count=1
+
+      - name: Perform CodeQL analysis
+        env:
+          GOFLAGS: -buildvcs=false
+        uses: github/codeql-action/analyze@v4

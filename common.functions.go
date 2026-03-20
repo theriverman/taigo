@@ -2,23 +2,37 @@ package taigo
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	neturl "net/url"
+	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/google/go-querystring/query"
 )
 
 /*
 	// Attachments Manager
-	since go does not have generics, a common attachments manager had to be created
+	a common attachments manager is used to avoid duplicating endpoint-specific code
 	Taiga objects (epics, tasks, issues, etc...) can wrap around this method to simplify otherwise redundant requests
 */
 
 // listAttachmentsForEndpoint is a common method to get attachments for an endpoint (userstories, tasks, etc...)
 func listAttachmentsForEndpoint(c *Client, queryParams *attachmentsQueryParams) ([]Attachment, error) {
-	paramValues, _ := query.Values(queryParams)
-	url := c.MakeURL(queryParams.endpointURI, "attachments?", paramValues.Encode())
+	if queryParams == nil {
+		return nil, fmt.Errorf("queryParams must not be nil")
+	}
+	url := c.MakeURL(queryParams.endpointURI, "attachments")
+	paramValues, err := query.Values(queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("encode attachment query params: %w", err)
+	}
+	if encoded := paramValues.Encode(); encoded != "" {
+		url += "?" + encoded
+	}
 	var attachments []Attachment
-	_, err := c.Request.Get(url, &attachments)
+	_, err = c.Request.Get(url, &attachments)
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +41,9 @@ func listAttachmentsForEndpoint(c *Client, queryParams *attachmentsQueryParams) 
 
 // getAttachmentForEndpoint is a common method to get a specific attachment for an endpoint (epic, issue, etc...)
 func getAttachmentForEndpoint(c *Client, attachmentID int, endpointURI string) (*Attachment, error) {
+	if err := requirePositiveID("attachmentID", attachmentID); err != nil {
+		return nil, err
+	}
 	url := c.MakeURL(endpointURI, "attachments", strconv.Itoa(attachmentID))
 	var a Attachment
 	_, err := c.Request.Get(url, &a)
@@ -42,7 +59,7 @@ func getAttachmentForEndpoint(c *Client, attachmentID int, endpointURI string) (
 // JSON is used as an intermediate language to achieve this functionality
 //
 // NOTE: Both `sourcePtr` and `targetPtr` MUST BE POINTERS!
-func convertStructViaJSON(sourcePtr interface{}, targetPtr interface{}) error {
+func convertStructViaJSON(sourcePtr any, targetPtr any) error {
 	payloadInJSON, err := json.Marshal(sourcePtr)
 	if err != nil {
 		return err
@@ -56,18 +73,252 @@ func convertStructViaJSON(sourcePtr interface{}, targetPtr interface{}) error {
 
 // isEmpty is a generic-ish function to check if a struct's field is empty/default
 // it is convenient when making sure the bare minimum values are set when creating an object
-func isEmpty(structField interface{}) bool {
+func isEmpty(structField any) bool {
 	if structField == nil {
 		return true
-	} else if structField == "" {
-		return true
-	} else if structField == false {
-		return true
 	}
-	return false
+	v := reflect.ValueOf(structField)
+	switch v.Kind() {
+	case reflect.Interface, reflect.Ptr, reflect.Map, reflect.Slice, reflect.Func:
+		return v.IsNil()
+	default:
+		return v.IsZero()
+	}
 }
 
 // projectIDQueryParam returns gives project ID formatted as a generic QueryParam
 func projectIDQueryParam(ProjectID int) string {
 	return "?project=" + strconv.Itoa(ProjectID)
+}
+
+// BoolPtr returns a pointer to the given bool.
+func BoolPtr(v bool) *bool {
+	return &v
+}
+
+func ptr[T any](v T) *T {
+	return &v
+}
+
+// requireNonNil validates that a required input is non-nil.
+func requireNonNil(name string, value any) error {
+	if value == nil {
+		return fmt.Errorf("%s must not be nil", name)
+	}
+	v := reflect.ValueOf(value)
+	switch v.Kind() {
+	case reflect.Interface, reflect.Ptr, reflect.Map, reflect.Slice, reflect.Func:
+		if v.IsNil() {
+			return fmt.Errorf("%s must not be nil", name)
+		}
+	}
+	return nil
+}
+
+func requirePositiveID(name string, id int) error {
+	if id <= 0 {
+		return fmt.Errorf("%s must be greater than 0", name)
+	}
+	return nil
+}
+
+func resolveProjectID(projectID, defaultProjectID int, fieldName string) (int, error) {
+	if projectID > 0 {
+		return projectID, nil
+	}
+	if defaultProjectID > 0 {
+		return defaultProjectID, nil
+	}
+	return 0, fmt.Errorf("%s is required", fieldName)
+}
+
+// sparsePatchMapFromStruct builds a map payload containing only non-zero JSON fields.
+// This is useful for non-destructive PATCH calls based on partially populated models.
+func sparsePatchMapFromStruct(model any, excludedJSONFields ...string) (map[string]any, error) {
+	if err := requireNonNil("model", model); err != nil {
+		return nil, err
+	}
+	v := reflect.ValueOf(model)
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return nil, errors.New("model must not be nil")
+		}
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return nil, errors.New("model must be a struct or pointer to struct")
+	}
+
+	excluded := make(map[string]struct{}, len(excludedJSONFields))
+	for _, field := range excludedJSONFields {
+		excluded[field] = struct{}{}
+	}
+
+	payload := make(map[string]any)
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		sf := t.Field(i)
+		if sf.PkgPath != "" { // unexported
+			continue
+		}
+		jsonTag := sf.Tag.Get("json")
+		if jsonTag == "" {
+			continue
+		}
+		jsonField := strings.Split(jsonTag, ",")[0]
+		if jsonField == "" || jsonField == "-" {
+			continue
+		}
+		if _, skip := excluded[jsonField]; skip {
+			continue
+		}
+
+		fieldValue := v.Field(i)
+		if isZeroForSparsePatch(fieldValue) {
+			continue
+		}
+		payload[jsonField] = fieldValue.Interface()
+	}
+
+	if len(payload) == 0 {
+		return nil, errors.New("patch payload is empty; use Patch with explicit fields")
+	}
+	return payload, nil
+}
+
+func isZeroForSparsePatch(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Interface, reflect.Ptr:
+		if v.IsNil() {
+			return true
+		}
+		return isZeroForSparsePatch(v.Elem())
+	case reflect.Slice, reflect.Map:
+		return v.IsNil()
+	default:
+		return v.IsZero()
+	}
+}
+
+// applyDefaultProjectToQuery fills the `project` query parameter when omitted.
+func applyDefaultProjectToQuery(queryParams any, defaultProjectID int) {
+	if queryParams == nil || defaultProjectID == 0 {
+		return
+	}
+	v := reflect.ValueOf(queryParams)
+	if v.Kind() != reflect.Ptr || v.IsNil() {
+		return
+	}
+	s := v.Elem()
+	if s.Kind() != reflect.Struct {
+		return
+	}
+	for i := 0; i < s.NumField(); i++ {
+		field := s.Field(i)
+		structField := s.Type().Field(i)
+		tag := structField.Tag.Get("url")
+		key := strings.Split(tag, ",")[0]
+		if key != "project" || !field.CanSet() {
+			continue
+		}
+		switch field.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if field.Int() == 0 {
+				field.SetInt(int64(defaultProjectID))
+			}
+		case reflect.Ptr:
+			if field.IsNil() && field.Type().Elem().Kind() == reflect.Int {
+				projectID := defaultProjectID
+				field.Set(reflect.ValueOf(&projectID))
+			}
+		}
+		return
+	}
+}
+
+func cloneQueryParams(queryParams any) any {
+	if queryParams == nil {
+		return nil
+	}
+	v := reflect.ValueOf(queryParams)
+	if v.Kind() != reflect.Ptr || v.IsNil() || v.Elem().Kind() != reflect.Struct {
+		return queryParams
+	}
+	clone := reflect.New(v.Elem().Type())
+	clone.Elem().Set(v.Elem())
+	return clone.Interface()
+}
+
+// appendQueryParams appends encoded query parameters to baseURL.
+func appendQueryParams(baseURL string, queryParams any) (string, error) {
+	if queryParams == nil {
+		return baseURL, nil
+	}
+	paramValues, err := query.Values(queryParams)
+	if err != nil {
+		return "", fmt.Errorf("encode query params: %w", err)
+	}
+	if len(paramValues) == 0 {
+		return baseURL, nil
+	}
+
+	parsedURL, err := neturl.Parse(baseURL)
+	if err != nil {
+		return "", fmt.Errorf("parse base URL: %w", err)
+	}
+	merged := parsedURL.Query()
+	for key, values := range paramValues {
+		for _, value := range values {
+			merged.Add(key, value)
+		}
+	}
+	parsedURL.RawQuery = merged.Encode()
+	return parsedURL.String(), nil
+}
+
+// urlWithQueryOrDefaultProject applies query filters and falls back to default project.
+func urlWithQueryOrDefaultProject(baseURL string, queryParams any, defaultProjectID int) (string, error) {
+	if queryParams != nil {
+		encodedParams := cloneQueryParams(queryParams)
+		applyDefaultProjectToQuery(encodedParams, defaultProjectID)
+		return appendQueryParams(baseURL, encodedParams)
+	}
+	if defaultProjectID != 0 {
+		return baseURL + projectIDQueryParam(defaultProjectID), nil
+	}
+	return baseURL, nil
+}
+
+// tagsToNames extracts tag names from Taiga's [][]string tag format.
+// Each tag entry is expected to have at least one element (the tag name).
+func tagsToNames(tags Tags) []string {
+	if len(tags) == 0 {
+		return nil
+	}
+	names := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		if len(tag) == 0 {
+			continue
+		}
+		names = append(names, tag[0])
+	}
+	return names
+}
+
+// namesToTags converts plain tag names to Taiga's [][]string tag format.
+func namesToTags(names ...string) Tags {
+	if len(names) == 0 {
+		return nil
+	}
+	tags := make(Tags, 0, len(names))
+	for _, name := range names {
+		if name == "" {
+			continue
+		}
+		tags = append(tags, []string{name})
+	}
+	if len(tags) == 0 {
+		return nil
+	}
+	return tags
 }
