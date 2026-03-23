@@ -231,7 +231,7 @@ jobs:
           go tool cover -func=coverage.out | tee coverage.txt
 
       - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-artifacts
           path: |
@@ -349,7 +349,7 @@ jobs:
 
       - name: Upload live smoke diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: live-smoke-diagnostics
           path: tests/ci-artifacts
@@ -411,7 +411,7 @@ jobs:
 
       - name: Upload live full diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: live-full-stable-diagnostics
           path: tests/ci-artifacts
@@ -483,7 +483,7 @@ jobs:
 
       - name: Upload compatibility diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: live-compatibility-${{ matrix.taiga_ref }}-diagnostics
           path: tests/ci-artifacts
@@ -566,7 +566,7 @@ jobs:
 
       - name: Upload role-matrix diagnostics
         if: failure() && steps.role-matrix-secrets.outputs.enabled == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: live-role-matrix-diagnostics
           path: tests/ci-artifacts
