@@ -458,8 +458,9 @@ jobs:
 
       - name: Check out taiga-docker ${{ matrix.taiga_ref }}
         run: |
-          git -C tests/taiga-docker fetch origin stable main --depth=1
-          git -C tests/taiga-docker checkout --detach origin/${{ matrix.taiga_ref }}
+          git -C tests/taiga-docker fetch --depth=1 origin \
+            "+refs/heads/${{ matrix.taiga_ref }}:refs/remotes/origin/${{ matrix.taiga_ref }}"
+          git -C tests/taiga-docker checkout --detach "refs/remotes/origin/${{ matrix.taiga_ref }}"
 
       - name: Build Taiga stack (${{ matrix.taiga_ref }})
         working-directory: tests
