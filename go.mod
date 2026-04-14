@@ -6,5 +6,5 @@ toolchain go1.25.8
 
 require (
 	github.com/google/go-querystring v1.2.0
-	golang.org/x/text v0.35.0
+	golang.org/x/text v0.36.0
 )
