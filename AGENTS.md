@@ -74,3 +74,15 @@
 - Are method signatures consistent across resource services (`Create/Get/GetByRef/Edit|Update/Delete/List` where relevant)?
 - Are unit tests added for path/query/transport behaviour, and integration tests updated when behaviour changes?
 - Is the code written using the latest Go version's capabilities?
+
+## 8) Documentation
+- Always add meaningful and conventional documentation comments to the source code.
+- Always update these files if any code changes and has an impact on the documentation: AGENTS.md; CONTRIBUTION.md; README.md
+- Always respect the rules of British English language
+
+## 9) Commit Messages
+- Whenever a commit message is requested, respect the rules of [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/#specification).
+- Always check the changed files in the git repository and reflect all meaningful changes in the generated commit message
+
+## 10) Expected Behaviour
+- Whenever a prompt is received, check the contents of `AGENTS.md` for changes. If there's any change, learn them first then proceed with the received user prompt.

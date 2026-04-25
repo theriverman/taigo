@@ -46,7 +46,7 @@ There is no Node.js, no npm, and no JavaScript build pipeline.
 Do not add frontend toolchain dependencies to contributor workflows or CI unless the project direction explicitly changes.
 
 Use the Go toolchain declared in `go.mod`.
-At the time of writing, the repository targets Go `1.25` with toolchain `go1.25.8`.
+At the time of writing, the repository targets Go `1.25` with toolchain `go1.25.9`.
 
 ## Development principles
 
