@@ -3,5 +3,6 @@ version: "3.5"
 services:
   taiga-back:
     image: taigaio/taiga-back:latest
+    restart: on-failure:5
     environment:
       - PUBLIC_REGISTER_ENABLED=True

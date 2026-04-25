@@ -17,6 +17,14 @@ wait_for_taiga() {
 		if curl --silent --show-error --fail --output /dev/null "${base_url}/api/v1/stats/discover"; then
 			break
 		fi
+
+		local backend_status
+		backend_status="$(docker ps -a --filter "name=taiga-back" --format '{{.Status}}')"
+		if [[ "${backend_status}" == Exited* || "${backend_status}" == Dead* ]]; then
+			echo "taiga-back stopped while waiting for Taiga: ${backend_status}" >&2
+			return 1
+		fi
+
 		sleep 1
 	done
 }
