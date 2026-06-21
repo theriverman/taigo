@@ -35,7 +35,7 @@ jobs:
       matrix:
         language: ["go"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Go from go.mod
         uses: actions/setup-go@v6
