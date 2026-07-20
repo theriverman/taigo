@@ -6,3 +6,10 @@ type UserStoryCustomAttribValues struct {
 	TgObjCAVDBase
 	UserStory int `json:"user_story,omitempty"`
 }
+
+// UserStoryCustomAttributesValues -> https://docs.taiga.io/api.html#object-userstory-custom-attributes-values-detail
+type UserStoryCustomAttributesValues struct {
+	AttributesValues map[string]string `json:"attributes_values"`
+	Version          int               `json:"version"`
+	UserStory        int               `json:"user_story"`
+}

@@ -6,3 +6,10 @@ type TaskCustomAttribValues struct {
 	TgObjCAVDBase
 	Task int `json:"task,omitempty"`
 }
+
+// TaskCustomAttributesValues -> https://docs.taiga.io/api.html#object-task-custom-attributes-values-detail
+type TaskCustomAttributesValues struct {
+	AttributesValues map[string]string `json:"attributes_values"`
+	Version          int               `json:"version"`
+	Task             int               `json:"task"`
+}

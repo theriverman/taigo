@@ -120,8 +120,7 @@ func (s *TaskService) Get(taskID int) (*Task, error) {
 	}
 	url := s.client.MakeURL(s.Endpoint, strconv.Itoa(taskID))
 	var t TaskDetailGET
-	_, err := s.client.Request.Get(url, &t)
-	if err != nil {
+	if _, err := s.client.Request.Get(url, &t); err != nil {
 		return nil, err
 	}
 	return t.AsTask()

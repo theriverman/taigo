@@ -312,6 +312,22 @@ func (s *UserStoryService) CreateAttachment(attachment *Attachment, userstory *U
 	return newfileUploadRequest(s.client, url, attachment, userstory)
 }
 
+func (s *UserStoryService) GetCustomAttributesValues(userStoryID int) (cav *UserStoryCustomAttributesValues, err error) {
+	url := s.client.MakeURL(s.Endpoint, "custom-attributes-values", strconv.Itoa(userStoryID))
+	if _, err = s.client.Request.Get(url, &cav); err != nil {
+		return nil, err
+	}
+	return
+}
+
+func (s *UserStoryService) EditCustomAttributesValues(cav *UserStoryCustomAttributesValues) (cavResponse *UserStoryCustomAttributesValues, err error) {
+	url := s.client.MakeURL(s.Endpoint, "custom-attributes-values", strconv.Itoa(cav.UserStory))
+	if _, err = s.client.Request.Patch(url, &cav, &cavResponse); err != nil {
+		return nil, err
+	}
+	return
+}
+
 /*
 	Advanced Operations
 */
