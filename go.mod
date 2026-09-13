@@ -1,10 +1,10 @@
 module github.com/theriverman/taigo/v2
 
-go 1.25.0
+go 1.26.0
 
 toolchain go1.26.7
 
 require (
 	github.com/google/go-querystring v1.2.0
-	golang.org/x/text v0.41.0
+	golang.org/x/text v0.42.0
 )
