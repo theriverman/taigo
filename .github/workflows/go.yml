@@ -20,6 +20,7 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   GOFLAGS: -buildvcs=false
+  GOTOOLCHAIN: auto
 
 defaults:
   run:

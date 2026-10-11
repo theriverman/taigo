@@ -20,6 +20,7 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  GOTOOLCHAIN: auto
 
 defaults:
   run:
@@ -53,6 +54,7 @@ jobs:
         env:
           GOCACHE: /tmp/taigo-codeql-gocache
           GOFLAGS: -buildvcs=false
+          GOTOOLCHAIN: auto
         run: |
           GOWORK=off go clean -cache -testcache
           GOWORK=off go build -a .
